@@ -1,0 +1,8 @@
+#-- gradle files
+.gradle
+/build
+
+#-- editor files
+*~
+*.swp
+
