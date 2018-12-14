@@ -1,6 +1,6 @@
-# RSP Software Toolkit Gateway
+# Gateway
 
-The features and functionality included in this reference design are intended to showcase the capabilities of the Intel® family of RFID Sensor Platforms by demonstrating the use of the API to collect and process RFID tag read information. **_THIS SOFTWARE IS NOT INTENDED TO BE A COMPLETE END-TO-END INVENTORY MANAGEMENT SOLUTION._**
+The features and functionality included in this reference design are intended to showcase the capabilities of the Intel® RFID Sensor Platform (Intel® RSP) by demonstrating the use of the API to collect and process RFID tag read information. **_THIS SOFTWARE IS NOT INTENDED TO BE A COMPLETE END-TO-END INVENTORY MANAGEMENT SOLUTION._**
 
 ## Getting Started
 
