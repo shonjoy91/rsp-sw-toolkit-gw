@@ -1,0 +1,44 @@
+<resources>
+
+    <string name="btn_next">Next</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_reload">Reload</string>
+
+    <string name="splash_title">Sensor NFC</string>
+    <string name="splash_content">
+        In order to use this application to provision a sensor using NFC,
+
+        \n\nInstall one or more root CA certificate files that have .crt file extension.
+
+        \n\nInstall one or more provisioning token files that start with "token" and
+        have .json file extenstion.
+
+        \n\nDownload these files to this device\'s downloads directory using Android File Transfer.
+        \n\nPlease see the User Guide for this application for more details.
+    </string>
+
+    <string name="root_ca_cert_title">Select Root CA Certificate</string>
+    <string name="root_ca_cert_prompt_unavailable">Unavailable\nPlease copy ca.crt to: </string>
+
+    <string name="token_select_title">Select Provisioning Token</string>
+
+    <string name="program_title">Program Provisioning Token</string>
+
+    <string name="nfc_program_state_searching">"Searching &#8230;\n\nPlease hold this device within 1 inch of the sensor NFC"</string>
+    <string name="nfc_program_state_completed">"Programming Completed"</string>
+    <string name="nfc_program_state_failed">"Programming Failed"</string>
+
+    <string name="err_bad_date_format">Bad Date Format</string>
+    <string name="err_missing_root_ca_cert">Missing Root CA Cert</string>
+    <string name="err_missing_token">Missing Token</string>
+    <string name="err_no_nfc_support">Device does not support NFC</string>
+
+    <string name="label_root_ca_cert_hash">CA Hash</string>
+    <string name="label_token_id">Token</string>
+    <string name="label_token_issued">Issued</string>
+    <string name="label_token_expires">Expires</string>
+
+    <string name="token_never_expires">Never</string>
+    <string name="token_expired">Expired</string>
+
+</resources>

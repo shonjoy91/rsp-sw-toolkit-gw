@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_token_program"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include layout="@layout/layout_title_bar" />
+
+
+    <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="5dp">
+
+        <TableRow>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="end"
+                android:padding="5dp"
+                android:text="@string/label_root_ca_cert_hash"
+                android:textAppearance="@style/NormalLabel"
+                />
+
+            <TextView
+                android:id="@+id/program_root_ca_cert_hash"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:padding="5dp"
+                android:textAppearance="@style/NormalContent"
+                />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="end"
+                android:padding="5dp"
+                android:text="@string/label_token_id"
+                android:textAppearance="@style/NormalLabel"
+                />
+
+            <TextView
+                android:id="@+id/program_token_id"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:padding="5dp"
+                android:textAppearance="@style/NormalContent"
+                />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:gravity="end"
+                android:padding="5dp"
+                android:text="@string/label_token_issued"
+                android:textAppearance="@style/NormalLabel" />
+
+            <TextView
+                android:id="@+id/program_token_issued"
+                android:padding="5dp"
+                android:textAppearance="@style/NormalContent" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:gravity="end"
+                android:padding="5dp"
+                android:text="@string/label_token_expires"
+                android:textAppearance="@style/NormalLabel" />
+
+            <TextView
+                android:id="@+id/program_token_expires"
+                android:padding="5dp"
+                android:textAppearance="@style/NormalContent" />
+        </TableRow>
+
+        <TableRow android:padding="25dp" />
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/program_token_status"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_column="1"
+                android:layout_weight="1"
+                android:padding="5dp"
+                android:text="Program Sensor"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textStyle="bold" />
+
+        </TableRow>
+    </TableLayout>
+
+
+</LinearLayout>
