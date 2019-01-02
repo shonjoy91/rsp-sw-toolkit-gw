@@ -31,6 +31,7 @@
     <string name="err_bad_date_format">Bad Date Format</string>
     <string name="err_missing_root_ca_cert">Missing Root CA Cert</string>
     <string name="err_missing_token">Missing Token</string>
+    <string name="err_needs_file_permission">Unable to proceed without READ file permission</string>
     <string name="err_no_nfc_support">Device does not support NFC</string>
 
     <string name="label_root_ca_cert_hash">CA Hash</string>

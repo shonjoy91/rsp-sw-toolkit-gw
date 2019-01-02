@@ -34,17 +34,25 @@
 
 package com.intel.rrs.activity;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.intel.rrs.R;
-import com.intel.rrs.helper.Common;
 
 public class SplashActivity extends Activity {
+
+    public static final int PERMISSION_REQUEST_READ = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,42 @@ public class SplashActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        int permValue = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        if (permValue == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        ActivityCompat.requestPermissions(this,
+                new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                },
+                PERMISSION_REQUEST_READ);
     }
 
+    @Override
+    public void onRequestPermissionsResult(int _requestCode, @NonNull String[] _permissions, @NonNull int[] _results) {
+
+        switch (_requestCode) {
+            case PERMISSION_REQUEST_READ:
+                if (_results.length > 0 && _results[0] != PackageManager.PERMISSION_GRANTED) {
+
+                    AlertDialog ad = new AlertDialog.Builder(SplashActivity.this).create();
+                    ad.setMessage(getText(R.string.err_needs_file_permission));
+                    ad.setButton(DialogInterface.BUTTON_NEUTRAL,
+                            getText(android.R.string.ok),
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    finish();
+                                }
+                            });
+                    ad.show();
+                }
+                break;
+            default:
+        }
+
+    }
 }

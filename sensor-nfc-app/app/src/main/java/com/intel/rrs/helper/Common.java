@@ -36,8 +36,6 @@ package com.intel.rrs.helper;
 
 import android.os.Environment;
 
-import com.intel.rrs.data.ProvisioningToken;
-
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -57,7 +55,9 @@ public class Common {
     }
 
     public static void getTokenFiles(List<File> _files, List<String> _names) {
-        for (File file : Common.getDownloadsDir().listFiles()) {
+        File downloadDir = Common.getDownloadsDir();
+        if(downloadDir == null) { return; }
+        for (File file : downloadDir.listFiles()) {
             String name = file.toString();
             if (name.contains("token") && name.endsWith(".json")) {
                 _files.add(file);
@@ -67,7 +67,9 @@ public class Common {
     }
 
     public static void getRootCACertFiles(List<File> _files, List<String> _names) {
-        for (File file : Common.getDownloadsDir().listFiles()) {
+        File downloadDir = Common.getDownloadsDir();
+        if(downloadDir == null) { return; }
+        for (File file : downloadDir.listFiles()) {
             if (file.toString().endsWith(".crt")) {
                 _files.add(file);
                 _names.add(file.getName());
@@ -77,79 +79,11 @@ public class Common {
 
     private static DateFormat userLocalDTF;
 
-    public static String toUserLocalDate(String _epochTime) {
-        long l;
-        try {
-            l = Long.parseLong(_epochTime);
-            return toUserLocalDate(l);
-        } catch (NumberFormatException _nfe) {
-            return "???";
-        }
-    }
-
     public static String toUserLocalDate(long _epochTime) {
         if (userLocalDTF == null) {
             userLocalDTF = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         }
         return userLocalDTF.format(new Date(_epochTime));
     }
-
-    public static boolean isExpired(ProvisioningToken _provisioningToken) {
-        long expires;
-        if(_provisioningToken == null || _provisioningToken.getExpirationTimestamp() == null) {
-            return false;
-        }
-        try {
-            expires = Long.parseLong(_provisioningToken.getExpirationTimestamp());
-        } catch (NumberFormatException _e) {
-            expires = 0;
-        }
-
-        // a -1 timestamp is meant to indicate an infinite time
-        return expires >= 0 && System.currentTimeMillis() > expires;
-    }
-
-
-    /*
-
-    public static String DateTime2TimeStamp(long timeStamp) {
-        String dataFormat = "yyyy-MM-dd";
-        if (timeStamp == 0) {
-            return "";
-        }
-        timeStamp = timeStamp * 1000;
-        String result = "";
-        SimpleDateFormat format = new SimpleDateFormat(dataFormat);
-        result = format.format(new Date(timeStamp));
-
-        //String result = "2018-1-1";
-
-        Log.i("rrs", "formatData:" + result);
-        return result;
-    }
-
-
-    public static String DateTime2TimeStamp(String timeStamp_str) {
-
-//        long timeStamp = 0;
-//        if(timeStamp_str != "") {
-//            timeStamp = Long.parseLong(timeStamp_str);
-//        }
-//
-//        String dataFormat = "yyyy-MM-dd";
-//        if (timeStamp == 0) {
-//            return "";
-//        }
-//        timeStamp = timeStamp * 1000;
-        String result = "2018-1-1";
-        //SimpleDateFormat format = new SimpleDateFormat(dataFormat);
-        //result = format.format(new Date(timeStamp));
-        //result = format.toString();
-        Log.i("rrs", "formatData:" + result);
-        return result;
-    }
-
-*/
-
 
 }

@@ -157,21 +157,18 @@ public class ProgramActivity extends Activity {
         if (rootCAHash == null ||
             rootCAHash.isEmpty() ) {
             showDialog(getString(R.string.err_missing_root_ca_cert));
-            finish();
         }
 
         if (provisioningToken == null ||
             provisioningToken.getToken() == null ||
             provisioningToken.getToken().isEmpty()) {
             showDialog(getString(R.string.err_missing_token));
-            finish();
         }
 
 
         if (nfcAdapter == null) {
             // Stop here, we definitely need NFC
             showDialog(getString(R.string.err_no_nfc_support));
-            finish();
         } else {
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()), 0);
             nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
@@ -187,12 +184,15 @@ public class ProgramActivity extends Activity {
 
             textViewStatus.setText(getString(R.string.nfc_program_state_completed));
         } catch (JSONException | IOException | FormatException e) {
-            String errMsg;
-            errMsg = getString(R.string.nfc_program_state_failed) + ": " + e.getLocalizedMessage();
-            showDialog(errMsg);
-            e.printStackTrace();
             nfcTag = null;
             textViewStatus.setText(getString(R.string.nfc_program_state_searching));
+            StringBuilder sb = new StringBuilder(getString(R.string.nfc_program_state_failed));
+            sb.append(": ").append(e.getClass().getSimpleName());
+            if(e.getMessage() != null) {
+                sb.append(": ").append(e.getMessage());
+            }
+            e.printStackTrace();
+            showDialog(sb.toString());
         }
 
     }
@@ -214,17 +214,17 @@ public class ProgramActivity extends Activity {
         nfcTag = null;
     }
 
-
-
     private void showDialog(String _message) {
-        final AlertDialog alertDialog = new AlertDialog.Builder(ProgramActivity.this).create();
-        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
+        AlertDialog alertDialog = new AlertDialog.Builder(ProgramActivity.this).create();
+        alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL,
+                getText(android.R.string.ok),
+                new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                alertDialog.dismiss();
+                finish();
             }
         });
-        alertDialog.setTitle(_message);
+        alertDialog.setMessage(_message);
         alertDialog.show();
     }
 
