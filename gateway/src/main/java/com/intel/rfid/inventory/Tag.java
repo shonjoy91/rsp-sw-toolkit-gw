@@ -129,6 +129,7 @@ public class Tag implements Comparable<Tag> {
 
     public static class Cached {
         public String epc;
+        public String tid;
         public TagState state;
         public String location;
         public String facility;
@@ -138,6 +139,7 @@ public class Tag implements Comparable<Tag> {
     public Cached toCached() {
         Cached ct = new Cached();
         ct.epc = epc;
+        ct.epc = tid;
         ct.state = state;
         ct.location = location;
         ct.facility = facility;
@@ -147,6 +149,7 @@ public class Tag implements Comparable<Tag> {
 
     public static Tag fromCached(Cached _ct) {
         Tag t = new Tag(_ct.epc);
+        t.tid = _ct.tid;
         t.state = _ct.state;
         if (t.state == EXITING) {
             t.state = PRESENT;
@@ -162,6 +165,7 @@ public class Tag implements Comparable<Tag> {
     public String toString() {
         long now = System.currentTimeMillis();
         return epc + ", " +
+               tid + ", " +
                state.abbrev() + ", " +
                location + ", " +
                DateTimeHelper.timeAsHMS_MS(now - lastRead) + ", " +
@@ -169,7 +173,7 @@ public class Tag implements Comparable<Tag> {
     }
 
     public static final String STATS_SUMMARY_CSV_HDR =
-        "epc, state, elapsed, " +
+        "epc, tid, state, elapsed, " +
         "location-ind, sensor, " +
         "count, " +
         "mean-dBm, stddev-dBm, min-dBm, max-dBm, " +
@@ -182,8 +186,9 @@ public class Tag implements Comparable<Tag> {
 
 
             _pw.println(String.format(
-                "%s, %s, %s, %s, %s, %2d, %6.1f, %9.1f, %6.1f, %6.1f, %8.0f, %8.0f",
+                "%s, %s, %s, %s, %s, %s, %2d, %6.1f, %9.1f, %6.1f, %6.1f, %8.0f, %8.0f",
                 epc,
+                tid,
                 state.abbrev(),
                 DateTimeHelper.timeAsHMS_MS(_timeRef - r.lastRead),
                 (location.equals(devId) ? "@" : " "),
@@ -195,7 +200,7 @@ public class Tag implements Comparable<Tag> {
     }
 
     public static final String STATS_DETAIL_CSV_HDR =
-        "epc,state,cur-time,last-read,elapsed," +
+        "epc,tid,state,cur-time,last-read,elapsed," +
         "location-ind,sensor," +
         "count," +
         "mean-dBm,stddev-dBm,min-dBm,max-dBm," +
@@ -209,8 +214,8 @@ public class Tag implements Comparable<Tag> {
             TagStats.Results mw = stats.inMilliWatts();
 
             _pw.println(String.format(
-                "%s,%s,%s,%s,%s,%s,%s,%2d,%.1f,%.1f,%.1f,%.1f,%.14f,%.14f,%.14f,%.14f,%.1f,%.1f",
-                epc, state.abbrev(), _timeRef, db.lastRead,
+                "%s,%s,%s,%s,%s,%s,%s,%s,%2d,%.1f,%.1f,%.1f,%.1f,%.14f,%.14f,%.14f,%.14f,%.1f,%.1f",
+                epc, tid, state.abbrev(), _timeRef, db.lastRead,
                 DateTimeHelper.timeAsHMS_MS(_timeRef - db.lastRead),
                 (location.equals(devId) ? "@" : " "), devId,
                 db.n,
@@ -222,6 +227,7 @@ public class Tag implements Comparable<Tag> {
 
     public void waypoints(PrintWriter _pw) {
         _pw.print(epc + ", ");
+        _pw.print(tid + ", ");
         _pw.print(state.abbrev() + ", ");
 
         List<TagHistory.Waypoint> waypoints = history.getWaypoints();
