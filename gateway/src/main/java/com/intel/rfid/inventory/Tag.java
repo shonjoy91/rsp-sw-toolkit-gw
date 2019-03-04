@@ -139,7 +139,7 @@ public class Tag implements Comparable<Tag> {
     public Cached toCached() {
         Cached ct = new Cached();
         ct.epc = epc;
-        ct.epc = tid;
+        ct.tid = tid;
         ct.state = state;
         ct.location = location;
         ct.facility = facility;
