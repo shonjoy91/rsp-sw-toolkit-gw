@@ -11,7 +11,6 @@ process RFID tag read information.
 The sensor-nfc-config project is a reference design for programming 
 identification assets into the Intel® RSP for authenticating with the gateway.
 
-The rsp-sim tool is a set of scripts that simulate the command responses
-and data indications that would come from actual Intel® RSP devices.  This
-tool allows developers to begin working with the gateway project prior to
-receiving actual hardware.
+The rsp-sim tool is a set of scripts that simulate the commands, responses
+and data notifications of the Intel® RSP. This tool allows developers to begin
+working with the gateway project prior to receiving actual hardware.
