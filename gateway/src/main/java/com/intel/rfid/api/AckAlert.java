@@ -9,7 +9,7 @@ import java.util.List;
 
 public class AckAlert extends JsonRequest {
 
-    public static final String METHOD_NAME = "set_device_alert";
+    public static final String METHOD_NAME = "ack_alert";
 
 
     public AckAlert() { method = METHOD_NAME; }
