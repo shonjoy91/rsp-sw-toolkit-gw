@@ -6,7 +6,7 @@ This tool is intended to aid the Gateway developer by providing simulated IntelÂ
 
 ## Install the IntelÂ® RSP Software Toolkit - Gateway
 
-Follow the instructions here (https://github.com/intel/rsp-sw-toolkit/tree/master/gateway) to install and run the Gateway.
+Follow the instructions here (https://github.com/intel/rsp-sw-toolkit-gw/) to install and run the Gateway.
 
 
 ## Execute the RSP Simulator script
