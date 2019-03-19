@@ -17,26 +17,26 @@ cd ${PROJECT_DIR}
 # clone the project into this project directory
 
 # build an archive suitable for deployment
-cd ${PROJECT_DIR}/gateway
+cd ${PROJECT_DIR}
 gradle buildTar
 ```
 
 ### Deploy
 ```
 cd $DEPLOY_DIR
-tar -xf ${PROJECT_DIR}/build/distributions/gateway-1.0.tgz
-cd ${DEPLOY_DIR}/gateway
+tar -xf ${PROJECT_DIR}/build/distributions/rsp-sw-toolkit-gw-1.0.tgz
+cd ${DEPLOY_DIR}/rsp-sw-toolkit-gw
 
 # need to create self signed certificates for sensors to connect
-mkdir -p ${DEPLOY_DIR}/gateway/cache
-cd ${DEPLOY_DIR}/gateway/cache
-${DEPLOY_DIR}/gateway/gen_keys.sh
+mkdir -p ${DEPLOY_DIR}/rsp-sw-toolkit-gw/cache
+cd ${DEPLOY_DIR}/rsp-sw-toolkit-gw/cache
+${DEPLOY_DIR}/rsp-sw-toolkit-gw/gen_keys.sh
 ```
 
 ### Run
 A shell script is provided to start the application in the foreground. 
 ```
-${DEPLOY_DIR}/gateway/run.sh
+${DEPLOY_DIR}/rsp-sw-toolkit-gw/run.sh
 ```
 
 #### Read RFID Tags
