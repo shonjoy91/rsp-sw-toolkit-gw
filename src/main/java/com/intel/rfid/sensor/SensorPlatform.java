@@ -13,6 +13,7 @@ import com.intel.rfid.api.Behavior;
 import com.intel.rfid.api.ConnectRequest;
 import com.intel.rfid.api.ConnectResponse;
 import com.intel.rfid.api.DeviceAlert;
+import com.intel.rfid.api.DeviceAlertDetails;
 import com.intel.rfid.api.GetBISTResults;
 import com.intel.rfid.api.GetSoftwareVersion;
 import com.intel.rfid.api.GetState;
@@ -35,31 +36,42 @@ import com.intel.rfid.api.Shutdown;
 import com.intel.rfid.api.StatusUpdate;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.schedule.AtomicTimeMillis;
 import com.intel.rfid.security.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.intel.rfid.api.ApplyBehavior.Action.START;
 
-public class SensorPlatform implements
-                            Comparable<SensorPlatform> {
+public class SensorPlatform 
+    implements Comparable<SensorPlatform> {
 
     public static final long LOST_COMMS_THRESHOLD = 90000;
     // Threshold used to determine whether the behavior is DEEP_SCAN
     public static final int DEEP_SCAN_DWELL_TIME_THRESHOLD = 10000;
     public static final String UNKNOWN_FACILITY_ID = "UNKNOWN";
+    public static final String DEFAULT_FACILITY_ID = "DEFAULT_FACILITY";
+
+    public static final long START_RATE_LIMIT = TimeUnit.SECONDS.toMillis(2);
 
     protected static final ObjectMapper MAPPER = Jackson.getMapper();
 
-    protected String facilityId = UNKNOWN_FACILITY_ID;
+    protected String facilityId = DEFAULT_FACILITY_ID;
     protected Personality personality;
     protected final String deviceId;
     protected final Logger logRSP; // created on construction using the deviceId
@@ -79,11 +91,16 @@ public class SensorPlatform implements
     protected final Object latchLock = new Object();
     protected CountDownLatch inventoryLatch = new CountDownLatch(0);
 
+    private final ExecutorService readExecutor;
+
     protected Behavior currentBehavior = new Behavior();
     protected ConnectionState connectionState = ConnectionState.DISCONNECTED;
     protected ReadState readState = ReadState.STOPPED;
     protected final AtomicTimeMillis lastCommsMillis = new AtomicTimeMillis();
+    private final AtomicTimeMillis lastStartFailure = new AtomicTimeMillis();
+    private final AtomicInteger startReadingErrors = new AtomicInteger(0);
     protected boolean inDeepScan = false;
+    protected String provisionToken;
 
     protected final Object downstreamLock = new Object();
     protected DownstreamManager downstream;
@@ -94,6 +111,9 @@ public class SensorPlatform implements
         sensorMgr = _sensorMgr;
         logRSP = LoggerFactory.getLogger(
             String.format("%s.%s", getClass().getSimpleName(), deviceId));
+        // only have a single thread because reading commands should never be in parallel
+        readExecutor = Executors.newFixedThreadPool(1,
+                                                    new ExecutorUtils.NamedThreadFactory(deviceId));
     }
 
     /**
@@ -191,6 +211,14 @@ public class SensorPlatform implements
         return personality != null && personality == _personality;
     }
 
+    public String getProvisionToken() {
+        return provisionToken;
+    }
+
+    public void setProvisionToken(String _token) {
+        provisionToken = _token;
+    }
+
     public void handleMessage(byte[] _msg) {
         synchronized (msgHandleLock) {
             // this means the reader is alive
@@ -280,12 +308,25 @@ public class SensorPlatform implements
 
     }
 
+    protected final List<DeviceAlertDetails> alerts = new ArrayList<>();
+
     private void onDeviceAlert(DeviceAlert _msg) {
         logInboundJson(logAlert, _msg.getMethod(), _msg.params);
+        synchronized (alerts) {
+            alerts.add(_msg.params);
+        }
         sensorMgr.notifyDeviceAlert(_msg);
         // be aware to not block on the ResultHandler returned by
         // this call in this current thread, deadlock
         acknowledgeAlert(_msg.params.alert_number, true);
+    }
+    
+    protected List<DeviceAlertDetails> getAlerts() {
+        List<DeviceAlertDetails> l = new ArrayList<>();
+        synchronized (alerts) {
+            l.addAll(alerts);
+        }
+        return l;
     }
 
     private void onHeartbeat(RSPHeartbeat _msg) {
@@ -471,46 +512,69 @@ public class SensorPlatform implements
                                        "behavior is now " + currentBehavior.id);
         }
     }
+    
+    public String getBehaviorId() {
+        String id = null;
+        if(currentBehavior != null) {
+            id = currentBehavior.id;
+        }
+        return id;
+    }
 
     private final AtomicBoolean scanCompletedSuccessfully = new AtomicBoolean(false);
 
-
-    public ResponseHandler startReading(Behavior _behavior, CountDownLatch _inventoryCompleteLatch) {
-
-        boolean added = false;
-        int tryCount = 1;
-        while (!added) {
-            synchronized (latchLock) {
-                if (inventoryLatch == null || inventoryLatch.getCount() == 0 || tryCount++ > 2) {
-                    added = true;
-                    inventoryLatch = _inventoryCompleteLatch;
-                }
-            }
-            if (!added) {
-                try {
-                    logRSP.warn("{} paused waiting for previous inventory complete messages", deviceId);
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return new ResponseHandler(deviceId,
-                                               JsonRPCError.Type.INTERNAL_ERROR,
-                                               "interrupted while paused pending previous inventory complete");
-                }
-            }
+    public CompletableFuture<Boolean> startScanAsync(final Behavior _behavior) {
+        CountDownLatch latch = new CountDownLatch(1);
+        synchronized (latchLock) {
+            inventoryLatch = latch;
         }
 
-        currentBehavior = _behavior;
+        CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                // An RSP with a current module error condition will fail to start
+                // only to be immediately rescheduled, rate limit this loop condition
+                if (lastStartFailure.isWithin(START_RATE_LIMIT)) {
+                    Thread.sleep(START_RATE_LIMIT);
+                }
 
-        ResponseHandler rh = startReading();
-        if (rh.isError()) {
-            synchronized (latchLock) {
-                inventoryLatch.countDown();
-                inventoryLatch = null;
+                ResponseHandler responseHandler = startReading(_behavior);
+                if (!responseHandler.waitForResponse() || responseHandler.isError()) {
+                    lastStartFailure.mark();
+                    return false;
+                }
+
+                // We don't specify a timeout; instead, if the caller wishes to, they
+                // can cancel the future, resulting in the "whenComplete" method below
+                // counting down the latch (and future.get() throwing a CancellationException).
+                latch.await();
+                return scanCompletedSuccessfully.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
             }
-        }
-        return rh;
+        }, readExecutor);
+
+        future.exceptionally(throwable -> false)
+              .whenComplete((success, throwable) -> {
+                  if (future.isCancelled()) {
+                      latch.countDown();
+                  }
+              });
+
+        return future;
     }
 
+    public ResponseHandler startReading(Behavior _behavior) {
+        if (_behavior == null) {
+            logRSP.error("Cannot start reading with a NULL behavior");
+            return new ResponseHandler(deviceId,
+                                       JsonRPCError.Type.INVALID_PARAMETER,
+                                       "behavior cannot be NULL");
+        }
+        currentBehavior = _behavior;
+        return startReading();
+    }
+    
     public ResponseHandler startReading() {
         ResponseHandler rh;
 
@@ -518,7 +582,7 @@ public class SensorPlatform implements
         if (isReading()) {
             rh = stopReading();
             if (rh.isError()) {
-                logRSP.error("Unable to stop reader " + rh.getError());
+                logRSP.error("startReading: unable to stop reader {}", deviceId);
                 return rh;
             }
         }
@@ -549,13 +613,22 @@ public class SensorPlatform implements
         return rh;
     }
 
+    public boolean isPotentiallyReading() {
+        return readState == ReadState.PEND_START || readState == ReadState.STARTED;
+    }
+
     public boolean isReading() {
         return readState == ReadState.STARTED;
     }
 
+    public ReadState getReadState() {
+        return readState;
+    }
 
     private void setReadState(ReadState _next) {
+        ReadState prev = readState;
         readState = _next;
+        sensorMgr.notifyReadStateChange(this, prev, readState);
         if (readState == ReadState.STARTED) {
             sensorStats.startedReading();
         } else if (readState == ReadState.STOPPED) {

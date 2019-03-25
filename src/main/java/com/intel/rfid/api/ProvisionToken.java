@@ -6,6 +6,7 @@ package com.intel.rfid.api;
 
 public class ProvisionToken {
 
+    public static final int NEVER_EXPIRES = -1;
     public String username = "";
     public String token = "";
     public long generatedTimestamp = 0;
@@ -19,7 +20,7 @@ public class ProvisionToken {
         username = _username;
         token = _token;
         generatedTimestamp = 0;
-        expirationTimestamp = 0;
+        expirationTimestamp = NEVER_EXPIRES;
     }
 
     @Override

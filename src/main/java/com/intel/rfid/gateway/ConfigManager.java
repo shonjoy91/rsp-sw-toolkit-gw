@@ -215,6 +215,10 @@ public class ConfigManager {
         return InetAddress.getLocalHost().getHostName();
     }
 
+    public String getSensorRepoBase() {
+        return Env.getHomePath().relativize(Env.getSensorSoftwareRepoPath()).toString();
+    }
+    
     public List<String> getRSPSoftwareRepos() {
         List<String> urls = new ArrayList<>();
         String proto = getOptString("repo.rsp.protocol", "http");
@@ -230,7 +234,7 @@ public class ConfigManager {
         // NOTE: delimit arch names.
         for (String arch : archs.split("(\\s|,)+")) {
             if (arch.isEmpty()) { continue; }
-            urls.add(repoHost + "/" + arch);
+            urls.add(repoHost + "/" + getSensorRepoBase() + "/" + arch);
         }
 
         if (urls.isEmpty()) {
@@ -296,8 +300,8 @@ public class ConfigManager {
     // Because this information needs to be shared between JmDNS and 
     // the servlets and endpoints, all the configuration is centralized
     // here in the configuaration manager
-    public static final String PROVISION_ROOT_CA_PATH = "/config/root-ca-cert";
-    public static final String PROVISION_SENSOR_CREDENTIALS_PATH = "/config/sensor-credentials";
+    public static final String PROVISION_ROOT_CA_PATH = "/provision/root-ca-cert";
+    public static final String PROVISION_SENSOR_CREDENTIALS_PATH = "/provision/sensor-credentials";
 
     public String getProvisionCACertProtocol() {
         return getOptString("provision.ca.cert.protocol", "http");

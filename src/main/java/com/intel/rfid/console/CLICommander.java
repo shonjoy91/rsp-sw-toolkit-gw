@@ -4,6 +4,8 @@
  */
 package com.intel.rfid.console;
 
+import com.intel.rfid.cluster.ClusterManager;
+import com.intel.rfid.cluster.ClusterManagerCommands;
 import com.intel.rfid.downstream.DownstreamCommands;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.GatewayException;
@@ -12,7 +14,6 @@ import com.intel.rfid.inventory.InventoryCommands;
 import com.intel.rfid.inventory.InventoryManager;
 import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.schedule.ScheduleManagerCommands;
-import com.intel.rfid.security.ProvisionTokenCommands;
 import com.intel.rfid.sensor.SensorCommands;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.upstream.UpstreamCommands;
@@ -65,8 +66,6 @@ public class CLICommander {
         supporter = new VersionCommands();
         supporters.put(supporter.getCommandId(), supporter);
 
-        supporter = new ProvisionTokenCommands();
-        supporters.put(supporter.getCommandId(), supporter);
     }
 
     public Support getSupporter(String commandId) {
@@ -75,6 +74,11 @@ public class CLICommander {
 
     public void set(PrettyPrinter _out) {
         out = _out;
+    }
+
+    public void enable(ClusterManager _clusterMgr) {
+        Support supporter = new ClusterManagerCommands(_clusterMgr);
+        supporters.put(supporter.getCommandId(), supporter);
     }
 
     public void enable(SensorManager _sensorMgr) {

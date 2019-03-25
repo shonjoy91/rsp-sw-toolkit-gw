@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Sensors</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css" />
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "sensors";
+
+    var gwSocket = new GatewayWebSocket();
+
+    var topics = [
+        "sensor_list"
+    ];
+
+    function onSocketState(state) {
+        switch (state) {
+            case "open":
+                gwSocket.sendRPC("subscribe", topics);
+                break;
+            case "closed":
+            default:
+                break;
+        }
+    }
+    gwSocket.addStateListener(onSocketState);
+
+    function onSocketData(data) {
+        var rsp = JSON.parse(data);
+
+        if (typeof rsp["method"] !== 'undefined') {
+            switch (rsp.method) {
+                case "sensor_show_info":
+                    onBasicInfo(rsp.params.info_list);
+                    break;
+                default:
+                    checkCommandResponse(rsp);
+                    break;
+            }
+        } else if (typeof rsp["result"] !== 'undefined' && rsp.result !== null && rsp.result !== "") {
+            alert(rsp.result);
+            return;
+        }
+    }
+    // register this callback with socket-support library
+    gwSocket.addDataListener(onSocketData);
+
+    var iConnected = '<i class="fa fa-link w3-large"></i>';
+    var iDisconnected = '<i class="fa fa-unlink w3-large"></i>';
+    var iStarted = '<i class="fa fa-rss w3-large"></i>';
+    var iStopped = '<i class="far fa-square w3-large"></i>';
+
+
+    var sensorInfoList;
+
+    function onBasicInfo(info_list) {
+        sensorInfoList = info_list;
+
+        if (selectedSensorId === "" && sensorInfoList.length > 0) {
+            selectSensor(sensorInfoList[0].id);
+        }
+
+        var table = document.getElementById("sensor_table");
+
+        for (var i = 0; i < sensorInfoList.length; i++) {
+
+            var curSensor = sensorInfoList[i];
+
+            var rowId = "row_" + curSensor.id;
+            var tRow = document.getElementById("row_" + curSensor.id);
+            if (tRow === null) {
+                tRow = createRow(table, curSensor.id);
+            }
+
+            var e;
+
+            document.getElementById(curSensor.id + ".id").innerHTML = curSensor.id;
+
+            e = document.getElementById(curSensor.id + ".connection_state");
+            if (curSensor.connection_state == "CONNECTED") {
+                e.innerHTML = iConnected;
+            } else {
+                e.innerHTML = iDisconnected;
+            }
+
+            e = document.getElementById(curSensor.id + ".read_state");
+            if (curSensor.read_state == "STARTED") {
+                e.innerHTML = iStarted;
+            } else {
+                e.innerHTML = iStopped;
+            }
+
+            if (curSensor.behavior_id !== null) {
+                document.getElementById(curSensor.id + ".behavior_id").innerHTML = curSensor.behavior_id;
+            }
+
+            if (curSensor.facility !== null) {
+                document.getElementById(curSensor.id + ".facility").innerHTML = curSensor.facility;
+            }
+
+            if (curSensor.personality !== null) {
+                document.getElementById(curSensor.id + ".personality").innerHTML = curSensor.personality;
+            }
+
+            if (curSensor.alerts !== null) {
+                e = document.getElementById(curSensor.id + ".alerts");
+                e.innerHTML = curSensor.alerts.length;
+            }
+        }
+    }
+
+    function createRow(table, sensorId) {
+        tRow = table.insertRow();
+        tRow.id = "row_" + sensorId;
+        tRow.appendChild(createIdCell(sensorId));
+        tRow.appendChild(createCell(sensorId + ".connection_state"));
+        tRow.appendChild(createCell(sensorId + ".read_state"));
+        tRow.appendChild(createCell(sensorId + ".behavior_id"));
+        tRow.appendChild(createCell(sensorId + ".facility"));
+        tRow.appendChild(createCell(sensorId + ".personality"));
+        tRow.appendChild(createAlertsCell(sensorId));
+    }
+
+    function createIdCell(sensorId) {
+        var tde = createCell(sensorId + ".id");
+        tde.onclick = selectSensorClosure(sensorId);
+        tde.classList.add("w3-button");
+        return tde;
+    }
+
+    function createAlertsCell(sensorId) {
+        var tde = createCell(sensorId + ".alerts");
+        tde.onclick = showAlertsClosure(sensorId);
+        tde.classList.add("w3-button");
+        return tde;
+    }
+
+    function createCell(cellId) {
+        var tde = document.createElement("td");
+        tde.id = cellId;
+        tde.classList.add("w3-border-bottom");
+        tde.classList.add("w3-border-dark-grey");
+        return tde;
+    }
+
+    function selectSensorClosure(sensorId) {
+        return function() {
+            selectSensor(sensorId);
+        }
+    }
+
+    function showAlertsClosure(sensorId) {
+        return function() {
+            showAlerts(sensorId);
+        }
+    }
+
+    function showAlerts(sensorId) {
+        var curSensor;
+        for (var i = 0; i < sensorInfoList.length; i++) {
+            if (sensorId === sensorInfoList[i].id) {
+                curSensor = sensorInfoList[i];
+                break;
+            }
+        }
+
+        if(typeof curSensor === 'undefined') { return; }
+        
+        if(curSensor.alerts.length <= 0) { return; }
+
+        document.getElementById("modal_sensor_id").innerHTML = sensorId;
+        document.getElementById("modal_label").innerHTML = "Alerts";
+        var e = document.getElementById("modal_content");
+        while (e.firstChild) {
+            e.removeChild(e.firstChild);
+        }        
+        for (var j = 0; j < curSensor.alerts.length; j++) {
+            var alert = curSensor.alerts[j];
+
+            var row = document.createElement("div");
+            row.classList.add("w3-row-padding");
+            row.classList.add(mapSeverityToColor(alert.severity));
+            var col;
+            // alert_number
+            col = document.createElement("div");
+            col.classList.add("w3-col");
+            col.classList.add("s1");
+            col.innerHTML = alert.alert_number;
+            row.appendChild(col);
+            // severity
+            col = document.createElement("div");
+            col.classList.add("w3-col");
+            col.classList.add("s1");
+            col.innerHTML = alert.severity;
+            row.appendChild(col);
+            // alert_desc
+            col = document.createElement("div");
+            col.classList.add("w3-col");
+            col.classList.add("s5");
+            col.innerHTML = alert.alert_description;
+            row.appendChild(col);
+            // sent_on
+            col = document.createElement("div");
+            col.classList.add("w3-col");
+            col.classList.add("s5");
+            col.innerHTML = epochToGMT(alert.sent_on);
+            row.appendChild(col);
+
+            e.appendChild(row);
+        }
+        
+        showResultsModal();
+    }
+    
+    function mapSeverityToColor(severity) {
+        switch(severity) {
+            case "info":
+                return "w3-green";
+                break;
+            case "warning":
+                return "w3-yellow";
+                break;
+            case "urgent":
+                return "w3-orange";
+                break;
+            case "critical":
+                return "w3-red";
+                break;
+        }
+    }
+
+    var commands = [
+        "get_bist_results",
+        "get_sw_version",
+        "get_state"
+    ];
+
+    function checkCommandResponse(rsp) {
+        var e = document.getElementById("modal_content");
+        e.classList.add("w3-container");
+        var s = "response error";
+        if (typeof rsp["result"] !== 'undefined') {
+            s = JSON.stringify(rsp["result"], null, ' ');
+        } else if (typeof rsp["error"] !== 'undefined') {
+            s = JSON.stringify(rsp["error"], null, ' ');
+        }
+        e.innerHTML = '<pre>' + s + '</pre>';
+    }
+
+    var selectedSensorId = "";
+    var pendResults = '...results pending <i class="fas fa-spinner fa-pulse"></i>';
+
+    function selectSensor(sensorId) {
+        selectedSensorId = sensorId;
+        var e = document.getElementById("sensor_commands_sensor_id");
+        e.innerHTML = selectedSensorId;
+    }
+
+    function showResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+    function closeResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+    function doSimpleGet(command) {
+        setupResults(selectedSensorId, command);
+        showResultsModal();
+        gwSocket.sendRPC("sensor_" + command, {
+            sensor_id: selectedSensorId
+        });
+    }
+
+    function setupResults(sensorId, command) {
+        document.getElementById("modal_sensor_id").innerHTML = selectedSensorId;
+        document.getElementById("modal_label").innerHTML = command;
+        var e = document.getElementById("modal_content");
+        e.innerHTML = '<br>&nbsp;<br>...results pending <i class="fas fa-spinner fa-pulse"></i><br>&nbsp;<br>&nbsp;'
+        e.classList.add("w3-container");
+    }
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+    <!-- Header -->
+    <script src="header.js"></script>
+
+    <!-- Content -->
+    <div class="w3-container">
+
+        <div id="sensor_commands" class="w3-container w3-display-container w3-border w3-dark-grey">
+            <div class="w3-bar">
+                <div id="sensor_commands_sensor_id" class="w3-bar-item w3-xlarge">
+                </div>
+                <script type="text/javascript">
+                    for (var i in commands) {
+                        document.write('<div class="w3-bar-item">');
+                        document.write('<button class="w3-button" onclick=\'doSimpleGet("');
+                        document.write(commands[i]);
+                        document.write('");\'>');
+                        document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
+                        document.write(commands[i]);
+                        document.write('</button></div>');
+                    }
+
+                </script>
+            </div>
+        </div>
+
+        <div id="modal_overlay" class="w3-modal">
+            <div class="w3-modal-content w3-animate-top w3-card-4 w3-white">
+                <div class="w3-bar w3-grey">
+                    <div class="w3-bar-item" id="modal_sensor_id"></div>
+                    <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
+                    <div class="w3-bar-item" id="modal_label"></div>
+                    <div class="w3-bar-item">
+                        <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="modal_content"></div>
+            </div>
+        </div>
+
+
+        <table id="sensor_table" class="w3-table">
+            <tr class="w3-grey">
+                <th>Device</th>
+                <th>Connected</th>
+                <th>Reading</th>
+                <th>Behavior</th>
+                <th>Facility</th>
+                <th>Personality</th>
+                <th>Alerts</th>
+            </tr>
+        </table>
+        <script src="table-support.js"></script>
+        <script>
+            initTableSort("sensor_table");
+
+        </script>
+
+    </div>
+
+</body>
+
+</html>

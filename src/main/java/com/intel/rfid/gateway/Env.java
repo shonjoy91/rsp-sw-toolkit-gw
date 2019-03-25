@@ -22,19 +22,21 @@ public class Env {
     public static final String SYS_PROP_GW_HOME = "rsp.gateway.home";
 
     protected static final Logger log = LoggerFactory.getLogger(Env.class);
+    private static Path homePath;
     private static Path cachePath;
     private static Path configPath;
     private static Path snapshotPath;
     private static Path statsPath;
     private static Path tagReadPath;
     private static Path exportTokenPath;
+    private static Path sensorSoftwareRepoPath;
+    private static Path webAdminResourcePath;
 
     // command line system property takes precedence
     // then any environment variables
     // then use the current working directory OR default value
     static {
         String s;
-        Path p;
 
         // GATEWAY PATHS
         s = System.getProperty(SYS_PROP_GW_HOME);
@@ -44,16 +46,18 @@ public class Env {
         if (s == null) {
             s = System.getProperty("user.dir");
         }
-        p = Paths.get(s);
-        cachePath = p.resolve("cache");
-        configPath = p.resolve("config");
-        snapshotPath = p.resolve("snapshot");
-        statsPath = p.resolve("stats");
-        tagReadPath = p.resolve("tagread");
-        exportTokenPath = p.resolve("exported-tokens");
+        homePath = Paths.get(s);
+        cachePath = homePath.resolve("cache");
+        configPath = homePath.resolve("config");
+        snapshotPath = homePath.resolve("snapshot");
+        statsPath = homePath.resolve("stats");
+        tagReadPath = homePath.resolve("tagread");
+        exportTokenPath = homePath.resolve("exported-tokens");
+        sensorSoftwareRepoPath = homePath.resolve("sensor-sw-repo");
+        webAdminResourcePath = homePath.resolve("web-admin");
 
         Path[] paths = {cachePath, configPath, snapshotPath, statsPath,
-                        tagReadPath, exportTokenPath};
+                        tagReadPath, exportTokenPath, sensorSoftwareRepoPath, webAdminResourcePath};
 
         for (Path curPath : paths) {
             try {
@@ -62,6 +66,10 @@ public class Env {
                 log.error("error creating paths: {}", e);
             }
         }
+    }
+
+    public static Path getHomePath() {
+        return homePath.toAbsolutePath();
     }
 
     public static Path getCachePath() {
@@ -102,6 +110,14 @@ public class Env {
 
     public static Path resolveTokenPath(String _file) {
         return exportTokenPath.resolve(_file);
+    }
+
+    public static Path getSensorSoftwareRepoPath() {
+        return sensorSoftwareRepoPath.toAbsolutePath();
+    }
+
+    public static Path getWebAdminResourcePath() {
+        return webAdminResourcePath.toAbsolutePath();
     }
 
     public static void ensurePath(Path p) throws IOException {

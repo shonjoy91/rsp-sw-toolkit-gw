@@ -5,10 +5,9 @@
 package com.intel.rfid.schedule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.Behavior;
-import com.intel.rfid.behavior.BehaviorConfig;
+import com.intel.rfid.api.SchedulerSummary;
+import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.exception.ConfigException;
-import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
@@ -30,14 +29,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.intel.rfid.schedule.ScheduleManager.RunState.ALL_SEQUENCED;
-import static com.intel.rfid.schedule.ScheduleManager.RunState.FROM_CONFIG;
 import static com.intel.rfid.schedule.ScheduleManager.RunState.INACTIVE;
 
 public class ScheduleManager
@@ -45,33 +42,28 @@ public class ScheduleManager
 
     public enum RunState {INACTIVE, ALL_ON, ALL_SEQUENCED, FROM_CONFIG}
 
+    public static final RunState DEFAULT_RUN_STATE = ALL_SEQUENCED;
+
     protected Logger log = LoggerFactory.getLogger(getClass());
 
-    protected final Object stateLock = new Object();
-    protected RunState runState = INACTIVE;
+    protected volatile RunState runState = INACTIVE;
 
     protected final Object executorLock = new Object();
     protected ExecutorService runStatePubExec = ExecutorUtils.newSingleThreadedEventExecutor(log);
     protected Publisher<RunStateListener> runStatePublisher = new Publisher<>(executorLock, runStatePubExec);
 
-    public static final String BEHAVIOR_ID_ALL_ON = "DefaultAllOn";
-    public static final String BEHAVIOR_ID_ALL_SEQ = "DefaultAllSeq";
-    protected Behavior behaviorAllOn = new Behavior();
-    protected Behavior behaviorAllSeq = new Behavior();
+    public static final String BEHAVIOR_ID_ALL_ON = "ClusterAllOn_PORTS_1";
+    public static final String BEHAVIOR_ID_ALL_SEQ = "ClusterAllSeq_PORTS_1";
 
-    protected SensorManager sensorMgr;
-    protected ScheduleConfiguration scheduleCfg;
-
-    protected final Object clusterLock = new Object();
     protected final List<ScheduleCluster> clusters = new ArrayList<>();
     protected final ExecutorService clusterExec = Executors.newCachedThreadPool();
-    protected final Collection<ClusterRunner> clusterRunners = new HashSet<>();
+    protected final Collection<ClusterRunner> clusterRunners = new ArrayList<>();
     protected final Collection<Future<?>> clusterFutures = new ArrayList<>();
+    protected final ClusterManager clusterMgr;
 
 
     public static class CacheState {
         public RunState runState;
-        public ScheduleConfiguration scheduleCfg;
     }
 
     public interface RunStateListener {
@@ -86,18 +78,16 @@ public class ScheduleManager
         runStatePublisher.unsubscribe(_l);
     }
 
-    public ScheduleManager(SensorManager _sensorMgr) {
-        sensorMgr = _sensorMgr;
+    public ScheduleManager(ClusterManager _clusterMgr) {
+        clusterMgr = _clusterMgr;
     }
 
 
     public boolean start() {
 
-        synchronized (stateLock) {
-            if (runState != INACTIVE) {
-                log.warn("already started");
-                return true;
-            }
+        if (runState != INACTIVE) {
+            log.warn("already started");
+            return true;
         }
 
         synchronized (executorLock) {
@@ -105,51 +95,31 @@ public class ScheduleManager
             runStatePublisher.replaceExecutor(runStatePubExec);
         }
 
-        try {
-            behaviorAllOn = BehaviorConfig.getBehavior(BEHAVIOR_ID_ALL_ON);
-        } catch (IOException _e) {
-            log.warn("unable to get behavior {}", BEHAVIOR_ID_ALL_ON);
-        }
-
-        try {
-            behaviorAllSeq = BehaviorConfig.getBehavior(BEHAVIOR_ID_ALL_SEQ);
-        } catch (IOException _e) {
-            log.warn("unable to get behavior {}", BEHAVIOR_ID_ALL_SEQ);
-        }
-
-
+        RunState startupRunState = DEFAULT_RUN_STATE;
         try (InputStream fis = Files.newInputStream(CACHE_PATH)) {
 
             CacheState cacheState = mapper.readValue(fis, CacheState.class);
             log.info("Restored {}", CACHE_PATH);
-            if (cacheState.runState == null) {
-                log.info("cached runState is null");
-                return true;
-            }
-            if (cacheState.runState == INACTIVE) {
-                log.info("cached runState is INACTIVE");
-                return true;
+            if (cacheState.runState != null) {
+                if (cacheState.runState == INACTIVE) {
+                    log.info("cached runState is INACTIVE");
+                    return true;
+                }
+                startupRunState = cacheState.runState;
             }
 
-            if (cacheState.runState == FROM_CONFIG) {
-                realizeScheduleClusters(cacheState.scheduleCfg);
-            }
-            scheduleCfg = cacheState.scheduleCfg;
-            tryChangeState(cacheState.runState);
-            log.info("ScheduleManager started");
-            return true;
-
-        } catch (ConfigException _e) {
-            log.error("Failed to restore {}", CACHE_PATH, _e);
         } catch (FileNotFoundException _e) {
             // this is a don't care really, but most code quality tools
-            // grip about empty catch blocks
-            log.info("cache file does not yet exist");
+            // gripe about empty catch blocks
+            log.debug("cache file does not yet exist");
         } catch (IOException _e) {
             log.error("Failed to restore {}", CACHE_PATH, _e);
         }
 
+        changeRunState(startupRunState);
+        log.info("ScheduleManager started");
         return true;
+
     }
 
     public boolean stop() {
@@ -170,33 +140,11 @@ public class ScheduleManager
     }
 
     public void deactivate() {
-        tryChangeState(INACTIVE);
+        changeRunState(INACTIVE);
     }
 
-    public void activate(RunState _runState, Path _scheduleConfigPath) throws IOException, ConfigException {
-
-        if (_runState == FROM_CONFIG) {
-            try (InputStream fis = Files.newInputStream(_scheduleConfigPath)) {
-                ScheduleConfiguration tmpSchedCfg = mapper.readValue(fis, ScheduleConfiguration.class);
-                realizeScheduleClusters(tmpSchedCfg);
-                // and can be applied to the instance variables
-                scheduleCfg = tmpSchedCfg;
-            }
-        }
-        tryChangeState(_runState);
-    }
-
-    protected void realizeScheduleClusters(ScheduleConfiguration _scheduleCfg) throws ConfigException {
-        List<ScheduleCluster> tmpClusters = new ArrayList<>();
-        for (ScheduleConfiguration.Cluster cfgCluster : _scheduleCfg.clusters) {
-            tmpClusters.add(new ScheduleCluster(cfgCluster, sensorMgr));
-        }
-        // at this point, if no exception has been thrown, then the configuration is good
-        synchronized (clusterLock) {
-            clusters.clear();
-            clusters.addAll(tmpClusters);
-            clusters.forEach(ScheduleCluster::alignSensorConfiguration);
-        }
+    public void activate(RunState _runState) throws IOException, ConfigException {
+        changeRunState(_runState);
     }
 
     @Override
@@ -206,12 +154,10 @@ public class ScheduleManager
         if (_cse.current != ConnectionState.CONNECTED) { return; }
 
         // don't care
-        synchronized (stateLock) {
-            if (runState == INACTIVE || runState == FROM_CONFIG) { return; }
-        }
+        if (runState == INACTIVE) { return; }
 
         // already included
-        synchronized (clusterLock) {
+        synchronized (clusters) {
             for (ScheduleCluster sc : clusters) {
                 if (sc.contains(_cse.rsp)) {
                     return;
@@ -219,81 +165,90 @@ public class ScheduleManager
             }
         }
 
-        // trigger a reconfiguration
-        tryChangeState(runState);
+        // This has to be on a different thread
+        clusterExec.submit(() -> changeRunState(runState));
+    }
+
+    public SchedulerSummary getSummary() {
+        SchedulerSummary summary = new SchedulerSummary();
+        summary.run_state = runState;
+        synchronized (clusters) {
+            for (ScheduleCluster sc : clusters) {
+                summary.clusters.add(sc.asCluster());
+            }
+        }
+        return summary;
     }
 
     public void show(PrettyPrinter _out) {
-        synchronized (stateLock) {
-            _out.line("runState: " + runState);
-            if (runState == FROM_CONFIG && scheduleCfg != null) {
-                _out.divider();
-                try {
-                    mapper.writerWithDefaultPrettyPrinter().writeValue(_out, scheduleCfg);
-                } catch (IOException _e) {
-                    _out.line("!!! error printing the schedule configuration !!!");
-                    _out.line(_e.toString());
+        List<ScheduleCluster> clustersCopy = new ArrayList<>();
+        synchronized (clusters) {
+            clustersCopy.addAll(clusters);
+        }
+
+        _out.line("runState: " + runState);
+        _out.divider();
+        _out.line("clusters:");
+        for (ScheduleCluster cluster : clustersCopy) {
+            _out.line("      id: " + cluster.id);
+            _out.line("behavior: " + cluster.behavior.id);
+            for (SensorGroup group : cluster.sensorGroups) {
+                _out.chunk("sensors: [");
+                for (SensorPlatform sensor : group.sensors) {
+                    _out.chunk(sensor.getDeviceId() + " ");
                 }
-
-                _out.divider();
+                _out.endln("]");
             }
-            _out.blank();
+            _out.endln();
+            _out.divider();
         }
+        _out.blank();
     }
 
-    protected void tryChangeState(RunState _runState) {
-        try {
-            changeRunState(_runState);
-        } catch (GatewayException _gwe) {
-            log.error(_gwe.getLocalizedMessage());
-        }
-    }
-
-    protected void changeRunState(RunState _next) throws GatewayException {
+    protected synchronized void changeRunState(RunState _next)  {
         // calling this method with a mode that is currently running will trigger a "reset" of that mode
         boolean actuallyChanged = false;
 
-        synchronized (stateLock) {
 
-            log.info("changing RunState from {} to {}...", runState, _next);
+        log.info("changing RunState from {} to {}...", runState, _next);
 
-            // handle exiting the current state
-            switch (runState) {
-                case ALL_ON:
-                case ALL_SEQUENCED:
-                case FROM_CONFIG:
-                    stopClusters();
-                    break;
-                default:
-            }
+        // handle exiting the current state
+        switch (runState) {
+            case ALL_ON:
+            case ALL_SEQUENCED:
+            case FROM_CONFIG:
+                stopClusters();
+                break;
+            default:
+        }
 
-            // generate clusters as needed
+        // generate clusters as needed
+        synchronized (clusters) {
+            clusters.clear();
             switch (_next) {
                 case ALL_ON:
-                    generateAllOnClusters();
+                    clusterMgr.generateClusterPerSensor(clusters, BEHAVIOR_ID_ALL_ON);
                     break;
                 case ALL_SEQUENCED:
-                    generateAllSequencedClusters();
+                    clusterMgr.generateSequenceCluster(clusters, BEHAVIOR_ID_ALL_SEQ);
                     break;
-                // NOTE: the FROM_CONFIG isn't handled here
-                // because generating the clusters is useful for
-                // validating configuration so the clusters are 
-                // already available
-            }
-
-            // state entry
-            switch (_next) {
-                case ALL_ON:
-                case ALL_SEQUENCED:
                 case FROM_CONFIG:
-                    startClusters();
+                    clusterMgr.generateFromConfig(clusters);
                     break;
             }
+        }
+        // state entry
+        switch (_next) {
+            case ALL_ON:
+            case ALL_SEQUENCED:
+            case FROM_CONFIG:
+                startClusters();
+                break;
+        }
 
-            if (runState != _next) {
-                runState = _next;
-                actuallyChanged = true;
-            }
+        if (runState != _next) {
+            runState = _next;
+            actuallyChanged = true;
         }
 
         if (actuallyChanged) {
@@ -302,111 +257,39 @@ public class ScheduleManager
         }
     }
 
-    /**
-     * generates one cluster per sensor
-     */
-    public void generateAllOnClusters() {
-
-        synchronized (clusterLock) {
-            clusters.clear();
-
-            for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
-                SensorGroup sensorGroup = new SensorGroup();
-                sensorGroup.sensors.add(sensor);
-                List<SensorGroup> sensorGroups = new ArrayList<>();
-                sensorGroups.add(sensorGroup);
-                ScheduleCluster sc = new ScheduleCluster(sensor.getDeviceId(),
-                                                         null,
-                                                         behaviorAllOn,
-                                                         sensorGroups);
-                clusters.add(sc);
-            }
-        }
-    }
-
-    public void generateAllSequencedClusters() {
-
-        synchronized (clusterLock) {
-            clusters.clear();
-
-            List<SensorGroup> sensorGroups = new ArrayList<>();
-            for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
-                // sensor should be in the correct state.
-                SensorGroup sensorGroup = new SensorGroup();
-                sensorGroup.sensors.add(sensor);
-                sensorGroups.add(sensorGroup);
-            }
-            ScheduleCluster sc = new ScheduleCluster(ALL_SEQUENCED.toString(),
-                                                     null,
-                                                     behaviorAllSeq,
-                                                     sensorGroups);
-            clusters.add(sc);
-        }
-    }
-
     protected void startClusters() {
-        synchronized (clusterLock) {
+        List<ScheduleCluster> clustersCopy = new ArrayList<>();
+        synchronized (clusters) {
+            clustersCopy.addAll(clusters);
+        }
 
-            log.info("Starting {} clusters", clusters.size());
-
-            if (!clusterFutures.isEmpty()) {
+        synchronized (clusterRunners) {
+            if (!clusterRunners.isEmpty()) {
                 log.warn("refusing to start clusters due to improper state -- " +
                          "cluster futures have not been cleared");
                 return;
             }
 
-            if (!clusterRunners.isEmpty()) {
-                log.warn("refusing to start clusters due to improper state -- " +
-                         "previously running clusters have not been cleared");
-                return;
-            }
+            log.info("Starting {} clusters", clusters.size());
 
-
-            for (ScheduleCluster cluster : clusters) {
-                ClusterRunner runner = new ClusterRunner(cluster);
-                clusterRunners.add(runner);
-                clusterFutures.add(clusterExec.submit(runner));
+            for (ScheduleCluster cluster : clustersCopy) {
+                ClusterRunner cr = new ClusterRunner(cluster);
+                clusterRunners.add(cr);
+                clusterFutures.add(clusterExec.submit(cr));
             }
         }
     }
 
     protected void stopClusters() {
-        
-        boolean interrupted = false;
-        synchronized (clusterLock) {
-
-            log.info("Stopping {} clusters", clusterFutures.size());
-
+        synchronized (clusterRunners) {
+            log.info("Stopping {} clusters", clusterRunners.size());
+            // cannot just cancel the thread without giving it time to finish
+            // otherwise, it will keep running and state ??
             clusterFutures.forEach(f -> f.cancel(true));
             clusterFutures.clear();
-            Thread.yield();
-
-            // wait until all sensors have stopped reading
-            boolean keepTryingToStop = true;
-            while (keepTryingToStop) {
-                try {
-                    keepTryingToStop = !awaitClustersFinished();
-                } catch (InterruptedException _e) {
-                    interrupted = true;
-                    keepTryingToStop = false;
-                }
-            }
+            clusterRunners.forEach(ClusterRunner::awaitFinish);
             clusterRunners.clear();
         }
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
-    }
-    
-    private boolean awaitClustersFinished() throws InterruptedException {
-        // wait until all sensors have stopped reading
-        boolean allCompleted = true;
-        for (ClusterRunner runner : clusterRunners) {
-                if (!runner.checkIfFinished(250)) {
-                    allCompleted = false;
-                }
-        }
-        return allCompleted;
     }
 
     public static final Path CACHE_PATH = Env.resolveCache("schedule_manager.json");
@@ -414,10 +297,7 @@ public class ScheduleManager
 
     private void persistState() {
         CacheState cacheState = new CacheState();
-        synchronized (stateLock) {
-            cacheState.runState = runState;
-            cacheState.scheduleCfg = scheduleCfg;
-        }
+        cacheState.runState = runState;
         try (OutputStream os = Files.newOutputStream(CACHE_PATH)) {
             mapper.writerWithDefaultPrettyPrinter().writeValue(os, cacheState);
             log.info("wrote {}", CACHE_PATH);

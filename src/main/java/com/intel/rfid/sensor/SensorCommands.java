@@ -7,6 +7,7 @@ package com.intel.rfid.sensor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.Behavior;
 import com.intel.rfid.api.DeviceAlert;
+import com.intel.rfid.api.DeviceAlertType;
 import com.intel.rfid.api.LEDState;
 import com.intel.rfid.api.Personality;
 import com.intel.rfid.behavior.BehaviorCompleter;
@@ -62,9 +63,9 @@ public class SensorCommands implements CLICommander.Support {
     public static final String REBOOT = "reboot";
     public static final String SHUTDOWN = "shutdown";
     public static final String REMOVE = "remove";
-    public static final String GET_BIST = "get.bist.results";
-    public static final String GET_STATE = "get.state";
-    public static final String GET_SW_VERS = "get.sw.version";
+    public static final String GET_BIST = "get_bist_results";
+    public static final String GET_STATE = "get_state";
+    public static final String GET_SW_VERS = "get_sw_version";
     public static final String SET_LED = "set.led";
     public static final String GET_LAST_COMMS = "get.last.comms";
     public static final String SET_MOTION_EVENT = "set.motion";
@@ -77,6 +78,7 @@ public class SensorCommands implements CLICommander.Support {
     public static final String ACK_ALERT = "ack.alert";
     public static final String MUTE_ALERT = "mute.alert";
     public static final String STATS = "stats";
+    public static final String TOKENS = "tokens";
 
     @Override
     public String getCommandId() {
@@ -95,7 +97,8 @@ public class SensorCommands implements CLICommander.Support {
                                  GET_BIST,
                                  GET_LAST_COMMS,
                                  GET_STATE,
-                                 GET_SW_VERS),
+                                 GET_SW_VERS,
+                                 TOKENS),
             new SensorIdCompleter(sensorMgr),
             new NullCompleter()
         ));
@@ -126,7 +129,7 @@ public class SensorCommands implements CLICommander.Support {
         _comps.add(new ArgumentCompleter(
             new StringsCompleter(CMD_ID),
             new StringsCompleter(SET_ALERT_THRESHOLD),
-            new BetterEnumCompleter(DeviceAlert.Type.class),
+            new BetterEnumCompleter(DeviceAlertType.class),
             new BetterEnumCompleter(DeviceAlert.Severity.class),
             new NullCompleter()
         ));
@@ -151,7 +154,7 @@ public class SensorCommands implements CLICommander.Support {
         _comps.add(new ArgumentCompleter(
             new StringsCompleter(CMD_ID),
             new StringsCompleter(ACK_ALERT, MUTE_ALERT),
-            new BetterEnumCompleter(DeviceAlert.Type.class),
+            new BetterEnumCompleter(DeviceAlertType.class),
             new BooleanCompleter(),
             new SensorIdCompleter(sensorMgr),
             new NullCompleter()
@@ -247,6 +250,9 @@ public class SensorCommands implements CLICommander.Support {
         _out.indent(0, "> " + CMD_ID + " " + MUTE_ALERT + " <alert_type>" + BooleanCompleter
             .asOptions() + " <device_id>...");
         _out.indent(1, "Disable a particular Device Alert");
+        _out.blank();
+        _out.indent(0, "> " + CMD_ID + " " + TOKENS + " <device_id>...");
+        _out.indent(1, "Show the token associated with the device");
     }
 
     @Override
@@ -321,6 +327,10 @@ public class SensorCommands implements CLICommander.Support {
                 };
                 break;
 
+            case TOKENS:
+                doTokens(_argIter, _out);
+                break;
+
             case REMOVE:
                 doRemove(_argIter, _out);
                 break;
@@ -359,7 +369,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case SET_ALERT_THRESHOLD:
-                final DeviceAlert.Type t1 = DeviceAlert.Type.valueOf(_argIter.next());
+                final DeviceAlertType t1 = DeviceAlertType.valueOf(_argIter.next());
                 final DeviceAlert.Severity severity = DeviceAlert.Severity.valueOf(_argIter.next());
                 final Number threshold;
                 try {
@@ -374,7 +384,7 @@ public class SensorCommands implements CLICommander.Support {
                 };
                 break;
             case ACK_ALERT:
-                final DeviceAlert.Type t2 = DeviceAlert.Type.valueOf(_argIter.next());
+                final DeviceAlertType t2 = DeviceAlertType.valueOf(_argIter.next());
                 final boolean ack = Boolean.parseBoolean(_argIter.next());
                 rcc = new RSPCommandCallback(ACK_ALERT) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
@@ -383,7 +393,7 @@ public class SensorCommands implements CLICommander.Support {
                 };
                 break;
             case MUTE_ALERT:
-                final DeviceAlert.Type t3 = DeviceAlert.Type.valueOf(_argIter.next());
+                final DeviceAlertType t3 = DeviceAlertType.valueOf(_argIter.next());
                 final boolean mute = Boolean.parseBoolean(_argIter.next());
                 rcc = new RSPCommandCallback(MUTE_ALERT) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
@@ -509,6 +519,19 @@ public class SensorCommands implements CLICommander.Support {
         sb.append("\n");
 
         _out.line(sb.toString());
+    }
+
+    public void doTokens(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+
+        TreeSet<SensorPlatform> sensors = new TreeSet<>();
+        sensors.addAll(getRSPs(_argIter, _out));
+        if (sensors.isEmpty()) { return; }
+
+        _out.println("device      token");
+        _out.println();
+        for (SensorPlatform rsp : sensors) {
+            _out.println(rsp.getDeviceId() + "  " +rsp.getProvisionToken());
+        }
     }
 
     public void showCmdResult(SensorPlatform _rsp,

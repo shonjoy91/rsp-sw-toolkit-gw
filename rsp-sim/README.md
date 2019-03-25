@@ -136,11 +136,11 @@ rfid-gw> sensor show
 --------------------------------------------------------------------------------------------
 device     connect      reading    behavior                  facility           personality
 
-RSP-150000 CONNECTED    STARTED    DefaultAllOn              sales-floor        
-RSP-150001 CONNECTED    STARTED    DefaultAllOn              sales-floor        EXIT
-RSP-150002 CONNECTED    STARTED    DefaultAllOn              sales-floor        POS
-RSP-150003 CONNECTED    STARTED    DefaultAllOn              back-stock         
-RSP-150004 CONNECTED    STARTED    DefaultAllOn              back-stock         
+RSP-150000 CONNECTED    STARTED    ClusterAllOn_PORTS_1              sales-floor        
+RSP-150001 CONNECTED    STARTED    ClusterAllOn_PORTS_1              sales-floor        EXIT
+RSP-150002 CONNECTED    STARTED    ClusterAllOn_PORTS_1              sales-floor        POS
+RSP-150003 CONNECTED    STARTED    ClusterAllOn_PORTS_1              back-stock         
+RSP-150004 CONNECTED    STARTED    ClusterAllOn_PORTS_1              back-stock         
 --------------------------------------------------------------------------------------------
 rfid-gw> inventory detail
 --------------------------------------------------------------------------------------------

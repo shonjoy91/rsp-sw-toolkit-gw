@@ -6,6 +6,7 @@ package com.intel.rfid.inventory;
 
 import com.intel.rfid.api.EpcRead;
 import com.intel.rfid.api.TagDirection;
+import com.intel.rfid.api.TagStatsUpdate;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.sensor.SensorPlatform;
 
@@ -170,6 +171,12 @@ public class Tag implements Comparable<Tag> {
                location + ", " +
                DateTimeHelper.timeAsHMS_MS(now - lastRead) + ", " +
                facility;
+    }
+
+    public void getStatsUpdate(TagStatsUpdate _statsUpdate) {
+        for (String devId : deviceStatsMap.keySet()) {
+            _statsUpdate.addStat(epc, devId, location.equals(devId), deviceStatsMap.get(devId).inDBM());
+        }        
     }
 
     public static final String STATS_SUMMARY_CSV_HDR =

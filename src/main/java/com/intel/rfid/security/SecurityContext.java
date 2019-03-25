@@ -32,7 +32,6 @@ public class SecurityContext {
     }
 
     private KeyManager keyMgr;
-    private ProvisionTokenManager provisionTokenMgr;
     private BouncyCastleProvider bouncyCastleProvider;
 
     private SecurityContext() {
@@ -42,11 +41,6 @@ public class SecurityContext {
     public KeyManager getKeyMgr() {
         if (keyMgr == null) { keyMgr = new KeyManager(); }
         return keyMgr;
-    }
-
-    public ProvisionTokenManager getProvisionTokenMgr() {
-        if (provisionTokenMgr == null) { provisionTokenMgr = new ProvisionTokenManager(); }
-        return provisionTokenMgr;
     }
 
     public BouncyCastleProvider getBouncyCastleProvider() {

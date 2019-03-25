@@ -1,5 +1,18 @@
 group = 'com.intel.rfid'
-version = '1.0'
+
+def gitVersion() {
+    def v = new Date().format('yy.MM.dd.HH') + "-SNAPSHOT"
+    try {
+        v = "git describe --tags --dirty".execute().text.trim()
+    } catch (all) {
+        println "Unable to get repository version information..."
+    }
+
+    println "Version for this build invocation is    [${v}]"
+    return v
+}
+
+version = gitVersion();
 
 apply plugin: 'java'
 
@@ -16,19 +29,21 @@ configurations {
 
 dependencies {
 
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
     compile 'ch.qos.logback:logback-classic:1.2.3'
-    compile 'org.jmdns:jmdns:3.5.4'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
     compile 'jline:jline:2.14.6'
-    compile 'org.apache.sshd:apache-sshd:1.7.0'
     compile 'org.apache.commons:commons-math3:3.6.1'
-    compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+    compile 'org.apache.sshd:apache-sshd:1.7.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
     compile 'org.eclipse.jetty:jetty-servlet:9.4.+'
     compile 'org.eclipse.jetty:jetty-server:9.4.+'
+    compile 'org.eclipse.jetty.websocket:websocket-server:9.4.15.v20190215'
+    compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
+    compile 'org.jmdns:jmdns:3.5.4'
 
     testCompile 'junit:junit:4.11'
+    testCompile 'org.assertj:assertj-core:3.12.1'
 }
 
 jar {
@@ -40,7 +55,7 @@ jar {
 
 // define the common configuration copy spec files as
 // a reference to be included in other copy tasks
-CopySpec baseFunctionalityCS = copySpec {
+CopySpec webAppCopySpec = copySpec {
     from("bin") {
         fileMode = 0755
     }
@@ -53,10 +68,34 @@ CopySpec baseFunctionalityCS = copySpec {
     }
 }
 
+CopySpec webFrontendCopySpec = copySpec {
+    into("web-admin") {
+        from "web-admin"
+    }
+}
+
+
 task buildTar(type: Tar, dependsOn: classes) {
     baseName "${project.name}"
     compression Compression.GZIP
     into "${project.name}"
-    with baseFunctionalityCS
+    with webAppCopySpec
+    with webFrontendCopySpec
+}
+
+
+task buildWebDevTar(type: Tar, dependsOn: classes) {
+    baseName "webDev"
+    compression Compression.GZIP
+    into "${project.name}"
+    with webAppCopySpec
+}
+
+def deployDir = "${System.env.HOME}/deploy/${project.name}"
+
+task deploy(type: Copy, dependsOn: classes) {
+    into "${deployDir}"
+    with webAppCopySpec
+    with webFrontendCopySpec
 }
 

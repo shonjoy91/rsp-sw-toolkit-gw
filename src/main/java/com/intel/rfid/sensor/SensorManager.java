@@ -7,6 +7,9 @@ package com.intel.rfid.sensor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.DeviceAlert;
 import com.intel.rfid.api.Personality;
+import com.intel.rfid.api.SensorManagerSummary;
+import com.intel.rfid.api.SensorShowInfo;
+import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.ExecutorUtils;
@@ -51,39 +54,43 @@ public class SensorManager {
     private static final Path STATS_PATH = Env.resolveStats(STATS_FILE_PREFIX + STATS_FILE_EXTENSION);
 
     final Map<String, SensorPlatform> deviceIdToRSP = new TreeMap<>();
+    protected ClusterManager clusterMgr;
 
     private final Object executorLock = new Object();
     private ExecutorService eventExecutor = ExecutorUtils.newEventExecutor(log, 5);
     private ScheduledExecutorService scheduleExecutor = Executors.newScheduledThreadPool(2);
 
-    private final Publisher<ConnectionStateListener> connectionStateChanges = new Publisher<>(executorLock,
-                                                                                              eventExecutor);
-    private final Publisher<SensorDeviceAlertListener> sensorAlerts = new Publisher<>(executorLock, eventExecutor);
+    private final Publisher<ConnectionStateListener> connectionStatePublisher = new Publisher<>(executorLock,
+                                                                                                eventExecutor);
+    private final Publisher<ReadStateListener> readStatePublisher = new Publisher<>(executorLock,
+                                                                                    eventExecutor);
+    private final Publisher<SensorDeviceAlertListener> alertPublisher = new Publisher<>(executorLock,
+                                                                                        eventExecutor);
 
     public interface ConnectionStateListener {
         void onConnectionStateChange(ConnectionStateEvent _cse);
+    }
+
+    public interface ReadStateListener {
+        void onReadStateChange(ReadStateEvent _cse);
     }
 
     public interface SensorDeviceAlertListener {
         void onSensorDeviceAlert(DeviceAlert _alert);
     }
 
-    public SensorManager() {
+    public SensorManager(ClusterManager _clusterMgr) {
+        clusterMgr = _clusterMgr;
+        clusterMgr.setSensorManager(this);
         scheduleTasks(scheduleExecutor);
     }
 
+
     private void scheduleTasks(ScheduledExecutorService _scheduler) {
-        _scheduler.scheduleAtFixedRate(
-            () -> {
-                synchronized (deviceIdToRSP) {
-                    for (SensorPlatform rsp : deviceIdToRSP.values()) {
-                        rsp.checkLostHeartbeatAndReset();
-                    }
-                }
-            },
-            HEARTBEAT_CHECK_SECONDS,
-            HEARTBEAT_CHECK_SECONDS,
-            TimeUnit.SECONDS);
+        _scheduler.scheduleAtFixedRate(this::checkLostHeartbeats,
+                                       HEARTBEAT_CHECK_SECONDS,
+                                       HEARTBEAT_CHECK_SECONDS,
+                                       TimeUnit.SECONDS);
 
         _scheduler.scheduleAtFixedRate(this::processStats,
                                        SensorStats.SAMPLE_RATE_MINUTES,
@@ -96,8 +103,8 @@ public class SensorManager {
         synchronized (executorLock) {
             eventExecutor = ExecutorUtils.ensureValidSequential(eventExecutor);
             scheduleExecutor = ExecutorUtils.ensureValidScheduler(scheduleExecutor, this::scheduleTasks);
-            connectionStateChanges.replaceExecutor(eventExecutor);
-            sensorAlerts.replaceExecutor(eventExecutor);
+            connectionStatePublisher.replaceExecutor(eventExecutor);
+            alertPublisher.replaceExecutor(eventExecutor);
         }
 
         log.info("Sensor Manager started");
@@ -107,8 +114,8 @@ public class SensorManager {
 
     public boolean stop() {
         synchronized (executorLock) {
-            connectionStateChanges.clearSubscribers();
-            sensorAlerts.clearSubscribers();
+            connectionStatePublisher.clearSubscribers();
+            alertPublisher.clearSubscribers();
 
             try {
                 ExecutorUtils.shutdownExecutors(log, scheduleExecutor, eventExecutor);
@@ -124,6 +131,74 @@ public class SensorManager {
         persist();
 
         log.info("sensor manager stopped");
+        return true;
+    }
+
+    public SensorManagerSummary getSummary() {
+        SensorManagerSummary summary = new SensorManagerSummary();
+
+        synchronized (deviceIdToRSP) {
+            for (SensorPlatform sensor : deviceIdToRSP.values()) {
+
+                if (sensor.getConnectionState() == ConnectionState.CONNECTED) {
+                    summary.connected++;
+                } else {
+                    summary.disconnected++;
+                }
+
+                if (sensor.isReading()) { summary.reading++; }
+            }
+        }
+        return summary;
+    }
+
+    public SensorShowInfo getBasicInfo() {
+        SensorShowInfo sbi = new SensorShowInfo();
+        synchronized (deviceIdToRSP) {
+            for (SensorPlatform sensor : deviceIdToRSP.values()) {
+                sbi.add(sensor.getDeviceId(),
+                        sensor.getConnectionState(),
+                        sensor.getReadState(),
+                        sensor.getBehaviorId(),
+                        sensor.getFacilityId(),
+                        sensor.getPersonality(),
+                        sensor.getAlerts());
+            }
+        }
+        return sbi;
+    }
+
+    public SensorGroup groupForIds(Collection<String> _sensorIds) {
+        SensorGroup sensorGroup = new SensorGroup();
+        for (String id : _sensorIds) {
+            sensorGroup.sensors.add(establishRSP(id));
+        }
+        return sensorGroup;
+    }
+
+    public SensorGroup groupForProvisioningToken(String _token) {
+        SensorGroup sensorGroup = new SensorGroup();
+
+        synchronized (deviceIdToRSP) {
+            for (SensorPlatform sensor : deviceIdToRSP.values()) {
+                if (_token.equals(sensor.getProvisionToken())) {
+                    sensorGroup.sensors.add(sensor);
+                }
+            }
+        }
+        return sensorGroup;
+    }
+
+    public boolean registerSensor(String _deviceId, String _provisioningToken) {
+        if (_provisioningToken == null || !clusterMgr.isTokenValid(_provisioningToken)) {
+            return false;
+        }
+        SensorPlatform sensor = establishRSP(_deviceId);
+        String curToken = sensor.getProvisionToken();
+        if (!_provisioningToken.equals(curToken)) {
+            sensor.setProvisionToken(_provisioningToken);
+            clusterMgr.alignSensor(sensor);
+        }
         return true;
     }
 
@@ -198,31 +273,58 @@ public class SensorManager {
     }
 
     public void addConnectionStateListener(ConnectionStateListener _listener) {
-        connectionStateChanges.subscribe(_listener);
+        connectionStatePublisher.subscribe(_listener);
     }
 
-    public void removeConnectionStateListener(ConnectionStateListener _listeners) {
-        connectionStateChanges.unsubscribe(_listeners);
+    public void removeConnectionStateListener(ConnectionStateListener _listener) {
+        connectionStatePublisher.unsubscribe(_listener);
     }
 
     void notifyConnectionStateChange(final SensorPlatform _rsp,
                                      ConnectionState _prevState,
                                      ConnectionState _current,
                                      ConnectionStateEvent.Cause _cause) {
-        connectionStateChanges.notifyListeners(listener -> listener.onConnectionStateChange(
+
+        // todo: on connected, align with cluster
+        connectionStatePublisher.notifyListeners(listener -> listener.onConnectionStateChange(
             new ConnectionStateEvent(_rsp, _prevState, _current, _cause)));
     }
 
+    public void addReadStateListener(ReadStateListener _listener) {
+        readStatePublisher.subscribe(_listener);
+    }
+
+    public void removeReadStateListener(ReadStateListener _listener) {
+        readStatePublisher.unsubscribe(_listener);
+    }
+
+    void notifyReadStateChange(final SensorPlatform _rsp,
+                               ReadState _prevState,
+                               ReadState _current) {
+
+        // todo: on connected, align with cluster
+        readStatePublisher.notifyListeners(listener -> listener.onReadStateChange(
+            new ReadStateEvent(_rsp, _prevState, _current)));
+    }
+
     public void addDeviceAlertListener(SensorDeviceAlertListener _listeners) {
-        sensorAlerts.subscribe(_listeners);
+        alertPublisher.subscribe(_listeners);
     }
 
     public void removeDeviceAlertListener(SensorDeviceAlertListener _listeners) {
-        sensorAlerts.unsubscribe(_listeners);
+        alertPublisher.unsubscribe(_listeners);
     }
 
     void notifyDeviceAlert(DeviceAlert _alert) {
-        sensorAlerts.notifyListeners(listener -> listener.onSensorDeviceAlert(_alert));
+        alertPublisher.notifyListeners(listener -> listener.onSensorDeviceAlert(_alert));
+    }
+
+    private void checkLostHeartbeats() {
+        synchronized (deviceIdToRSP) {
+            for (SensorPlatform rsp : deviceIdToRSP.values()) {
+                rsp.checkLostHeartbeatAndReset();
+            }
+        }
     }
 
     private void processStats() {
@@ -300,13 +402,15 @@ public class SensorManager {
             public String deviceId;
             public String faciiltyId;
             public Personality personality;
+            public String provisionToken;
 
             public Sensor() { }
 
-            public Sensor(String _deviceId, String _faciiltyId, Personality _personality) {
+            public Sensor(String _deviceId, String _faciiltyId, Personality _personality, String _provisionToken) {
                 deviceId = _deviceId;
                 faciiltyId = _faciiltyId;
                 personality = _personality;
+                provisionToken = _provisionToken;
             }
         }
 
@@ -319,7 +423,8 @@ public class SensorManager {
             for (SensorPlatform rsp : deviceIdToRSP.values()) {
                 cache.sensors.add(new Cache.Sensor(rsp.getDeviceId(),
                                                    rsp.getFacilityId(),
-                                                   rsp.getPersonality()));
+                                                   rsp.getPersonality(),
+                                                   rsp.getProvisionToken()));
             }
         }
 
@@ -358,6 +463,7 @@ public class SensorManager {
                                                            k -> new SensorPlatform(cachedSensor.deviceId, this));
                 realSensor.setPersonality(cachedSensor.personality);
                 realSensor.setFacilityId(cachedSensor.faciiltyId);
+                realSensor.setProvisionToken(cachedSensor.provisionToken);
             }
         }
 

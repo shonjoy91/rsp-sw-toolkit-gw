@@ -7,6 +7,9 @@ package com.intel.rfid.inventory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.EpcRead;
 import com.intel.rfid.api.InventoryData;
+import com.intel.rfid.api.TagReadSummary;
+import com.intel.rfid.api.TagStateSummary;
+import com.intel.rfid.api.TagStatsUpdate;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.gateway.Env;
@@ -46,6 +49,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -95,6 +99,48 @@ public class InventoryManager
         }
     }
 
+    // public interface StatsUpdateListener {
+    //     void onStatsUpdate(TagStatsUpdate _statsUpdate);
+    // }
+    //
+    // private final HashMap<String, HashSet<StatsUpdateListener>> statsUpdateListeners = new HashMap<>();
+    //
+    // public void subscribeStats(String _epc, StatsUpdateListener _s) {
+    //     synchronized (statsUpdateListeners) {
+    //         statsUpdateListeners.computeIfAbsent(_epc, k -> new HashSet<>()).add(_s);
+    //     }
+    // }
+    //
+    // public void unsubscribeStats(String _epc, StatsUpdateListener _s) {
+    //     synchronized (statsUpdateListeners) {
+    //         HashSet<StatsUpdateListener> listeners = statsUpdateListeners.get(_epc);
+    //         if (listeners == null) { return; }
+    //         listeners.remove(_s);
+    //         if (listeners.isEmpty()) {
+    //             statsUpdateListeners.remove(_epc);
+    //         }
+    //     }
+    // }
+    //
+    // private void notifyTagStats(Tag _tag) {
+    //     synchronized (statsUpdateListeners) {
+    //         if (statsUpdateListeners.isEmpty()) { return; }
+    //         if (!statsUpdateListeners.containsKey(_tag.getEPC())) { return; }
+    //
+    //         HashSet<StatsUpdateListener> listeners = statsUpdateListeners.get(_tag.getEPC());
+    //
+    //         TagStatsUpdate update = _tag.getStatsUpdate();
+    //         for (StatsUpdateListener l : listeners) {
+    //             try {
+    //                 l.onStatsUpdate(update);
+    //             } catch (Throwable t) {
+    //                 log.error("error:", t);
+    //             }
+    //         }
+    //     }
+    // }
+
+
     protected final TreeMap<String, Tag> inventory = new TreeMap<>();
     private final Map<String, Set<Tag>> exitingTags = new TreeMap<>();
 
@@ -111,6 +157,7 @@ public class InventoryManager
         ageout();
         scheduleAggregateDepartedTask();
         scheduleReadRateStatsTask();
+        schedulePersistence();
         log.info(getClass().getSimpleName() + " started");
         return true;
     }
@@ -135,36 +182,40 @@ public class InventoryManager
         return true;
     }
 
-    private long cumulativeReads = 0L;
+    private AtomicLong currentReadsPerSecond = new AtomicLong(0);
+
+    public long getCurrentReadRatePerSeccond() {
+        return currentReadsPerSecond.get();
+    }
+
+    private AtomicLong cumulativeReads = new AtomicLong(0);
     private static final int READ_RATE_STATS_INTERVAL_SEC = 3;
 
     private void scheduleReadRateStatsTask() {
-        scheduler.schedule(
-            new Runnable() {
-                public void run() {
-                    doReadRateStatsTask();
-                    scheduleReadRateStatsTask();
-                }
-            },
-            READ_RATE_STATS_INTERVAL_SEC,
-            TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(this::doReadRateStatsTask,
+                                         READ_RATE_STATS_INTERVAL_SEC,
+                                         READ_RATE_STATS_INTERVAL_SEC,
+                                         TimeUnit.SECONDS);
     }
 
     private void doReadRateStatsTask() {
         try {
-            long curReads = cumulativeReads;
-            cumulativeReads = 0;
-            if (curReads > 0 && log.isInfoEnabled()) {
+            long curReadRate = currentReadsPerSecond.getAndSet(cumulativeReads.getAndSet(0) / READ_RATE_STATS_INTERVAL_SEC);
+            if (curReadRate > 0 && log.isInfoEnabled()) {
                 SysStats.MemoryInfo memInfo = SysStats.getMemoryInfo();
                 SysStats.CPUInfo cpuInfo = SysStats.getCPUInfo();
                 log.info(String.format("rds/sec: %6d   h-used: %6s   h-tot: %6s   h-max: %6s   sys: %6s",
-                                       curReads / READ_RATE_STATS_INTERVAL_SEC,
+                                       curReadRate,
                                        memInfo.strHeapUsed, memInfo.strHeapTotal, memInfo.strHeapMax,
                                        cpuInfo.strSystemLoad));
             }
         } catch (Throwable _t) {
             log.error("error:", _t);
         }
+    }
+
+    private void schedulePersistence() {
+        scheduler.scheduleWithFixedDelay(this::persist, 3, 3, TimeUnit.MINUTES);
     }
 
     void unload() {
@@ -191,7 +242,7 @@ public class InventoryManager
             }
         }
         publish(uie);
-        cumulativeReads += epcRead.data.size();
+        cumulativeReads.addAndGet(epcRead.data.size());
     }
 
     @SuppressWarnings({"fallthrough"})
@@ -264,6 +315,7 @@ public class InventoryManager
                 long onOrBefore = tag.getLastRead() - getPOSReturnThreshold();
                 if (tag.getLastDeparted() < onOrBefore) {
                     doTagReturn(tag, prev, uie);
+                    checkExiting(_rsp, tag);
                 }
                 break;
         }
@@ -405,6 +457,39 @@ public class InventoryManager
         log.info("inventory ageout removed: {}", numRemoved);
     }
 
+    public void getSummary(TagStateSummary _states, TagReadSummary _reads) {
+
+        Map<TagState, AtomicInteger> invStateMap = new HashMap<>();
+        invStateMap.put(PRESENT, new AtomicInteger(0));
+        invStateMap.put(EXITING, new AtomicInteger(0));
+        invStateMap.put(DEPARTED_EXIT, new AtomicInteger(0));
+        invStateMap.put(DEPARTED_POS, new AtomicInteger(0));
+
+        Map<TimeBucket, AtomicInteger> timeBucketMap = new HashMap<>();
+        timeBucketMap.put(TimeBucket.within_last_01_min, new AtomicInteger(0));
+        timeBucketMap.put(TimeBucket.from_01_to_05_min, new AtomicInteger(0));
+        timeBucketMap.put(TimeBucket.from_05_to_30_min, new AtomicInteger(0));
+        timeBucketMap.put(TimeBucket.from_30_to_60_min, new AtomicInteger(0));
+        timeBucketMap.put(TimeBucket.from_60_min_to_24_hr, new AtomicInteger(0));
+        timeBucketMap.put(TimeBucket.more_than_24_hr, new AtomicInteger(0));
+
+        aggregateInventoryStates(invStateMap, timeBucketMap);
+
+        _states.PRESENT = invStateMap.get(PRESENT).get();
+        _states.EXITING = invStateMap.get(EXITING).get();
+        _states.DEPARTED_EXIT = invStateMap.get(DEPARTED_EXIT).get();
+        _states.DEPARTED_POS = invStateMap.get(DEPARTED_POS).get();
+
+        _reads.reads_per_second = currentReadsPerSecond.get();
+        _reads.within_last_01_min = timeBucketMap.get(TimeBucket.within_last_01_min).get();
+        _reads.from_01_to_05_min = timeBucketMap.get(TimeBucket.from_01_to_05_min).get();
+        _reads.from_05_to_30_min = timeBucketMap.get(TimeBucket.from_05_to_30_min).get();
+        _reads.from_30_to_60_min = timeBucketMap.get(TimeBucket.from_30_to_60_min).get();
+        _reads.from_60_min_to_24_hr = timeBucketMap.get(TimeBucket.from_60_min_to_24_hr).get();
+        _reads.more_than_24_hr = timeBucketMap.get(TimeBucket.more_than_24_hr).get();
+
+    }
+
     public Collection<Tag> getTags(String _pattern) {
         Collection<Tag> tags = new TreeSet<>();
         Pattern p = StringHelper.regexWildcard(_pattern);
@@ -424,14 +509,7 @@ public class InventoryManager
 
     private void scheduleAggregateDepartedTask() {
         long interval = (getAggregateDepartedThreshold() / 5);
-        scheduler.schedule(
-            new Runnable() {
-                public void run() {
-                    doAggregateDepartedTask();
-                    scheduleAggregateDepartedTask();
-                }
-            },
-            interval, TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(this::doAggregateDepartedTask, interval, interval, TimeUnit.MILLISECONDS);
     }
 
     protected void doAggregateDepartedTask() {
@@ -736,6 +814,19 @@ public class InventoryManager
                 }
             }
         }
+    }
+
+    public TagStatsUpdate getStatsUpdate(String _regex) {
+        TagStatsUpdate statsUpdate = new TagStatsUpdate();
+        Pattern p = StringHelper.regexWildcard(_regex);
+        synchronized (inventory) {
+            for (Tag tag : inventory.values()) {
+                if (p == null || p.matcher(tag.getEPC()).matches()) {
+                    tag.getStatsUpdate(statsUpdate);
+                }
+            }
+        }
+        return statsUpdate;
     }
 
     public void showStats(String _regex, PrintWriter _out) {

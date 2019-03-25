@@ -10,16 +10,12 @@ import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
-import jline.console.completer.FileNameCompleter;
 import jline.console.completer.NullCompleter;
 import jline.console.completer.StringsCompleter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import static com.intel.rfid.console.CLICommander.INFO;
@@ -40,7 +36,7 @@ public class ScheduleManagerCommands implements Support {
 
     public static final String ACTIVATE_ALL_ON = "activate.all.on";
     public static final String ACTIVATE_ALL_SEQ = "activate.all.sequenced";
-    public static final String ACTIVATE_FROM_CFG = "activate.from.config.file";
+    public static final String ACTIVATE_FROM_CFG = "activate.from.config";
     public static final String DEACTIVATE = "deactivate";
 
     @Override
@@ -58,13 +54,8 @@ public class ScheduleManagerCommands implements Support {
                     new StringsCompleter(SHOW,
                                          ACTIVATE_ALL_ON,
                                          ACTIVATE_ALL_SEQ,
+                                         ACTIVATE_FROM_CFG,
                                          DEACTIVATE),
-                    new NullCompleter()
-                ),
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(ACTIVATE_FROM_CFG),
-                    new FileNameCompleter(),
                     new NullCompleter()
                 )
             )
@@ -87,8 +78,8 @@ public class ScheduleManagerCommands implements Support {
         _out.indent(0, "> " + CMD_ID + " " + ACTIVATE_ALL_SEQ);
         _out.indent(1, "Transitions to each sensor reading tags one at a time");
         _out.blank();
-        _out.indent(0, "> " + CMD_ID + " " + ACTIVATE_FROM_CFG + " <file_path>");
-        _out.indent(1, "Load a schedule from the specified JSON file path");
+        _out.indent(0, "> " + CMD_ID + " " + ACTIVATE_FROM_CFG);
+        _out.indent(1, "Transitions to running per the existing cluster configuration");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + DEACTIVATE);
         _out.indent(1, "Deactivates any scheduling activities and causes the sensors to stop reading");
@@ -103,10 +94,8 @@ public class ScheduleManagerCommands implements Support {
 
             case ACTIVATE_ALL_ON:
             case ACTIVATE_ALL_SEQ:
-                doActivate(_action, _out);
-                break;
             case ACTIVATE_FROM_CFG:
-                doActivateFromConfig(_argIter, _out);
+                doActivate(_action, _out);
                 break;
             case DEACTIVATE:
                 doDeactivate(_out);
@@ -123,23 +112,19 @@ public class ScheduleManagerCommands implements Support {
         throws IOException, GatewayException {
 
         switch (_action) {
-            case ACTIVATE_ALL_ON:
-                scheduleMgr.activate(ScheduleManager.RunState.ALL_ON, null);
+            case ACTIVATE_FROM_CFG:
+                scheduleMgr.activate(ScheduleManager.RunState.FROM_CONFIG);
                 break;
             case ACTIVATE_ALL_SEQ:
-                scheduleMgr.activate(ScheduleManager.RunState.ALL_SEQUENCED, null);
+                scheduleMgr.activate(ScheduleManager.RunState.ALL_SEQUENCED);
                 break;
+            case ACTIVATE_ALL_ON:
+                scheduleMgr.activate(ScheduleManager.RunState.ALL_ON);
+                break;
+            default:
+                _out.line("unhandled action " + _action);
+                return;
         }
-        _out.line("completed");
-    }
-
-    private void doActivateFromConfig(ArgumentIterator _argIter, PrettyPrinter _out)
-        throws IOException, GatewayException {
-
-
-        Path p = Paths.get(new File(_argIter.next()).getCanonicalPath());
-
-        scheduleMgr.activate(ScheduleManager.RunState.FROM_CONFIG, p);
         _out.line("completed");
     }
 

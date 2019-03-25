@@ -6,6 +6,7 @@ package com.intel.rfid.downstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.GatewayStatusUpdate;
+import com.intel.rfid.api.MQTTSummary;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
@@ -87,5 +88,16 @@ public class MQTTDownstream extends MQTT {
     public void publishGWStatus(byte[] _msg) throws GatewayException {
         publish(GW_STATUS_TOPIC, _msg, DEFAULT_QOS);
     }
+
+    public MQTTSummary getSummary() {
+        MQTTSummary summary = new MQTTSummary();
+        summary.run_state = runState;
+        summary.broker_uri = brokerURI;
+        summary.subscribes.addAll(subscriptions);
+        summary.publishes.add(COMMAND_TOPIC);
+        summary.publishes.add(GW_STATUS_TOPIC);
+        return summary;
+    }
+
 
 }

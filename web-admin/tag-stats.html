@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Tag Statistics</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css" />
+
+<script src="/web-admin/socket-support.js"></script>
+
+<script type="text/javascript">
+
+    var currentPage = "tag_stats";
+
+    var gwSocket = new GatewayWebSocket();
+
+    var topics = [
+        "tag_statistics"
+    ];
+
+    function onSocketState(state) {
+        switch (state) {
+            case "open":
+                gwSocket.sendRPC("subscribe", topics);
+                break;
+            case "closed":
+            default:
+                break;
+        }
+    }
+    gwSocket.addStateListener(onSocketState);
+
+
+    var stats_update;
+
+    function onSocketData(data) {
+        var rsp = JSON.parse(data);
+        if (typeof rsp["result"] !== 'undefined' && rsp.result !== null && rsp.result !== "") {
+            alert(rsp.result);
+            return;
+        }
+
+        if (typeof rsp["method"] !== 'undefined') {
+            switch (rsp.method) {
+                case "tag_stats_update":
+                    stats_update = rsp.params;
+                    onTagStatsUpdate();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    // register this callback with socket-support library
+    gwSocket.addDataListener(onSocketData);
+
+    
+    var test_stats_update = {
+        sensor_ids: ["RSP-150000", "RSP-150001", "RSP-150002", "RSP-150003", "RSP-150004"],
+        epc_map: {
+            EPCA1233456789012334567890: [
+                { device_id: "RSP-150000", is_location: false, last_read: Date.now(), mean: -48.9 },
+                { device_id: "RSP-150001", is_location: false, last_read: Date.now(), mean: -58.9 },
+                { device_id: "RSP-150002", is_location: false, last_read: Date.now(), mean: -72.9 },
+                { device_id: "RSP-150003", is_location: true, last_read: Date.now(), mean: -58.9 },
+                { device_id: "RSP-150004", is_location: false, last_read: Date.now(), mean: -48.9 }
+            ],
+            EPCB1233456789012334567890: [
+                { device_id: "RSP-150000", is_location: false, last_read: Date.now() - 70000, mean: -48.9 },
+                { device_id: "RSP-150001", is_location: true, last_read: Date.now() - 70000, mean: -58.9 },
+                { device_id: "RSP-150002", is_location: false, last_read: Date.now() - 70000, mean: -72.9 },
+                { device_id: "RSP-150003", is_location: false, last_read: Date.now() - 70000, mean: -58.9 },
+                { device_id: "RSP-150004", is_location: false, last_read: Date.now() - 70000, mean: -48.9 }
+            ],
+            EPCC1233456789012334567890: [
+                { device_id: "RSP-150000", is_location: true, last_read: Date.now() - 350000, mean: -48.9 },
+                { device_id: "RSP-150001", is_location: false, last_read: Date.now() - 350000, mean: -58.9 },
+                { device_id: "RSP-150002", is_location: false, last_read: Date.now() - 350000, mean: -72.9 },
+                { device_id: "RSP-150003", is_location: false, last_read: Date.now() - 350000, mean: -58.9 },
+                { device_id: "RSP-150004", is_location: false, last_read: Date.now() - 350000, mean: -48.9 }
+            ],
+            EPCD1233456789012334567890: [
+                { device_id: "RSP-150000", is_location: false, last_read: Date.now() - 5200000, mean: -48.9 },
+                { device_id: "RSP-150001", is_location: false, last_read: Date.now() - 5200000, mean: -58.9 },
+                { device_id: "RSP-150002", is_location: false, last_read: Date.now() - 5200000, mean: -72.9 },
+                { device_id: "RSP-150003", is_location: false,  last_read: Date.now() - 5200000, mean: -58.9 },
+                { device_id: "RSP-150004", is_location: true, last_read: Date.now() - 5200000, mean: -48.9 }
+            ],
+            EPC21233456789012334567890: [
+                { device_id: "RSP-150000", is_location: false, last_read: 1551310186736, mean: -77.9 },
+                { device_id: "RSP-150001", is_location: false, last_read: Date.now(), mean: -66.9 },
+                { device_id: "RSP-150002", is_location: true, last_read: 1551310186736, mean: -55.9 },
+                { device_id: "RSP-150003", is_location: false, last_read: 1551310186736, mean: -44.9 },
+                { device_id: "RSP-150004", is_location: false, last_read: 1551310186736, mean: -48.9 }
+            ],
+            EPC31233456789012334567890: [
+                { device_id: "RSP-150002", is_location: true, last_read: 1551310186736, mean: -48.9 },
+                { device_id: "RSP-150004", is_location: false, last_read: Date.now(), mean: -48.9 }
+            ],
+            EPC41233456789012334567890: [
+                { device_id: "RSP-150001", is_location: false, last_read: 1551310186736, mean: -48.9 },
+                { device_id: "RSP-150003", is_location: true, last_read: 1551310186736, mean: -48.9 }
+            ]
+        }
+    }
+
+    // maps sensor id and epc to corresponding indexes;
+    var colLookup = {};
+    var rowLookup = {};
+
+    function onTagStatsUpdate() {
+
+        var table = document.getElementById("tag_stats_table");
+        table.style.overflow = "auto";
+        // establish sensor id columns
+        for (var i = 0; i < stats_update.sensor_ids.length; i++) {
+            var id = stats_update.sensor_ids[i];
+            var cell;
+            if(typeof colLookup[id] === 'undefined') {
+                var newColIndex = table.rows[0].cells.length;
+                colLookup[id] = newColIndex;
+
+                var headerCell = document.createElement("th");
+                headerCell.innerHTML = '<span>' +id+ '</span>';
+                table.rows[0].appendChild(headerCell);
+                
+                for (var j = 1; j < table.rows.length; j++) {
+                    cell = document.createElement("td");
+                    cell.classList.add("w3-border-bottom");
+                    table.rows[j].appendChild(cell);
+                }
+            }
+        }
+
+        for (var epc in stats_update.epc_map) {
+            var row;
+            // establish epc rows
+            if(typeof rowLookup[epc] === 'undefined') {
+                var newRowIndex = table.rows.length;
+                rowLookup[epc] = newRowIndex;
+                row = table.insertRow(newRowIndex);
+                // note: extra index for epc column
+                for (var k = 0; k < table.rows[0].cells.length; k++) {
+                    var cell = row.insertCell(k);
+                    cell.className = "w3-border-bottom";
+                }
+                row.cells[0].innerHTML = epc;
+            }
+        }
+        updateTableData();
+    }
+
+    function updateTableData() {
+        var now = Date.now();
+        var table = document.getElementById("tag_stats_table");
+        for (var epc in stats_update.epc_map) {
+            var row = table.rows[rowLookup[epc]];
+            statsList = stats_update.epc_map[epc];
+            for(var i = 0; i < statsList.length; i++) {
+                var stat = statsList[i];
+                var cell = row.cells[colLookup[stat.device_id]];
+                if(stat.is_location) {
+                    cell.classList.add("w3-dark-grey");
+                } else {
+                    cell.classList.remove("w3-dark-grey");
+                }
+                cell.innerHTML = '<span style="background-color:'+
+                    getColor(stat.mean, now - stat.last_read) +
+                    '">&nbsp;&nbsp;</span>&nbsp;' + 
+                    stat.mean;
+            }
+        }
+    }
+
+    // time thresholds
+    var t1 = 1000 * 60;
+    var t2 = t1 * 5;
+    var t3 = t2 * 3;
+
+    function getColor(mean, elapsed) {
+        var color = "#020202";
+        
+        if(elapsed < t1) {
+            if     (mean > -50) { color = "#FF0000"; }
+            else if(mean > -70) { color = "#FFFF00"; } 
+            else                { color = "#0000FF"; }
+        } else  if(elapsed < t2) {
+            if     (mean > -50) { color = "#CC0000"; }
+            else if(mean > -70) { color = "#CCCC00"; } 
+            else                { color = "#0000CC"; }
+        } else  if(elapsed < t3) {
+            if     (mean > -50) { color = "#990000"; }
+            else if(mean > -70) { color = "#999900"; } 
+            else                { color = "#000099"; }
+        } else {
+            if     (mean > -50) { color = "#660000"; }
+            else if(mean > -70) { color = "#666600"; } 
+            else                { color = "#000066"; }
+        }
+        return color;
+    }
+
+    function init() {
+        gwSocket.init();
+        // for testing
+        //stats_update = test_stats_update;
+        //onTagStatsUpdate();
+    }
+
+</script>
+
+<body onload="init()">
+
+    <!-- Header -->
+    <script src="header.js"></script>
+    
+    <!-- Content -->
+    <div class="w3-container">
+
+        <table id="tag_stats_table" class="w3-table w3-responsive">
+            <tr class="w3-grey">
+                <th>
+                    <!-- empty cell to help with alignment -->
+                </th>
+            </tr>
+        </table>
+
+    </div>
+
+</body>
+
+</html>

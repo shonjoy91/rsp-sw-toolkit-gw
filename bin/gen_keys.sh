@@ -1,6 +1,12 @@
 #!/bin/bash
 
 #----------------------------------------------------------------
+#- Copyright (C) 2018 Intel Corporation
+#- SPDX-License-Identifier: BSD-3-Clause
+#----------------------------------------------------------------
+
+
+#----------------------------------------------------------------
 #-- create an openssl.cfg for this CA used when signing the CSR
 #----------------------------------------------------------------
 cat > ca.conf <<__EOF__
@@ -55,7 +61,7 @@ SERVER_STORE_PASSWORD="server123store456"
 #----------------------------------------------------------------
 
 # this file tracks the next available certficate serial number
-if [ ! -f serial ]; then
+if [[ ! -f serial ]]; then
     echo "0001" > serial
 fi
 
@@ -66,12 +72,14 @@ touch certindex
 #-- Create CA certificate
 #    -nodes \
 #    -passin pass:${CA_KEY_PASSWORD} \
-openssl req \
+if [[ ! -f ca.crt ]] && [[ ! -f ca.key ]]; then
+  openssl req \
     -newkey rsa:4096 \
     -keyout ca.key \
     -nodes \
-    -x509 -days 365  -out ca.crt \
+    -x509 -days 3650  -out ca.crt \
     -subj "/C=${COUNTRY}/ST=${STATE}/L=${LOCALITY}/O=${ORGANIZATION}/CN=PlatformRootCA"
+fi
 
 #----------------------------------------------------------------
 #-- Create a CSR - certificate signing request

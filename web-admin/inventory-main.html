@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Inventory</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css" />
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+
+    var currentPage = "inventory";
+
+    var gwSocket = new GatewayWebSocket();
+
+    var topics = [
+        "inventory_list"
+    ];
+
+    function onSocketState(state) {
+        switch (state) {
+            case "open":
+                gwSocket.sendRPC("subscribe", topics);
+                break;
+            case "closed":
+            default:
+                break;
+        }
+    }
+    gwSocket.addStateListener(onSocketState);
+
+    function onSocketData(data) {
+        var rsp = JSON.parse(data);
+        if (typeof rsp["result"] !== 'undefined' && rsp.result !== null && rsp.result !== "") {
+            alert(rsp.result);
+            return;
+        }
+
+        if (typeof rsp["method"] !== 'undefined') {
+            switch (rsp.method) {
+                case "inventory_list":
+                    onInventoryList(rsp.params);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    gwSocket.addDataListener(onSocketData);
+
+    
+    function onInventoryList(list) {
+
+        var table = document.getElementById("inventory_table");
+
+        for (var i = 0; i < list.length; i++) {
+
+            var curTag = list[i];
+            var tRow = document.getElementById("row_" + curTag.epc);
+            if (tRow === null) {
+                tRow = createRow(table, curTag.epc);
+            }
+
+            document.getElementById(curTag.epc + ".epc").innerHTML = curTag.epc;
+            document.getElementById(curTag.epc + ".tid").innerHTML = curTag.tid;
+            document.getElementById(curTag.epc + ".state").innerHTML = curTag.state;
+            document.getElementById(curTag.epc + ".location").innerHTML = curTag.location;
+            document.getElementById(curTag.epc + ".lastRead").innerHTML = epochToGMT(curTag.lastRead);
+            document.getElementById(curTag.epc + ".facility").innerHTML = curTag.facility;
+        }
+    }
+
+    function createRow(table, id) {
+        tRow = table.insertRow();
+        tRow.id = "row_" + id;
+        var cells = "";
+        cells += createCell(id + ".epc");
+        cells += createCell(id + ".tid");
+        cells += createCell(id + ".state");
+        cells += createCell(id + ".location");
+        cells += createCell(id + ".lastRead");
+        cells += createCell(id + ".facility");
+        tRow.innerHTML = cells;
+    }
+
+    function createCell(cellId) {
+        return "<td id=\"" + cellId + "\" class=\"w3-border-bottom w3-border-dark-grey\"></td>";
+    }
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+    <!-- Header -->
+    <script src="header.js"></script>
+
+    <!-- Content -->
+    <div class="w3-container">
+
+        <table id="inventory_table" class="w3-table">
+            <tr class="w3-grey">
+                <th>EPC</th>
+                <th>TID</th>
+                <th>State</th>
+                <th>Location</th>
+                <th>Last Read</th>
+                <th>Facility</th>
+            </tr>
+        </table>
+
+        <script src="table-support.js"></script>
+        <script>
+            initTableSort("inventory_table");
+
+        </script>
+
+    </div>
+
+</body>
+
+</html>

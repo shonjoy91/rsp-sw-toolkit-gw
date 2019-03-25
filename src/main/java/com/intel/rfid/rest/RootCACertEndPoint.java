@@ -25,17 +25,17 @@ public class RootCACertEndPoint extends DefaultServlet {
     private static final ObjectMapper mapper = Jackson.getMapper();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGet(HttpServletRequest _req, HttpServletResponse _rsp) {
 
         try {
             KeyManager keyMgr = SecurityContext.instance().getKeyMgr();
             Certificate cert = new Certificate(keyMgr.getCACertificateAsPem());
             String s = mapper.writeValueAsString(cert);
-            resp.getWriter().println(s);
-            resp.setStatus(HttpStatus.OK_200);
+            _rsp.getWriter().println(s);
+            _rsp.setStatus(HttpStatus.OK_200);
         } catch (IOException e) {
             log.error("Error doGet: {}", e.getMessage());
-            resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+            _rsp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
     }
 }

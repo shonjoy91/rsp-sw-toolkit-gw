@@ -17,24 +17,21 @@ import org.slf4j.LoggerFactory;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ConsoleSession implements Runnable {
 
     public static final String QUIT_CMD = "quit";
+    public static final String EXIT_CMD = "exit";
 
     protected Logger log = LoggerFactory.getLogger(getClass());
     protected InputStream in;
     protected OutputStream out;
     protected OutputStream err;
     protected CLICommandBuilder cmdBuilder;
-
-    public ConsoleSession(CLICommandBuilder _cmdBuilder) {
-        this(System.in, System.out, System.err, _cmdBuilder);
-    }
 
     public ConsoleSession(InputStream _in,
                           OutputStream _out,
@@ -47,8 +44,6 @@ public class ConsoleSession implements Runnable {
     }
 
     private boolean keepGoing;
-
-    public boolean isRunning() { return keepGoing; }
 
     public void end() {
         keepGoing = false;
@@ -81,7 +76,7 @@ public class ConsoleSession implements Runnable {
             List<Completer> comps = new ArrayList<>();
 
             comps.add(new ArgumentCompleter(
-                new StringsCompleter(QUIT_CMD),
+                new StringsCompleter(QUIT_CMD, EXIT_CMD),
                 new NullCompleter()));
 
             commander.getCompleters(comps);
@@ -100,7 +95,7 @@ public class ConsoleSession implements Runnable {
             String line;
             while (keepGoing && (line = console.readLine()) != null) {
                 line = line.trim();
-                if (line.equalsIgnoreCase(QUIT_CMD)) {
+                if (line.equalsIgnoreCase(QUIT_CMD) || line.equalsIgnoreCase(EXIT_CMD)) {
                     keepGoing = false;
                 } else if (line.equalsIgnoreCase("clear")) {
                     console.clearScreen();
@@ -111,10 +106,10 @@ public class ConsoleSession implements Runnable {
             pp.line("Stopping console session...");
             pp.flush();
 
+        } catch (InterruptedIOException _e) {
+            log.info("Stopping console: Interrupted");
         } catch (Exception e) {
             log.error("error ", e);
-            PrintStream ps = new PrintStream(err);
-            ps.println("-- Error executing JLineShell..." + e.getMessage());
         }
     }
 }

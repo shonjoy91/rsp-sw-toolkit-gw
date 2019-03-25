@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Configuration</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+
+<script type="text/javascript">
+
+    var currentPage = "scheduler";
+
+    var gwSocket = new GatewayWebSocket();
+
+    var topics = [
+        "scheduler_summary"
+    ];
+
+    function onSocketState(state) {
+        switch (state) {
+            case "open":
+                gwSocket.sendRPC("subscribe", topics);
+                break;
+            case "closed":
+            default:
+                break;
+        }
+    }
+    gwSocket.addStateListener(onSocketState);
+
+
+    function onSocketData(data) {
+        var rsp = JSON.parse(data);
+        if (typeof rsp["result"] !== 'undefined' && rsp.result !== null && rsp.result !== "") {
+            alert(rsp.result);
+            return;
+        }
+
+        if (typeof rsp["method"] !== 'undefined') {            
+            switch (rsp.method) {
+                case "scheduler_summary":
+                    onSchedulerSummary(rsp);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    // register this callback with socket-support library
+    gwSocket.addDataListener(onSocketData);
+
+    function onSchedulerSummary(rsp) {
+        var s = "";
+        for (var i in rsp.params.available_states) {
+            var state = rsp.params.available_states[i];
+
+            if (state != rsp.params.run_state) {
+                s += "<button class=\"w3-bar-item w3-button\" onClick=activate(\"" + state + "\")>";
+                s += state;
+                s += "</button>";
+            } else {
+                s += "<div class=\"w3-bar-item w3-border\">";
+                s += state;
+                s += "</div>";
+            }
+
+        }
+        document.getElementById("scheduler_summary.run_state").innerHTML = s;
+
+
+        if (rsp.params.clusters == null || rsp.params.clusters.length === 0) {
+            document.getElementById("scheduler_summary.clusters").innerHTML = ""
+            return;
+        }
+
+        //alert("clusters: " +rsp.params.clusters.length);
+        s = '<table class="w3-table">';
+        s +=  '<tr class="w3-grey"><th>Cluster Id</th><th>Behavior</th><th>Sensors</th></tr>';
+        for (var i in rsp.params.clusters) {
+            var cluster = rsp.params.clusters[i];
+
+            s += '<tr><td class="w3-border-bottom w3-border-dark-grey">';
+            s += cluster.id;
+            s += '</td><td class="w3-border-bottom w3-border-dark-grey">';
+            s += cluster.behavior_id;
+            s += '</td><td class="w3-border-bottom w3-border-dark-grey">';
+
+            for (var j in cluster.sensor_groups) {
+                var t = "";
+                for (var k in cluster.sensor_groups[j]) {
+                    if(t.length > 0) {
+                        t += ", ";
+                    }
+                    t += cluster.sensor_groups[j][k];
+                }
+                s+= '<div>[' +t+ ']</div>';
+            }
+
+            s += '</td></tr>';
+        }
+        s += '</table>';
+        document.getElementById("scheduler_summary.clusters").innerHTML = s;
+    }
+
+    function activate(newState) {
+        gwSocket.sendRPC("scheduler_activate", { run_state: newState});
+    }
+
+    function init() {
+        gwSocket.init();
+    }    
+</script>
+
+<body onload="init()">
+
+<!-- Header -->
+<script src="header.js"></script>
+
+<!-- Content -->
+<div class="w3-container">
+
+    <div class="w3-bar" id="scheduler_summary.run_state"></div>
+    <div id="scheduler_summary.clusters"></div>
+
+</div>
+
+</body>
+</html>

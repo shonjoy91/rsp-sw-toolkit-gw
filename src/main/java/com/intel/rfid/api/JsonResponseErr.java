@@ -21,4 +21,24 @@ public class JsonResponseErr extends JsonResponse {
         this(_id, _errType.code, _errType.toString(), _errData);
     }
 
+    // write this out explicitly to avoid having to catch mapping exceptions
+    // when serializing.
+    // public String toJson() {
+    //     StringBuffer sb = new StringBuffer();
+    //     sb.append("{");
+    //     sb.append("\"id\": \"").append(id).append("\",");
+    //     sb.append("\"error\": {");
+    //    
+    //     sb.append("\"code\": ").append(error.code).append(",");
+    //     sb.append("\"message\": \"").append(error.message).append("\",");
+    //     sb.append("\"data\": \"");
+    //     if(error.data != null) {
+    //         sb.append(error.data.toString());
+    //     }
+    //     sb.append("\"");
+    //     sb.append("}");
+    //     sb.append("}");
+    //    
+    //     return sb.toString();
+    // }
 }

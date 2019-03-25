@@ -11,6 +11,7 @@ import com.intel.rfid.api.ConnectResponse;
 import com.intel.rfid.api.GatewayStatusUpdate;
 import com.intel.rfid.api.InventoryData;
 import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.MQTTSummary;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
@@ -107,16 +108,10 @@ public class DownstreamManager implements MQTTDownstream.Dispatch {
         }
     }
 
-    public boolean isMQTTConnected() {
-        return mqttDownstream.isConnected();
+    public MQTTSummary getSummary() {
+        return mqttDownstream.getSummary();
     }
-
-    public void statusMQTT(PrettyPrinter _out) {
-        if (mqttDownstream != null) {
-            mqttDownstream.status(_out);
-        }
-    }
-
+    
     @Override
     public void onMessage(String _topic, MqttMessage _msg) {
         // Don't blow up!!

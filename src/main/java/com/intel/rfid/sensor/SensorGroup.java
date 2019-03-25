@@ -11,12 +11,4 @@ public class SensorGroup {
 
     public List<SensorPlatform> sensors = new ArrayList<>();
 
-    public SensorGroup() { }
-
-    public SensorGroup(List<String> _sensorIds, SensorManager _sensorMgr) {
-        for (String devId : _sensorIds) {
-            sensors.add(_sensorMgr.establishRSP(devId));
-        }
-    }
-
 }

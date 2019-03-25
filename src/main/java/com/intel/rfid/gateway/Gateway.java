@@ -6,6 +6,7 @@ package com.intel.rfid.gateway;
 
 import com.intel.rfid.alerts.AlertManager;
 import com.intel.rfid.api.GatewayStatusUpdate;
+import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.console.CLICommandBuilder;
 import com.intel.rfid.console.CLICommander;
 import com.intel.rfid.downstream.DownstreamManager;
@@ -36,6 +37,7 @@ public class Gateway implements CLICommandBuilder {
         return gw;
     }
 
+    protected ClusterManager clusterMgr;
     protected SensorManager sensorMgr;
     protected ScheduleManager scheduleMgr;
     protected InventoryManager inventoryMgr;
@@ -50,8 +52,12 @@ public class Gateway implements CLICommandBuilder {
     protected void init() {
         log.info("Gateway {} software initializing", Version.asString());
 
+        if (clusterMgr == null) {
+            clusterMgr = new ClusterManager();
+        }
+
         if (sensorMgr == null) {
-            sensorMgr = new SensorManager();
+            sensorMgr = new SensorManager(clusterMgr);
         }
         if (inventoryMgr == null) {
             inventoryMgr = new InventoryManager();
@@ -60,13 +66,17 @@ public class Gateway implements CLICommandBuilder {
             downstreamMgr = new DownstreamManager(sensorMgr);
         }
         if (scheduleMgr == null) {
-            scheduleMgr = new ScheduleManager(sensorMgr);
+            scheduleMgr = new ScheduleManager(clusterMgr);
         }
         if (upstreamMgr == null) {
             upstreamMgr = new UpstreamManager();
         }
         if (endPointMgr == null) {
-            endPointMgr = new EndPointManager();
+            endPointMgr = new EndPointManager(sensorMgr, 
+                                              inventoryMgr,
+                                              upstreamMgr,
+                                              downstreamMgr,
+                                              scheduleMgr);
         }
         if (alertMgr == null) {
             alertMgr = new AlertManager(upstreamMgr);
@@ -96,6 +106,7 @@ public class Gateway implements CLICommandBuilder {
     public void start() {
         log.info("Gateway {} starting", Version.asString());
 
+        clusterMgr.start();
         alertMgr.start();
         sensorMgr.start();
         inventoryMgr.start();
@@ -122,6 +133,7 @@ public class Gateway implements CLICommandBuilder {
         inventoryMgr.stop();
         sensorMgr.stop();
         alertMgr.stop();
+        clusterMgr.stop();
 
         scheduleMgr.removeRunStateListener(inventoryMgr);
         inventoryMgr.removeUpstreamEventListener(upstreamMgr);
@@ -148,6 +160,7 @@ public class Gateway implements CLICommandBuilder {
     @Override
     public CLICommander buildCommander(PrettyPrinter _prettyPrinter) {
         CLICommander commander = new CLICommander(_prettyPrinter);
+        commander.enable(clusterMgr);
         commander.enable(sensorMgr);
         commander.enable(scheduleMgr);
         commander.enable(inventoryMgr);

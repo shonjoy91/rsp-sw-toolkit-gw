@@ -1,0 +1,47 @@
+{
+  "id": "SampleSensorClusterConfig",
+  "clusters": [
+    {
+      "id": "BackStockDefault",
+      "facility_id": "BackStock",
+      "behavior_id": "ClusterDeepScan_PORTS_1",
+      "sensor_groups": [
+        ["RSP-150000"], 
+        ["RSP-150001"]
+      ]
+    }, {
+      "id": "SalesFloorDefault",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterMobility_PORTS_1",
+      "sensor_groups": [
+        ["RSP-150002", "RSP-150004", "RSP-150006"],
+        ["RSP-150003", "RSP-150005", "RSP-150007"]
+      ]
+    }, {
+      "id": "SalesFloorExit",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterExit_PORTS_1",
+      "personality": "EXIT",
+      "sensor_groups": [
+        ["RSP-150008"]
+      ]
+    }, {
+      "id": "SalesFloorPOS",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterPOS_PORTS_1",
+      "personality": "POS",
+      "sensor_groups": [
+        ["RSP-150009"]
+      ]
+    }, {
+      "id": "SalesFloorFittingRoom",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterFittingRoom_PORTS_1",
+      "personality": "FITTING_ROOM",
+      "sensor_groups": [
+        ["RSP-150010"]
+      ]
+    }
+  ]
+}
+

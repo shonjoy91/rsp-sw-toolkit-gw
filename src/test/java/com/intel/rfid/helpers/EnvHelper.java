@@ -37,9 +37,9 @@ public class EnvHelper {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void beforeBasicTests() throws IOException {
         establishTestDir();
-        // copyConfig();
-        // adjustLogs();
-        // ConfigManagerHelper.initForTesting();
+        copyConfig();
+        adjustLogs();
+        //ConfigManagerHelper.initForTesting();
     }
 
     public static void afterTests() {

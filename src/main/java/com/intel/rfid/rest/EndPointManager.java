@@ -4,16 +4,25 @@
  */
 package com.intel.rfid.rest;
 
+import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.gateway.Env;
+import com.intel.rfid.inventory.InventoryManager;
+import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.security.SecurityContext;
+import com.intel.rfid.sensor.SensorManager;
+import com.intel.rfid.upstream.UpstreamManager;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +30,24 @@ public class EndPointManager {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
     protected Server server;
+    protected SensorManager sensorMgr;
+    protected InventoryManager inventoryMgr;
+    protected UpstreamManager upstreamMgr;
+    protected DownstreamManager downstreamMgr;
+    protected ScheduleManager scheduleMgr;
+
+    public EndPointManager(SensorManager _sensorMgr,
+                           InventoryManager _inventoryMgr,
+                           UpstreamManager _upstreamMgr,
+                           DownstreamManager _downstreamMgr,
+                           ScheduleManager _scheduleMgr) {
+
+        sensorMgr = _sensorMgr;
+        inventoryMgr = _inventoryMgr;
+        upstreamMgr = _upstreamMgr;
+        downstreamMgr = _downstreamMgr;
+        scheduleMgr = _scheduleMgr;
+    }
 
     public boolean start() {
 
@@ -38,6 +65,7 @@ public class EndPointManager {
             addHttpConnector();
             addTlsConnector();
             addEndPoints();
+            addErrorHandlers();
 
             server.start();
 
@@ -92,9 +120,53 @@ public class EndPointManager {
     }
 
     protected void addEndPoints() {
-        ServletContextHandler ctx = new ServletContextHandler();
-        ctx.addServlet(RootCACertEndPoint.class, ConfigManager.PROVISION_ROOT_CA_PATH);
-        ctx.addServlet(SensorCredentialsEndPoint.class, ConfigManager.PROVISION_SENSOR_CREDENTIALS_PATH);
-        server.setHandler(ctx);
+        ServletContextHandler context;
+        context = new ServletContextHandler();
+        context.setContextPath("/");
+        server.setHandler(context);
+
+        ServletHolder holder;
+
+        holder = new ServletHolder(new RootCACertEndPoint());
+        context.addServlet(holder, ConfigManager.PROVISION_ROOT_CA_PATH);
+        log.info("adding {} on {}", 
+                 RootCACertEndPoint.class.getSimpleName(), 
+                 ConfigManager.PROVISION_ROOT_CA_PATH);
+
+        holder = new ServletHolder(new SensorCredentialsEndPoint(sensorMgr));
+        context.addServlet(holder, ConfigManager.PROVISION_SENSOR_CREDENTIALS_PATH);
+        log.info("adding {} on {}", 
+                 SensorCredentialsEndPoint.class.getSimpleName(), 
+                 ConfigManager.PROVISION_SENSOR_CREDENTIALS_PATH);
+
+        holder = new ServletHolder(new AdminWebSocketServlet(sensorMgr, 
+                                                             inventoryMgr,
+                                                             upstreamMgr,
+                                                             downstreamMgr,
+                                                             scheduleMgr));
+        context.addServlet(holder, "/web-admin-socket");
+        log.info("adding {} on {}",
+                 AdminWebSocketServlet.class.getSimpleName(),
+                 "/web-admin-socket");
+
+        context.setWelcomeFiles(new String[] {"dashboard.html"});
+        holder = new ServletHolder("web-admin-files-servlet", DefaultServlet.class);
+        holder.setInitParameter("resourceBase", Env.getWebAdminResourcePath().toString());
+        holder.setInitParameter("pathInfoOnly","true");
+        context.addServlet(holder, "/" + Env.getWebAdminResourcePath().getFileName().toString() + "/*");
+        log.info("adding web-admin-servlet on {}", holder.getInitParameter("resourceBase"));
+
+
+        holder = new ServletHolder("repo-servlet", DefaultServlet.class);
+        holder.setInitParameter("resourceBase", Env.getSensorSoftwareRepoPath().toString());
+        holder.setInitParameter("pathInfoOnly","true");
+        context.addServlet(holder, "/" + ConfigManager.instance.getSensorRepoBase() + "/*");
+        log.info("adding DefaultServlet on {}", holder.getInitParameter("resourceBase"));
+    }
+    
+    protected void addErrorHandlers() {
+        ErrorHandler errorHandler = new ErrorHandler();
+        errorHandler.setShowStacks(false);
+        server.addBean(errorHandler);
     }
 }

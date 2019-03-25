@@ -5,6 +5,7 @@
 package com.intel.rfid.upstream;
 
 import com.intel.rfid.api.GatewayDeviceAlert;
+import com.intel.rfid.api.MQTTSummary;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.inventory.InventoryManager;
@@ -57,6 +58,10 @@ public class UpstreamManager
         } catch (Exception e) {
             log.error("error: ", e);
         }
+    }
+
+    public MQTTSummary getSummary() {
+        return mqttUpstream.getSummary();
     }
 
     public void show(PrettyPrinter _out) {

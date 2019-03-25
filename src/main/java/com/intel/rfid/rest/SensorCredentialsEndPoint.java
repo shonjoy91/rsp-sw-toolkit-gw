@@ -9,7 +9,7 @@ import com.intel.rfid.api.ProvisionToken;
 import com.intel.rfid.api.SensorCredentials;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
-import com.intel.rfid.security.SecurityContext;
+import com.intel.rfid.sensor.SensorManager;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.slf4j.Logger;
@@ -26,6 +26,11 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
     protected static final ObjectMapper mapper = Jackson.getMapper();
+    protected SensorManager sensorMgr;
+
+    public SensorCredentialsEndPoint(SensorManager _sensorMgr) {
+        sensorMgr = _sensorMgr;
+    }
 
     @Override
     protected void doGet(HttpServletRequest _req, HttpServletResponse _rsp) throws IOException, ServletException {
@@ -35,16 +40,7 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
 
     @Override
     protected void doPost(HttpServletRequest _req, HttpServletResponse _rsp) throws IOException, ServletException {
-
-        // nest the method to keep indents reasonable
-        // grab all exceptions even though method signature indicates otherwise
-        // TODO: unify error handing and let exceptions propogate as designed, write custom exception handler if needed
-        try {
-            processRequest(_req, _rsp);
-        } catch (Exception e) {
-            log.error("Internal servlet error- ", e);
-            _rsp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-        }
+        processRequest(_req, _rsp);
     }
 
     private void processRequest(HttpServletRequest _req, HttpServletResponse _rsp)
@@ -69,19 +65,12 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
             return;
         }
 
-        if (cm.getProvisionSensorTokenRequired()) {
+        boolean tokenIsValid = sensorMgr.registerSensor(pToken.username, pToken.token);
 
-            boolean valid = false;
+        if (cm.getProvisionSensorTokenRequired() && !tokenIsValid) {
 
-            if (pToken.token != null && !pToken.token.isEmpty()) {
-                log.info("authenticating LOCAL");
-                valid = SecurityContext.instance().getProvisionTokenMgr().isTokenValid(pToken.token);
-            }
-
-            if (!valid) {
-                setErr(_rsp, HttpStatus.UNAUTHORIZED_401, "Invalid token.");
-                return;
-            }
+            setErr(_rsp, HttpStatus.UNAUTHORIZED_401, "Invalid token.");
+            return;
 
         } else {
             log.info("skipping token authentication, not required");
@@ -122,7 +111,7 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
                    "Content-Length required. ");
             return true;
         }
-        
+
         return false;
     }
 

@@ -12,7 +12,6 @@ import java.util.List;
 public class ListLooper<T> {
     private final Collection<T> backingCollection;
     private Iterator<T> iterator;
-    private boolean listLooped = false;
 
     public ListLooper(Collection<T> _collection) {
         backingCollection = _collection;
@@ -20,17 +19,14 @@ public class ListLooper<T> {
     }
 
     public T next() {
-        if (iterator.hasNext()) {
-            listLooped = false;
-        } else {
+        if (!iterator.hasNext()) {
             iterator = backingCollection.iterator();
-            listLooped = true;
         }
         return iterator.next();
     }
 
     public boolean listLooped() {
-        return listLooped;
+        return !iterator.hasNext();
     }
 
     public List<T> getAll() {

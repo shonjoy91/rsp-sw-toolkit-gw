@@ -7,6 +7,7 @@ package com.intel.rfid.upstream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.GatewayDeviceAlert;
+import com.intel.rfid.api.MQTTSummary;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
@@ -45,10 +46,22 @@ public class MQTTUpstream extends MQTT {
         }
     }
 
+    // TOOD: remove this in favor of getSummary()
     public void status(PrettyPrinter _out) {
         super.status(_out);
         _out.line("pub: " + ALERTS_TOPIC);
         _out.line("pub: " + EVENTS_TOPIC);
     }
+
+    public MQTTSummary getSummary() {
+        MQTTSummary summary = new MQTTSummary();
+        summary.run_state = runState;
+        summary.broker_uri = brokerURI;
+        summary.subscribes.addAll(subscriptions);
+        summary.publishes.add(ALERTS_TOPIC);
+        summary.publishes.add(EVENTS_TOPIC);
+        return summary;
+    }
+
 
 }

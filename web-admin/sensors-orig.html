@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Sensors</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css" />
+
+<script src="/web-admin/socket-support.js"></script>
+
+<script type="text/javascript">
+
+    var currentPage = "sensors";
+
+    var gwSocket = new GatewayWebSocket();
+
+    var topics = [
+        "sensor_list"
+    ];
+
+    function onSocketState(state) {
+        switch (state) {
+            case "open":
+                gwSocket.sendRPC("subscribe", topics);
+                break;
+            case "closed":
+            default:
+                break;
+        }
+    }
+    gwSocket.addStateListener(onSocketState);
+
+    function onSocketData(data) {
+        var rsp = JSON.parse(data);
+
+        if (typeof rsp["method"] !== 'undefined') {
+            switch (rsp.method) {
+                case "sensor_show_info":
+                    onBasicInfo(rsp.params.info_list);
+                    break;
+                default:
+                    checkCommandResponse(rsp);
+                    break;
+            }
+        } else if (typeof rsp["result"] !== 'undefined' && rsp.result !== null && rsp.result !== "") {
+            alert(rsp.result);
+            return;
+        }
+    }
+    // register this callback with socket-support library
+    gwSocket.addDataListener(onSocketData);
+
+    var iConnected = '<i class="fa fa-link w3-large"></i>';
+    var iDisconnected = '<i class="fa fa-unlink w3-large"></i>';
+    var iStarted = '<i class="fa fa-rss w3-large"></i>';
+    var iStopped = '<i class="far fa-square w3-large"></i>';
+
+    function onBasicInfo(info_list) {
+        var table = document.getElementById("sensor_table");
+
+        if(selectedSensorId === "" && info_list.length > 0) {
+            selectSensor(info_list[0].id);
+        }
+
+        for (var i = 0; i < info_list.length; i++) {
+
+            var curSensor = info_list[i];
+
+            var rowId = "row_" + curSensor.id;
+            var tRow = document.getElementById("row_" + curSensor.id);
+            if (tRow === null) {
+                tRow = createRow(table, curSensor.id);
+            }
+
+            var e;
+
+            document.getElementById(curSensor.id + ".id").innerHTML = curSensor.id;
+
+            e = document.getElementById(curSensor.id + ".connection_state");
+            if (curSensor.connection_state == "CONNECTED") {
+                e.innerHTML = iConnected;
+            } else {
+                e.innerHTML = iDisconnected;
+            }
+
+            e = document.getElementById(curSensor.id + ".read_state");
+            if (curSensor.read_state == "STARTED") {
+                e.innerHTML = iStarted;
+            } else {
+                e.innerHTML = iStopped;
+            }
+
+            if (curSensor.behavior_id !== null) {
+                document.getElementById(curSensor.id + ".behavior_id").innerHTML = curSensor.behavior_id;
+            }
+
+            if (curSensor.facility !== null) {
+                document.getElementById(curSensor.id + ".facility").innerHTML = curSensor.facility;
+            }
+
+            if (curSensor.personality !== null) {
+                document.getElementById(curSensor.id + ".personality").innerHTML = curSensor.personality;
+            }
+
+            if (curSensor.alerts !== null) {
+                document.getElementById(curSensor.id + ".alerts").innerHTML = curSensor.facility;
+            }
+        }
+    }
+
+    function createRow(table, sensorId) {
+        tRow = table.insertRow();
+        tRow.id = "row_" + sensorId;
+        var cells = "";
+        cells += createIdCell(sensorId);
+        cells += createCell(sensorId + ".connection_state");
+        cells += createCell(sensorId + ".read_state");
+        cells += createCell(sensorId + ".behavior_id");
+        cells += createCell(sensorId + ".facility");
+        cells += createCell(sensorId + ".personality");
+        cells += createCell(sensorId + ".alerts");
+        tRow.innerHTML = cells;
+    }
+
+    function createIdCell(sensorId) {
+        return '<td id="' + sensorId + '.id" style="cursor: pointer;"' +
+            'onclick=\'selectSensor("' + sensorId + '");\' ' +
+            'class="w3-border-bottom w3-border-dark-grey"></td>';
+    }
+
+    function createCell(cellId) {
+        return '<td id="' + cellId + '" class="w3-border-bottom w3-border-dark-grey"></td>';
+    }
+
+    var commands = [
+        "get_bist_results",
+        "get_sw_version",
+        "get_state"
+    ];
+
+    function checkCommandResponse(rsp) {
+        var e = document.getElementById("sensor_commands_result");
+        var s = "response error";
+        if (typeof rsp["result"] !== 'undefined') {
+            s = JSON.stringify(rsp["result"], null, ' ');
+        } else if (typeof rsp["error"] !== 'undefined') {
+            s = JSON.stringify(rsp["error"], null, ' ');
+        }
+        e.innerHTML = '<pre>' +s+ '</pre>';
+    }
+
+    var selectedSensorId = "";
+    var pendResults = '...results pending <i class="fas fa-spinner fa-pulse"></i>';
+
+    function selectSensor(sensorId) {
+        selectedSensorId = sensorId;
+        var e = document.getElementById("sensor_commands_sensor_id");
+        e.innerHTML = selectedSensorId;
+    }
+
+    function showResultsModal() {
+        document.getElementById("sensor_results_modal").style.display = 'block';
+    }
+
+    function closeResultsModal() {
+        document.getElementById("sensor_results_modal").style.display = 'none';
+    }
+
+    function doSimpleGet(command) {
+        setupResults(selectedSensorId, command);
+        showResultsModal();
+        gwSocket.sendRPC("sensor_" + command, {
+            sensor_id: selectedSensorId
+        });
+    }
+
+    function setupResults(sensorId, command) {
+        document.getElementById("sensor_results_sensor_id").innerHTML = selectedSensorId;
+        document.getElementById("sensor_results_command").innerHTML = command;
+        document.getElementById("sensor_commands_result").innerHTML = pendResults;
+    }
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+    <!-- Header -->
+    <script src="header.js"></script>
+
+    <!-- Content -->
+    <div class="w3-container">
+
+        <div id="sensor_commands" class="w3-container w3-display-container w3-border w3-dark-grey">
+            <div class="w3-bar">
+                <div id="sensor_commands_sensor_id" class="w3-bar-item w3-xlarge">
+                </div>
+                <script type="text/javascript">
+                    for (var i in commands) {
+                        document.write('<div class="w3-bar-item">');
+                        document.write('<button class="w3-button" onclick=\'doSimpleGet("');
+                        document.write(commands[i]);
+                        document.write('");\'>');
+                        document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
+                        document.write(commands[i]);
+                        document.write('</button></div>');
+                    }
+
+                </script>
+            </div>
+        </div>
+
+        <div id="sensor_results_modal" class="w3-modal">
+            <div class="w3-modal-content w3-animate-top w3-card-4 w3-grey">
+                <div class="w3-bar">
+                    <div class="w3-bar-item">
+                        <span id="sensor_results_sensor_id"></span>
+                        <i class="fa fa-greater-than"></i>
+                        <span id="sensor_results_command"></span>
+                    </div>
+                    <div class="w3-bar-item">
+                        <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="w3-container w3-light-grey" id="sensor_commands_result">
+                    <p>Some text..</p>
+                    <p>Some text..</p>
+                </div>
+            </div>
+        </div>
+
+
+        <table id="sensor_table" class="w3-table">
+            <tr class="w3-grey">
+                <th>Device</th>
+                <th>Connected</th>
+                <th>Reading</th>
+                <th>Behavior</th>
+                <th>Facility</th>
+                <th>Personality</th>
+                <th>Alerts</th>
+            </tr>
+        </table>
+        <script src="table-support.js"></script>
+        <script>
+            initTableSort("sensor_table");
+
+        </script>
+
+    </div>
+
+</body>
+
+</html>
