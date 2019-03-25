@@ -54,7 +54,7 @@ public class ClusterTest {
         assertThat(cluster.tokens).isEmpty();
         assertThat(cluster.sensor_groups).hasSize(1);
 
-        cluster = clusterMgr.getCluster("SalesFloorDefault");
+        cluster = clusterMgr.getCluster("SalesFloorMobility");
         assertThat(cluster).isNotNull();
         assertThat(cluster.tokens).isEmpty();
         assertThat(cluster.sensor_groups).hasSize(2);
@@ -65,7 +65,7 @@ public class ClusterTest {
         assertThat(cluster.tokens).hasSize(1);
         assertThat(cluster.sensor_groups).isEmpty();
 
-        cluster = clusterMgr.getCluster("SalesFloorDefault");
+        cluster = clusterMgr.getCluster("SalesFloorMobility");
         assertThat(cluster).isNotNull();
         assertThat(cluster.tokens).hasSize(2);
         assertThat(cluster.sensor_groups).isEmpty();
@@ -186,9 +186,9 @@ public class ClusterTest {
         assertThat(cluster).isNotNull();
         assertThat(cluster.id).isEqualTo("SalesFloorPOS");
 
-        cluster = clusterMgr.findClusterByDeviceId("RSP-000005");
+        cluster = clusterMgr.findClusterByDeviceId("RSP-150005");
         assertThat(cluster).isNotNull();
-        assertThat(cluster.id).isEqualTo("SalesFloorDefault");
+        assertThat(cluster.id).isEqualTo("SalesFloorMobility");
     }
 
     @Test
@@ -213,6 +213,6 @@ public class ClusterTest {
 
         cluster = clusterMgr.findClusterByToken("BackStockDeepScan001UUWWYYBBDDFFE3DA5098692CE27945AA367189B52C58");
         assertThat(cluster).isNotNull();
-        assertThat(cluster.id).isEqualTo("BackStockDefault");
+        assertThat(cluster.id).isEqualTo("BackStock");
     }
 }

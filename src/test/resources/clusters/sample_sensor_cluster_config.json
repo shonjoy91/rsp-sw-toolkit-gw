@@ -2,7 +2,7 @@
   "id": "SampleSensorClusterConfig",
   "clusters": [
     {
-      "id": "BackStockDefault",
+      "id": "BackStock",
       "facility_id": "BackStock",
       "behavior_id": "ClusterDeepScan_PORTS_1",
       "sensor_groups": [
@@ -10,7 +10,7 @@
         ["RSP-150001"]
       ]
     }, {
-      "id": "SalesFloorDefault",
+      "id": "SalesFloorMobility",
       "facility_id": "SalesFloor",
       "behavior_id": "ClusterMobility_PORTS_1",
       "sensor_groups": [
