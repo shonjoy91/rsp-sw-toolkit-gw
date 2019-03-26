@@ -13,7 +13,7 @@
   "max_q_value": 15,
   "retry_count": 0,
   "threshold_multiplier": 2,
-  "dwell_time": 5000,
+  "dwell_time": 2000,
   "inv_cycles": 0,
   "toggle_target_flag": true,
   "repeat_until_no_tags": false,
@@ -21,5 +21,5 @@
   "perform_post_match": false,
   "filter_duplicates": false,
   "toggle_mode": "OnInvCycle",
-  "auto_repeat": true
+  "auto_repeat": false
 }

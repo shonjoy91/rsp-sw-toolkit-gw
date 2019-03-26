@@ -11,7 +11,6 @@
 <script src="/web-admin/socket-support.js"></script>
 
 <script type="text/javascript">
-
     var currentPage = "tag_stats";
 
     var gwSocket = new GatewayWebSocket();
@@ -56,52 +55,190 @@
     // register this callback with socket-support library
     gwSocket.addDataListener(onSocketData);
 
-    
+
     var test_stats_update = {
         sensor_ids: ["RSP-150000", "RSP-150001", "RSP-150002", "RSP-150003", "RSP-150004"],
         epc_map: {
-            EPCA1233456789012334567890: [
-                { device_id: "RSP-150000", is_location: false, last_read: Date.now(), mean: -48.9 },
-                { device_id: "RSP-150001", is_location: false, last_read: Date.now(), mean: -58.9 },
-                { device_id: "RSP-150002", is_location: false, last_read: Date.now(), mean: -72.9 },
-                { device_id: "RSP-150003", is_location: true, last_read: Date.now(), mean: -58.9 },
-                { device_id: "RSP-150004", is_location: false, last_read: Date.now(), mean: -48.9 }
+            EPCA1233456789012334567890: [{
+                    device_id: "RSP-150000",
+                    is_location: false,
+                    last_read: Date.now(),
+                    mean: -48.9
+                },
+                {
+                    device_id: "RSP-150001",
+                    is_location: false,
+                    last_read: Date.now(),
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150002",
+                    is_location: false,
+                    last_read: Date.now(),
+                    mean: -72.9
+                },
+                {
+                    device_id: "RSP-150003",
+                    is_location: true,
+                    last_read: Date.now(),
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150004",
+                    is_location: false,
+                    last_read: Date.now(),
+                    mean: -48.9
+                }
             ],
-            EPCB1233456789012334567890: [
-                { device_id: "RSP-150000", is_location: false, last_read: Date.now() - 70000, mean: -48.9 },
-                { device_id: "RSP-150001", is_location: true, last_read: Date.now() - 70000, mean: -58.9 },
-                { device_id: "RSP-150002", is_location: false, last_read: Date.now() - 70000, mean: -72.9 },
-                { device_id: "RSP-150003", is_location: false, last_read: Date.now() - 70000, mean: -58.9 },
-                { device_id: "RSP-150004", is_location: false, last_read: Date.now() - 70000, mean: -48.9 }
+            EPCB1233456789012334567890: [{
+                    device_id: "RSP-150000",
+                    is_location: false,
+                    last_read: Date.now() - 70000,
+                    mean: -48.9
+                },
+                {
+                    device_id: "RSP-150001",
+                    is_location: true,
+                    last_read: Date.now() - 70000,
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150002",
+                    is_location: false,
+                    last_read: Date.now() - 70000,
+                    mean: -72.9
+                },
+                {
+                    device_id: "RSP-150003",
+                    is_location: false,
+                    last_read: Date.now() - 70000,
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150004",
+                    is_location: false,
+                    last_read: Date.now() - 70000,
+                    mean: -48.9
+                }
             ],
-            EPCC1233456789012334567890: [
-                { device_id: "RSP-150000", is_location: true, last_read: Date.now() - 350000, mean: -48.9 },
-                { device_id: "RSP-150001", is_location: false, last_read: Date.now() - 350000, mean: -58.9 },
-                { device_id: "RSP-150002", is_location: false, last_read: Date.now() - 350000, mean: -72.9 },
-                { device_id: "RSP-150003", is_location: false, last_read: Date.now() - 350000, mean: -58.9 },
-                { device_id: "RSP-150004", is_location: false, last_read: Date.now() - 350000, mean: -48.9 }
+            EPCC1233456789012334567890: [{
+                    device_id: "RSP-150000",
+                    is_location: true,
+                    last_read: Date.now() - 350000,
+                    mean: -48.9
+                },
+                {
+                    device_id: "RSP-150001",
+                    is_location: false,
+                    last_read: Date.now() - 350000,
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150002",
+                    is_location: false,
+                    last_read: Date.now() - 350000,
+                    mean: -72.9
+                },
+                {
+                    device_id: "RSP-150003",
+                    is_location: false,
+                    last_read: Date.now() - 350000,
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150004",
+                    is_location: false,
+                    last_read: Date.now() - 350000,
+                    mean: -48.9
+                }
             ],
-            EPCD1233456789012334567890: [
-                { device_id: "RSP-150000", is_location: false, last_read: Date.now() - 5200000, mean: -48.9 },
-                { device_id: "RSP-150001", is_location: false, last_read: Date.now() - 5200000, mean: -58.9 },
-                { device_id: "RSP-150002", is_location: false, last_read: Date.now() - 5200000, mean: -72.9 },
-                { device_id: "RSP-150003", is_location: false,  last_read: Date.now() - 5200000, mean: -58.9 },
-                { device_id: "RSP-150004", is_location: true, last_read: Date.now() - 5200000, mean: -48.9 }
+            EPCD1233456789012334567890: [{
+                    device_id: "RSP-150000",
+                    is_location: false,
+                    last_read: Date.now() - 5200000,
+                    mean: -48.9
+                },
+                {
+                    device_id: "RSP-150001",
+                    is_location: false,
+                    last_read: Date.now() - 5200000,
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150002",
+                    is_location: false,
+                    last_read: Date.now() - 5200000,
+                    mean: -72.9
+                },
+                {
+                    device_id: "RSP-150003",
+                    is_location: false,
+                    last_read: Date.now() - 5200000,
+                    mean: -58.9
+                },
+                {
+                    device_id: "RSP-150004",
+                    is_location: true,
+                    last_read: Date.now() - 5200000,
+                    mean: -48.9
+                }
             ],
-            EPC21233456789012334567890: [
-                { device_id: "RSP-150000", is_location: false, last_read: 1551310186736, mean: -77.9 },
-                { device_id: "RSP-150001", is_location: false, last_read: Date.now(), mean: -66.9 },
-                { device_id: "RSP-150002", is_location: true, last_read: 1551310186736, mean: -55.9 },
-                { device_id: "RSP-150003", is_location: false, last_read: 1551310186736, mean: -44.9 },
-                { device_id: "RSP-150004", is_location: false, last_read: 1551310186736, mean: -48.9 }
+            EPC21233456789012334567890: [{
+                    device_id: "RSP-150000",
+                    is_location: false,
+                    last_read: 1551310186736,
+                    mean: -77.9
+                },
+                {
+                    device_id: "RSP-150001",
+                    is_location: false,
+                    last_read: Date.now(),
+                    mean: -66.9
+                },
+                {
+                    device_id: "RSP-150002",
+                    is_location: true,
+                    last_read: 1551310186736,
+                    mean: -55.9
+                },
+                {
+                    device_id: "RSP-150003",
+                    is_location: false,
+                    last_read: 1551310186736,
+                    mean: -44.9
+                },
+                {
+                    device_id: "RSP-150004",
+                    is_location: false,
+                    last_read: 1551310186736,
+                    mean: -48.9
+                }
             ],
-            EPC31233456789012334567890: [
-                { device_id: "RSP-150002", is_location: true, last_read: 1551310186736, mean: -48.9 },
-                { device_id: "RSP-150004", is_location: false, last_read: Date.now(), mean: -48.9 }
+            EPC31233456789012334567890: [{
+                    device_id: "RSP-150002",
+                    is_location: true,
+                    last_read: 1551310186736,
+                    mean: -48.9
+                },
+                {
+                    device_id: "RSP-150004",
+                    is_location: false,
+                    last_read: Date.now(),
+                    mean: -48.9
+                }
             ],
-            EPC41233456789012334567890: [
-                { device_id: "RSP-150001", is_location: false, last_read: 1551310186736, mean: -48.9 },
-                { device_id: "RSP-150003", is_location: true, last_read: 1551310186736, mean: -48.9 }
+            EPC41233456789012334567890: [{
+                    device_id: "RSP-150001",
+                    is_location: false,
+                    last_read: 1551310186736,
+                    mean: -48.9
+                },
+                {
+                    device_id: "RSP-150003",
+                    is_location: true,
+                    last_read: 1551310186736,
+                    mean: -48.9
+                }
             ]
         }
     }
@@ -118,14 +255,14 @@
         for (var i = 0; i < stats_update.sensor_ids.length; i++) {
             var id = stats_update.sensor_ids[i];
             var cell;
-            if(typeof colLookup[id] === 'undefined') {
+            if (typeof colLookup[id] === 'undefined') {
                 var newColIndex = table.rows[0].cells.length;
                 colLookup[id] = newColIndex;
 
                 var headerCell = document.createElement("th");
-                headerCell.innerHTML = '<span>' +id+ '</span>';
+                headerCell.innerHTML = '<span>' + id + '</span>';
                 table.rows[0].appendChild(headerCell);
-                
+
                 for (var j = 1; j < table.rows.length; j++) {
                     cell = document.createElement("td");
                     cell.classList.add("w3-border-bottom");
@@ -137,7 +274,7 @@
         for (var epc in stats_update.epc_map) {
             var row;
             // establish epc rows
-            if(typeof rowLookup[epc] === 'undefined') {
+            if (typeof rowLookup[epc] === 'undefined') {
                 var newRowIndex = table.rows.length;
                 rowLookup[epc] = newRowIndex;
                 row = table.insertRow(newRowIndex);
@@ -158,18 +295,22 @@
         for (var epc in stats_update.epc_map) {
             var row = table.rows[rowLookup[epc]];
             statsList = stats_update.epc_map[epc];
-            for(var i = 0; i < statsList.length; i++) {
+            for (var i = 0; i < statsList.length; i++) {
                 var stat = statsList[i];
                 var cell = row.cells[colLookup[stat.device_id]];
-                if(stat.is_location) {
+                if (stat.is_location) {
                     cell.classList.add("w3-dark-grey");
                 } else {
                     cell.classList.remove("w3-dark-grey");
                 }
-                cell.innerHTML = '<span style="background-color:'+
+                cell.innerHTML = '<span ' +
+                    'class="w3-button w3-tiny w3-padding-small" onclick=\'showResultsModal();\' ' +
+                    'style="background-color:' +
                     getColor(stat.mean, now - stat.last_read) +
-                    '">&nbsp;&nbsp;</span>&nbsp;' + 
-                    stat.mean;
+                    '"></span>&nbsp;' +
+                    stat.mean.toFixed(1);
+
+
             }
         }
     }
@@ -178,35 +319,110 @@
     var t1 = 1000 * 60;
     var t2 = t1 * 5;
     var t3 = t2 * 3;
+    var r1 = -50;
+    var r2 = -70;
 
     function getColor(mean, elapsed) {
         var color = "#020202";
-        
-        if(elapsed < t1) {
-            if     (mean > -50) { color = "#FF0000"; }
-            else if(mean > -70) { color = "#FFFF00"; } 
-            else                { color = "#0000FF"; }
-        } else  if(elapsed < t2) {
-            if     (mean > -50) { color = "#CC0000"; }
-            else if(mean > -70) { color = "#CCCC00"; } 
-            else                { color = "#0000CC"; }
-        } else  if(elapsed < t3) {
-            if     (mean > -50) { color = "#990000"; }
-            else if(mean > -70) { color = "#999900"; } 
-            else                { color = "#000099"; }
+
+        if (elapsed < t1) {
+            if (mean > r1) {
+                color = "#FF0000";
+            } else if (mean > r2) {
+                color = "#FFFF00";
+            } else {
+                color = "#0000FF";
+            }
+        } else if (elapsed < t2) {
+            if (mean > r1) {
+                color = "#CC0000";
+            } else if (mean > r2) {
+                color = "#CCCC00";
+            } else {
+                color = "#0000CC";
+            }
+        } else if (elapsed < t3) {
+            if (mean > r1) {
+                color = "#990000";
+            } else if (mean > r2) {
+                color = "#999900";
+            } else {
+                color = "#000099";
+            }
         } else {
-            if     (mean > -50) { color = "#660000"; }
-            else if(mean > -70) { color = "#666600"; } 
-            else                { color = "#000066"; }
+            if (mean > r1) {
+                color = "#660000";
+            } else if (mean > r2) {
+                color = "#666600";
+            } else {
+                color = "#000066";
+            }
         }
         return color;
     }
 
+    function createLegend() {
+        var times = [t1 - 10, t2 - 10, t3 - 10, t3 + 10];
+        var timeLabels = ["less than 01 min",
+                         "less than 05 min",
+                         "less than 15 min",
+                         "more than 15 min"]
+        var rssis = [r1 + 10, r1 - 10, r2 + -10];
+
+        var s = '<table class="w3-table w3-center">';
+        s += '<tr>';
+        s += '<th></th>';
+        s += '<th>strong > '+r1 +'</th>';
+        s += '<th>ok > '+r2 +'</th>';
+        s += '<th>weak < '+r2 +'</th>';
+        s += '</tr>';
+        for (var t = 0; t < times.length; t++) {
+            s += '<tr><td>'+timeLabels[t] +'</td>';
+            for (var r = 0; r < rssis.length; r++) {
+                s += '<td style="background-color:' +
+                    getColor(rssis[r], times[t]) +
+                    '">&nbsp;</td>';
+            }
+            s += '</tr>';
+        }
+        s += '</table>';
+
+        //        var s = '<div class="w3-bar">';
+        //        for (var r = 0; r < rssis.length; r++) {
+        //            for(var t = 0; t < times.length; t++) {
+        //                s += '<div class="w3-bar-item w3-tiny w3-padding-small" style="background-color:'+
+        //                    getColor(rssis[r], times[t]) +
+        //                    '">&nbsp;</div>';
+        //            }
+        //        }
+        //        s += '</div>';
+        //        for(var time in t1 - 10, t2 - 10, t3 - 10, t3 + 10) {
+        //            for (var rssi in r1 - 10, r2 - 10, r2 + 10) {
+        //                s += '<span style="background-color:'+
+        //                    getColor(rssi, time) +
+        //                    '">&nbsp;&nbsp;</span>';
+        //            }
+        //        }
+        //document.getElementById("legend").innerHTML = s;
+        document.getElementById("modal_content").innerHTML = s;
+
+    }
+
+    function showResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+    function closeResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+
     function init() {
+        createLegend();
         gwSocket.init();
         // for testing
-        //stats_update = test_stats_update;
-        //onTagStatsUpdate();
+        stats_update = test_stats_update;
+        onTagStatsUpdate();
     }
 
 </script>
@@ -215,12 +431,27 @@
 
     <!-- Header -->
     <script src="header.js"></script>
-    
+
+    <div id="modal_overlay" class="w3-modal">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-white">
+            <div class="w3-bar w3-grey">
+                <div class="w3-bar-item" id="modal_label">Color Legend : Elapsed Read Time vs Signal Strength</div>
+                <div class="w3-bar-item">
+                    <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="modal_content"></div>
+        </div>
+    </div>
+
+
     <!-- Content -->
     <div class="w3-container">
 
         <table id="tag_stats_table" class="w3-table w3-responsive">
-            <tr class="w3-grey">
+            <tr id="legend" class="w3-grey">
                 <th>
                     <!-- empty cell to help with alignment -->
                 </th>

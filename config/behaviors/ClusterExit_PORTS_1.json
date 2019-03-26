@@ -4,7 +4,7 @@
   "link_profile": 1,
   "power_level": 30.5,
   "selected_state": "Any",
-  "session_flag": "S1",
+  "session_flag": "S0",
   "target_state": "A",
   "q_algorithm": "Dynamic",
   "fixed_q_value": 10,
