@@ -319,6 +319,7 @@
     var t1 = 1000 * 60;
     var t2 = t1 * 5;
     var t3 = t2 * 3;
+    // rssi thresholds
     var r1 = -50;
     var r2 = -70;
 
@@ -361,51 +362,16 @@
         return color;
     }
 
-    function createLegend() {
+    function createLegendColors() {
         var times = [t1 - 10, t2 - 10, t3 - 10, t3 + 10];
-        var timeLabels = ["less than 01 min",
-                         "less than 05 min",
-                         "less than 15 min",
-                         "more than 15 min"]
-        var rssis = [r1 + 10, r1 - 10, r2 + -10];
+        var rssis = [r1 + 10, r1 - 10, r2 - 10];
 
-        var s = '<table class="w3-table w3-center">';
-        s += '<tr>';
-        s += '<th></th>';
-        s += '<th>strong > '+r1 +'</th>';
-        s += '<th>ok > '+r2 +'</th>';
-        s += '<th>weak < '+r2 +'</th>';
-        s += '</tr>';
         for (var t = 0; t < times.length; t++) {
-            s += '<tr><td>'+timeLabels[t] +'</td>';
             for (var r = 0; r < rssis.length; r++) {
-                s += '<td style="background-color:' +
-                    getColor(rssis[r], times[t]) +
-                    '">&nbsp;</td>';
+                var e = document.getElementById("t" + t + "r" + r);
+                e.style.backgroundColor = getColor(rssis[r], times[t]);
             }
-            s += '</tr>';
         }
-        s += '</table>';
-
-        //        var s = '<div class="w3-bar">';
-        //        for (var r = 0; r < rssis.length; r++) {
-        //            for(var t = 0; t < times.length; t++) {
-        //                s += '<div class="w3-bar-item w3-tiny w3-padding-small" style="background-color:'+
-        //                    getColor(rssis[r], times[t]) +
-        //                    '">&nbsp;</div>';
-        //            }
-        //        }
-        //        s += '</div>';
-        //        for(var time in t1 - 10, t2 - 10, t3 - 10, t3 + 10) {
-        //            for (var rssi in r1 - 10, r2 - 10, r2 + 10) {
-        //                s += '<span style="background-color:'+
-        //                    getColor(rssi, time) +
-        //                    '">&nbsp;&nbsp;</span>';
-        //            }
-        //        }
-        //document.getElementById("legend").innerHTML = s;
-        document.getElementById("modal_content").innerHTML = s;
-
     }
 
     function showResultsModal() {
@@ -418,11 +384,12 @@
 
 
     function init() {
-        createLegend();
+        createLegendColors();
         gwSocket.init();
         // for testing
-        stats_update = test_stats_update;
-        onTagStatsUpdate();
+        //stats_update = test_stats_update;
+        //onTagStatsUpdate();
+        //showResultsModal();
     }
 
 </script>
@@ -434,15 +401,59 @@
 
     <div id="modal_overlay" class="w3-modal">
         <div class="w3-modal-content w3-animate-top w3-card-4 w3-white">
-            <div class="w3-bar w3-grey">
-                <div class="w3-bar-item" id="modal_label">Color Legend : Elapsed Read Time vs Signal Strength</div>
+            <div class="w3-bar">
+                <div class="w3-bar-item" id="modal_label">
+                    <h2>Legend</h2>
+                </div>
                 <div class="w3-bar-item">
                     <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
                         <i class="fa fa-times"></i>
                     </button>
                 </div>
             </div>
-            <div id="modal_content"></div>
+            <div class="w3-container">
+                This table shows the average signal strength (dBm) 
+                of the last 20 tag reads from each sensor/antenna
+                that has seen the tag.
+                <br><br>
+                Color chip hue indicates signal strength.
+                <br>
+                Color chip shade indicates relative elapsed time since last read.
+                <br>
+                Cell with grey background indicates current location
+            </div>
+            <div class="w3-container">
+                <table class="w3-table w3-center">
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th>rssi > -50</th>
+                        <th>rssi > -70</th>
+                        <th>rssi < -70</th> </tr> <tr>
+                        <th>less than 01 minute</th>
+                        <td id="t0r0">&nbsp;</td>
+                        <td id="t0r1">&nbsp;</td>
+                        <td id="t0r2">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <th>less than 05 minutes</th>
+                        <td id="t1r0">&nbsp;</td>
+                        <td id="t1r1">&nbsp;</td>
+                        <td id="t1r2">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <th>less than 05 minutes</th>
+                        <td id="t2r0">&nbsp;</td>
+                        <td id="t2r1">&nbsp;</td>
+                        <td id="t2r2">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <th>less than 05 minutes</th>
+                        <td id="t3r0">&nbsp;</td>
+                        <td id="t3r1">&nbsp;</td>
+                        <td id="t3r2">&nbsp;</td>
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -452,8 +463,8 @@
 
         <table id="tag_stats_table" class="w3-table w3-responsive">
             <tr id="legend" class="w3-grey">
-                <th>
-                    <!-- empty cell to help with alignment -->
+                <th class="w3-button" onclick='showResultsModal();'>
+                    Legend
                 </th>
             </tr>
         </table>
