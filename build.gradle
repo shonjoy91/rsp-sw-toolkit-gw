@@ -30,7 +30,7 @@ configurations {
 dependencies {
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     compile 'jline:jline:2.14.6'
     compile 'org.apache.commons:commons-math3:3.6.1'
     compile 'org.apache.sshd:apache-sshd:1.7.0'

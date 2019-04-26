@@ -63,7 +63,7 @@ public class Env {
             try {
                 ensurePath(curPath);
             } catch (IOException e) {
-                log.error("error creating paths: {}", e);
+                log.error("error creating paths: {}", e.getMessage());
             }
         }
     }

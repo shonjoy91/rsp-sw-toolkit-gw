@@ -15,7 +15,6 @@ public class TagReadSummary {
         from_01_to_05_min = _other.from_01_to_05_min;
         from_05_to_30_min = _other.from_05_to_30_min;
         from_30_to_60_min = _other.from_30_to_60_min;
-        from_30_to_60_min = _other.from_30_to_60_min;
         from_60_min_to_24_hr = _other.from_60_min_to_24_hr;
         more_than_24_hr = _other.more_than_24_hr;
     }

@@ -42,6 +42,7 @@ public class DownstreamManager implements MQTTDownstream.Dispatch {
 
     public DownstreamManager(SensorManager _sensorMgr) {
         sensorMgr = _sensorMgr;
+        sensorMgr.setDownstreamMgr(this);
         mqttDownstream = new MQTTDownstream(this);
         jmDNSService = new JmDNSService();
         dataMsgHandler = new DataMsgHandler();
@@ -138,7 +139,6 @@ public class DownstreamManager implements MQTTDownstream.Dispatch {
                 RSPMsgHandler rspMsgHandler = rspMsgHandlers.get(deviceId);
                 if (rspMsgHandler == null) {
                     SensorPlatform rsp = sensorMgr.establishRSP(deviceId);
-                    rsp.setDownstream(this);
                     rspMsgHandler = new RSPMsgHandler(rsp);
                     rspMsgHandlers.put(deviceId, rspMsgHandler);
                     rspMsgHandler.start();

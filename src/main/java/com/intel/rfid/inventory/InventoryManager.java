@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
@@ -245,7 +246,6 @@ public class InventoryManager
         cumulativeReads.addAndGet(epcRead.data.size());
     }
 
-    @SuppressWarnings({"fallthrough"})
     protected void processReadData(UpstreamInventoryEvent uie,
                                    SensorPlatform _rsp,
                                    EpcRead.Data data) {
@@ -610,7 +610,7 @@ public class InventoryManager
 
                 String s = "Facility,Epc,State,Last Seen,Location" + nl;
 
-                zos.write(s.getBytes("UTF-8"));
+                zos.write(s.getBytes(StandardCharsets.UTF_8));
 
                 List<Tag.Cached> tags = cache.inventory.get(facilityId);
                 if (tags != null) {
@@ -622,7 +622,7 @@ public class InventoryManager
                             tag.lastRead + "," +
                             tag.location + nl;
 
-                        zos.write(s.getBytes("UTF-8"));
+                        zos.write(s.getBytes(StandardCharsets.UTF_8));
                     }
                 }
 

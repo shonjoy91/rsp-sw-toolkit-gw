@@ -33,11 +33,55 @@ public class SensorManagerTest {
 
 
     @Test
+    public void testAliasing() {
+
+        ClusterManager clusterMgr = new ClusterManager();
+        SensorManager sensorMgr = new SensorManager(clusterMgr);
+
+        SensorPlatform rsp01 = sensorMgr.establishRSP("RSP-TEST01");
+
+        // Check constructed with defaults
+        for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
+            assertThat(rsp01.getAlias(i)).isEqualTo(rsp01.getDefaultAlias(i));
+        }
+
+        // Check ways to set a default
+        rsp01.setAlias(0, null);
+        rsp01.setAlias(1, "");
+        rsp01.setAlias(3, SensorPlatform.ALIAS_KEY_DEFAULT);
+
+        for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
+            assertThat(rsp01.getAlias(i)).isEqualTo(rsp01.getDefaultAlias(i));
+        }
+
+        for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
+            rsp01.setAlias(i, SensorPlatform.ALIAS_KEY_DEVICE_ID);
+            assertThat(rsp01.getAlias(i)).isEqualTo(rsp01.getDeviceId());
+        }
+
+        assertThat(rsp01.getAlias(0)).isEqualTo(rsp01.getAlias(1));
+        assertThat(rsp01.getAlias(2)).isEqualTo(rsp01.getAlias(1));
+        assertThat(rsp01.getAlias(2)).isEqualTo(rsp01.getAlias(3));
+
+        rsp01.setAlias(0, "alias-0");
+        assertThat(rsp01.getAlias(0)).isEqualTo("alias-0");
+        rsp01.setAlias(1, "alias-1");
+        assertThat(rsp01.getAlias(1)).isEqualTo("alias-1");
+        rsp01.setAlias(2, "alias-2");
+        assertThat(rsp01.getAlias(2)).isEqualTo("alias-2");
+        rsp01.setAlias(3, "alias-3");
+        assertThat(rsp01.getAlias(3)).isEqualTo("alias-3");
+
+    }
+
+    @Test
     public void testPersistRestore() {
 
         String dev01 = "RSP-000001";
         String facility01 = "facility-01";
         String token01 = "token-01";
+        String alias01 = "alias-01";
+        String alias03 = "alias-03";
 
         Personality personality = Personality.EXIT;
 
@@ -54,6 +98,8 @@ public class SensorManagerTest {
         sensor.setProvisionToken(token01);
         sensor.setFacilityId(facility01);
         sensor.setPersonality(personality);
+        sensor.setAlias(1, alias01);
+        sensor.setAlias(3, alias03);
 
         sensorMgr.establishRSP("UnitTestRSP-112233");
 
@@ -69,18 +115,22 @@ public class SensorManagerTest {
         sensorMgr.restore();
         assertThat(sensorMgr.getRSPsCopy()).hasSize(3);
 
-        List<SensorPlatform> sensors = new ArrayList<>();
-        sensors.addAll(sensorMgr.findRSPs(dev01));
+        List<SensorPlatform> sensors = new ArrayList<>(sensorMgr.findRSPs(dev01));
 
         assertThat(sensors).hasSize(1);
         sensor = sensors.get(0);
         assertThat(sensor.getDeviceId()).isEqualTo(dev01);
         assertThat(sensor.getProvisionToken()).isEqualTo(token01);
         assertThat(sensor.getFacilityId()).isEqualTo(facility01);
+        assertThat(sensor.getAlias(1)).isEqualTo(alias01);
+        assertThat(sensor.getAlias(3)).isEqualTo(alias03);
+        assertThat(sensor.getAlias(0)).isEqualTo(sensor.getDefaultAlias(0));
+        assertThat(sensor.getAlias(2)).isEqualTo(sensor.getDefaultAlias(2));
+        assertThat(sensor.getAlias(4)).isEqualTo(sensor.getDefaultAlias(4));
 
         assertThat(sensor.getPersonality()).isEqualTo(personality);
     }
-    
+
     // String dev01 = "RSP-000001";
     // String facility01 = "facility-01";
     // String token01 = "token-01";

@@ -82,6 +82,11 @@ public class Gateway implements CLICommandBuilder {
             alertMgr = new AlertManager(upstreamMgr);
         }
 
+        // additional object relationships
+        clusterMgr.setSensorManager(sensorMgr);
+        clusterMgr.setScheduleManager(scheduleMgr);
+        clusterMgr.setDownstreamManager(downstreamMgr);
+
         // hook up all the listeners
 
         // to apply the correct behavior to an RSP that comes online

@@ -6,31 +6,37 @@ package com.intel.rfid.cluster;
 
 import com.intel.rfid.api.Personality;
 import com.intel.rfid.api.ProvisionToken;
+import com.intel.rfid.exception.ConfigException;
+import com.intel.rfid.exception.ExpiredTokenException;
+import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.helpers.EnvHelper;
-import com.intel.rfid.schedule.ScheduleCluster;
+import com.intel.rfid.schedule.ClusterRunner;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 public class ClusterTest {
 
     @BeforeClass
-    public static void beforeClass() throws IOException, GeneralSecurityException {
+    public static void beforeClass() throws IOException {
         EnvHelper.beforeTests();
     }
 
     @AfterClass
-    public static void afterClass() throws IOException {
+    public static void afterClass() {
         EnvHelper.afterTests();
     }
 
@@ -76,29 +82,70 @@ public class ClusterTest {
     public void testExpiredToken() {
 
         ClusterManager clusterMgr = new ClusterManager();
-        ProvisionToken pt = new ProvisionToken("test", "ABCDEF");
-        pt.expirationTimestamp = 300;
-        clusterMgr.tokens.put(pt.token, pt);
+        final ProvisionToken pt1 = new ProvisionToken("test", "ABCDEF");
+        pt1.expirationTimestamp = 300;
+        clusterMgr.tokens.put(pt1.token, pt1);
 
-        assertThat(clusterMgr.isTokenValid(pt.token)).isFalse();
+        assertThatThrownBy(() -> clusterMgr.validateToken(pt1.token)).isInstanceOf(ExpiredTokenException.class);
 
-        pt = new ProvisionToken("test", "ABCDEF");
-        pt.expirationTimestamp = System.currentTimeMillis() + 5000;
-        clusterMgr.tokens.put(pt.token, pt);
-        assertThat(clusterMgr.isTokenValid(pt.token)).isTrue();
+        final ProvisionToken pt2 = new ProvisionToken("test", "ABCDEF");
+        pt2.expirationTimestamp = System.currentTimeMillis() + 5000;
+        clusterMgr.tokens.put(pt2.token, pt2);
+        try {
+            clusterMgr.validateToken(pt2.token);
+        } catch (GatewayException _e) {
+            fail("unexpected token validation error {}", _e.getMessage());
+        }
     }
 
     @Test
-    public void testTokenConnection() {
-        List<ScheduleCluster> schedClusters = new ArrayList<>();
+    public void testAliasConfiguration() {
+
+        ClusterManager clusterMgr = new ClusterManager();
+        SensorManager sensorMgr = new SensorManager(clusterMgr);
+        clusterMgr.setSensorManager(sensorMgr);
+
+        SensorPlatform rsp00 = sensorMgr.establishRSP("RSP-150000");
+        SensorPlatform rsp01 = sensorMgr.establishRSP("RSP-150001");
+        SensorPlatform rsp02 = sensorMgr.establishRSP("RSP-150002");
+        SensorPlatform rsp03 = sensorMgr.establishRSP("RSP-150003");
+        SensorPlatform rsp04 = sensorMgr.establishRSP("RSP-150004");
+        SensorPlatform rsp05 = sensorMgr.establishRSP("RSP-150005");
+
+        cth.loadConfig(clusterMgr, "clusters/sample_alias_cluster_config.json");
+
+        for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
+            assertThat(rsp00.getAlias(i)).isEqualTo(rsp00.getDefaultAlias(i));
+            assertThat(rsp01.getAlias(i)).isEqualTo(rsp01.getDefaultAlias(i));
+        }
+
+        SensorPlatform[] sensors = {rsp02, rsp03, rsp04};
+        for (SensorPlatform sensor : sensors) {
+            for (int i = 0; i < 2; i++) {
+                assertThat(sensor.getAlias(i)).isEqualTo(sensor.getDeviceId());
+            }
+        }
+
+        assertThat(rsp05.getAlias(0)).isEqualTo(rsp05.getDefaultAlias(0));
+        assertThat(rsp05.getAlias(1)).isEqualTo(rsp05.getDefaultAlias(1));
+        assertThat(rsp05.getAlias(2)).isEqualTo("freezer");
+        assertThat(rsp05.getAlias(3)).isEqualTo("cooler");
+
+    }
+
+    @Test
+    public void testTokenConnection() throws InvalidTokenException, ExpiredTokenException {
+        List<ClusterRunner> runners = new ArrayList<>();
         ClusterManager clusterMgr = new ClusterManager();
 
-        clusterMgr.generateFromConfig(schedClusters);
-        assertThat(schedClusters).isEmpty();
+        clusterMgr.generateFromConfig(runners);
+        assertThat(runners).isEmpty();
 
         SensorManager sensorMgr = new SensorManager(clusterMgr);
-        clusterMgr.generateFromConfig(schedClusters);
-        assertThat(schedClusters).isEmpty();
+        clusterMgr.setSensorManager(sensorMgr);
+
+        clusterMgr.generateFromConfig(runners);
+        assertThat(runners).isEmpty();
 
         cth.loadConfig(clusterMgr, "clusters/sample_provisioning_cluster_config.json");
 
@@ -109,13 +156,11 @@ public class ClusterTest {
 
         String rspId150008 = "RSP-150008";
 
-        // Bad tokens do not establish new sensors
-        assertThat(sensorMgr.registerSensor(rspId150008, FAKE)).isFalse();
         Collection<SensorPlatform> sensors = sensorMgr.getRSPsCopy();
         assertThat(sensors).isEmpty();
 
         // Good token will establish a sensor and associate a provisioning token
-        assertThat(sensorMgr.registerSensor(rspId150008, clusterSFExit.tokens.get(0).token)).isTrue();
+        sensorMgr.registerSensor(rspId150008, clusterSFExit.tokens.get(0).token);
         sensors = sensorMgr.getRSPsCopy();
         assertThat(sensors).isNotEmpty();
 
@@ -125,13 +170,22 @@ public class ClusterTest {
         assertThat(rspE00100.getFacilityId()).isEqualTo(clusterSFExit.facility_id);
         assertThat(rspE00100.getProvisionToken()).isEqualTo(clusterSFExit.tokens.get(0).token);
 
+        //"ExitLeft", "ExitOverhead", "ExitRight", null
+        assertThat(rspE00100.getAlias(0)).isEqualTo("ExitLeft");
+        assertThat(rspE00100.getAlias(1)).isEqualTo("ExitOverhead");
+        assertThat(rspE00100.getAlias(2)).isEqualTo("ExitRight");
+        assertThat(rspE00100.getAlias(3)).isEqualTo(rspE00100.getDefaultAlias(3));
+        assertThat(rspE00100.getAlias(3)).isEqualTo(rspE00100.getDeviceId() + "-3");
+
         // Cluster configuration will clobber existing facility and personality
         // when new token comes in
         SensorPlatform rsp01 = sensorMgr.establishRSP("RSP-TEST01");
         rsp01.setFacilityId(FAKE);
         rsp01.setPersonality(Personality.FITTING_ROOM);
+        rsp01.setAlias(0, FAKE);
+        rsp01.setAlias(2, FAKE);
 
-        assertThat(sensorMgr.registerSensor(rsp01.getDeviceId(), clusterSFExit.tokens.get(0).token)).isTrue();
+        sensorMgr.registerSensor(rsp01.getDeviceId(), clusterSFExit.tokens.get(0).token);
         assertThat(rsp01.getFacilityId()).isEqualTo(clusterSFExit.facility_id);
         assertThat(rsp01.hasPersonality(Personality.EXIT)).isTrue();
         assertThat(rsp01.hasPersonality(Personality.FITTING_ROOM)).isFalse();
@@ -143,31 +197,62 @@ public class ClusterTest {
         clusterMgr.alignSensor(rspNotInConfig);
         assertThat(rspNotInConfig.getFacilityId()).isEqualTo(FAKE);
 
-        schedClusters.clear();
-        clusterMgr.generateFromConfig(schedClusters);
-        for(ScheduleCluster sc : schedClusters) {
-            System.out.println("sched cluster sensors");
-            for(SensorPlatform rsp : sc.getAllSensors()) {
-                System.out.println(rsp.getDeviceId());
-            }
-            System.out.println();
-        }
-        assertThat(schedClusters).isNotEmpty();
+        runners.clear();
+        clusterMgr.generateFromConfig(runners);
+        assertThat(runners).isNotEmpty();
 
         // check that loading a new configuration will realign existing sensors
         rspE00100.setFacilityId(FAKE);
         rspE00100.setPersonality(Personality.FITTING_ROOM);
+        rspE00100.setAlias(1, FAKE);
+        rspE00100.setAlias(3, FAKE);
         cth.loadConfig(clusterMgr, "clusters/sample_sensor_cluster_config.json");
-        assertThat(rsp01.getFacilityId()).isEqualTo(clusterSFExit.facility_id);
-        assertThat(rsp01.hasPersonality(Personality.EXIT)).isTrue();
-        assertThat(rsp01.hasPersonality(Personality.FITTING_ROOM)).isFalse();
-        assertThat(rsp01.hasPersonality(Personality.POS)).isFalse();
+        assertThat(rspE00100.getFacilityId()).isEqualTo(clusterSFExit.facility_id);
+        assertThat(rspE00100.hasPersonality(Personality.EXIT)).isTrue();
+        assertThat(rspE00100.hasPersonality(Personality.FITTING_ROOM)).isFalse();
+        assertThat(rspE00100.hasPersonality(Personality.POS)).isFalse();
 
     }
 
 
     @Test
-    public void test_findClusterByDeviceId() {
+    public void testValidate() {
+        assertThatThrownBy(() -> ClusterManager.validate(null))
+            .isInstanceOf(ConfigException.class)
+            .withFailMessage(ClusterManager.VAL_ERR_NULL_CFG);
+
+        final ClusterConfig cfg = new ClusterConfig();
+        final ThrowableAssert.ThrowingCallable throwingCallable = () -> ClusterManager.validate(cfg);
+        assertThatThrownBy(throwingCallable)
+            .isInstanceOf(ConfigException.class)
+            .withFailMessage(ClusterManager.VAL_ERR_MISSING_CLUSTERS);
+
+        Cluster cluster = new Cluster();
+        cfg.clusters.add(cluster);
+        assertThatThrownBy(throwingCallable).isInstanceOf(ConfigException.class);
+
+        cluster.behavior_id = "ClusterMobility_PORTS_1";
+        try {
+            ClusterManager.validate(cfg);
+        } catch (Exception _e) {
+            fail("Unexpected exception: " + _e.getClass() + " with " + _e.getMessage());
+        }
+
+        cluster = new Cluster();
+        cluster.behavior_id = "bad_behavior_id";
+        cfg.clusters.add(cluster);
+
+        cluster = new Cluster();
+        cluster.behavior_id = "and_another_bad_behavior_id";
+        cfg.clusters.add(cluster);
+        assertThatThrownBy(throwingCallable).isInstanceOf(ConfigException.class);
+
+        cfg.clusters = null;
+        assertThatThrownBy(throwingCallable).isInstanceOf(ConfigException.class);
+    }
+
+    @Test
+    public void testFindClusterByDeviceId() {
 
         ClusterManager clusterMgr = new ClusterManager();
         Cluster cluster;
@@ -192,7 +277,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void test_findClusterByToken() {
+    public void testFindClusterByToken() {
 
         ClusterManager clusterMgr = new ClusterManager();
         Cluster cluster;

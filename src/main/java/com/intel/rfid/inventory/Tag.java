@@ -23,8 +23,8 @@ import static com.intel.rfid.inventory.TagState.PRESENT;
 
 public class Tag implements Comparable<Tag> {
 
-    private String epc = null;
-    private String tid = null;
+    private String epc;
+    private String tid;
     private String location = "UNKNOWN";
     private String facility = "UNKNOWN";
     private long lastRead = 0;
@@ -91,7 +91,7 @@ public class Tag implements Comparable<Tag> {
         if (_data == null || _rsp == null) {
             throw new IllegalArgumentException("null arguments to TagEvent.update are not allowed");
         }
-        String sourceId = _rsp.getDeviceId() + "-" + _data.antenna_id;
+        String sourceId = _rsp.getAlias(_data.antenna_id);
 
         lastRead = _data.last_read_on;
 
@@ -176,7 +176,7 @@ public class Tag implements Comparable<Tag> {
     public void getStatsUpdate(TagStatsUpdate _statsUpdate) {
         for (String devId : deviceStatsMap.keySet()) {
             _statsUpdate.addStat(epc, devId, location.equals(devId), deviceStatsMap.get(devId).inDBM());
-        }        
+        }
     }
 
     public static final String STATS_SUMMARY_CSV_HDR =

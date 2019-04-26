@@ -11,7 +11,6 @@ import org.apache.sshd.server.ExitCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -35,7 +34,6 @@ public class ConsoleShellFactory implements Factory<Command> {
         private OutputStream out;
         private OutputStream err;
         private ExitCallback callback;
-        private Environment env;
         private Thread thread;
         private ConsoleSession session;
         private final CLICommandBuilder cmdBuilder;
@@ -52,8 +50,7 @@ public class ConsoleShellFactory implements Factory<Command> {
 
         public void setExitCallback(ExitCallback _callback) { callback = _callback; }
 
-        public void start(Environment _env) throws IOException {
-            env = _env;
+        public void start(Environment _env) {
             session = new ConsoleSession(in, out, err, cmdBuilder);
             thread = new Thread(this);
             thread.start();

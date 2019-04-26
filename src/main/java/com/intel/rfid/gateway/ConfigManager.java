@@ -82,6 +82,7 @@ public class ConfigManager {
     public boolean getReqBool(String _property) throws ConfigException {
         String s = get(_property);
         if (s != null) {
+            s = s.trim();
             if (s.equalsIgnoreCase("true")) {
                 return true;
             } else if (s.equalsIgnoreCase("false")) {

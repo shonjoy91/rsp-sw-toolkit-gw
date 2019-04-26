@@ -230,7 +230,7 @@ public abstract class MQTT implements MqttCallback {
             }
         } catch (MqttException e) {
             // any subscription errors are treated as failures
-            log.error("mqtt -- error subscribing {} : {}", unroll(e));
+            log.error("mqtt -- error subscribing {} : {}", _topic, unroll(e));
         }
     }
 

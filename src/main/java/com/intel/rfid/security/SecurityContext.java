@@ -66,7 +66,7 @@ public class SecurityContext {
 
             factory = context.getSocketFactory();
         } catch (GeneralSecurityException | IOException _e) {
-            log.error("error creating secure socket factory: {}", _e);
+            log.error("error creating secure socket factory: {}", _e.getMessage());
         }
 
         return factory;

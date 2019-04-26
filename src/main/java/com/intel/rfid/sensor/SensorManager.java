@@ -5,16 +5,25 @@
 package com.intel.rfid.sensor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.ConnectResponse;
 import com.intel.rfid.api.DeviceAlert;
+import com.intel.rfid.api.GatewayStatusUpdate;
+import com.intel.rfid.api.JsonRequest;
 import com.intel.rfid.api.Personality;
 import com.intel.rfid.api.SensorManagerSummary;
 import com.intel.rfid.api.SensorShowInfo;
 import com.intel.rfid.cluster.ClusterManager;
+import com.intel.rfid.downstream.DownstreamManager;
+import com.intel.rfid.exception.ExpiredTokenException;
+import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.InvalidTokenException;
+import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.Publisher;
+import com.intel.rfid.security.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +68,7 @@ public class SensorManager {
     private final Object executorLock = new Object();
     private ExecutorService eventExecutor = ExecutorUtils.newEventExecutor(log, 5);
     private ScheduledExecutorService scheduleExecutor = Executors.newScheduledThreadPool(2);
+    private DownstreamManager downstreamMgr;
 
     private final Publisher<ConnectionStateListener> connectionStatePublisher = new Publisher<>(executorLock,
                                                                                                 eventExecutor);
@@ -81,10 +91,12 @@ public class SensorManager {
 
     public SensorManager(ClusterManager _clusterMgr) {
         clusterMgr = _clusterMgr;
-        clusterMgr.setSensorManager(this);
         scheduleTasks(scheduleExecutor);
     }
 
+    public void setDownstreamMgr(DownstreamManager _downstreamMgr) {
+        downstreamMgr = _downstreamMgr;
+    }
 
     private void scheduleTasks(ScheduledExecutorService _scheduler) {
         _scheduler.scheduleAtFixedRate(this::checkLostHeartbeats,
@@ -162,44 +174,43 @@ public class SensorManager {
                         sensor.getBehaviorId(),
                         sensor.getFacilityId(),
                         sensor.getPersonality(),
+                        sensor.getAliasesAsString(),
                         sensor.getAlerts());
             }
         }
         return sbi;
     }
 
-    public SensorGroup groupForIds(Collection<String> _sensorIds) {
-        SensorGroup sensorGroup = new SensorGroup();
+    public void groupForIds(Collection<String> _sensorIds, List<SensorPlatform> _sensors) {
         for (String id : _sensorIds) {
-            sensorGroup.sensors.add(establishRSP(id));
+            _sensors.add(establishRSP(id));
         }
-        return sensorGroup;
     }
 
-    public SensorGroup groupForProvisioningToken(String _token) {
-        SensorGroup sensorGroup = new SensorGroup();
-
+    public void groupForProvisioningToken(String _token, List<SensorPlatform> _sensors) {
         synchronized (deviceIdToRSP) {
             for (SensorPlatform sensor : deviceIdToRSP.values()) {
                 if (_token.equals(sensor.getProvisionToken())) {
-                    sensorGroup.sensors.add(sensor);
+                    _sensors.add(sensor);
                 }
             }
         }
-        return sensorGroup;
     }
 
-    public boolean registerSensor(String _deviceId, String _provisioningToken) {
-        if (_provisioningToken == null || !clusterMgr.isTokenValid(_provisioningToken)) {
-            return false;
+    public void registerSensor(String _deviceId, String _provisioningToken)
+        throws ExpiredTokenException, InvalidTokenException {
+
+        if (_deviceId == null || _deviceId.isEmpty()) {
+            throw new InvalidTokenException("bad device id");
         }
+
+        if (ConfigManager.instance.getProvisionSensorTokenRequired()) {
+            clusterMgr.validateToken(_provisioningToken);
+        }
+
         SensorPlatform sensor = establishRSP(_deviceId);
-        String curToken = sensor.getProvisionToken();
-        if (!_provisioningToken.equals(curToken)) {
-            sensor.setProvisionToken(_provisioningToken);
-            clusterMgr.alignSensor(sensor);
-        }
-        return true;
+        sensor.setProvisionToken(_provisioningToken);
+        clusterMgr.alignSensor(sensor);
     }
 
     public Collection<SensorPlatform> getRSPsCopy() {
@@ -211,7 +222,6 @@ public class SensorManager {
     }
 
     public Collection<SensorPlatform> findRSPs(String _pattern) {
-        //noinspection ReplaceAllDot
         String literals = CONVERT_TO_CHAR_LITERALS.matcher(_pattern).replaceAll("[$0]");
         String regex = ALLOW_STAR_PATTERNS.matcher(literals).replaceAll(Matcher.quoteReplacement(".*"));
 
@@ -256,6 +266,54 @@ public class SensorManager {
                                                    k -> new SensorPlatform(_deviceId, this));
         }
         return sensor;
+    }
+
+    public void sendConnectResponse(String _responseId, String _deviceId, String _facilityId)
+        throws IOException, GatewayException {
+
+        if (downstreamMgr == null) {
+            throw new GatewayException("missing downstream manager reference");
+        }
+        ConfigManager cm = ConfigManager.instance;
+
+        ConnectResponse rsp = new ConnectResponse(_responseId,
+                                                  _facilityId,
+                                                  System.currentTimeMillis(),
+                                                  cm.getLocalHost("ntp.server.host"),
+                                                  cm.getRSPSoftwareRepos(),
+                                                  SecurityContext.instance().getKeyMgr().getSshEncodedPublicKey());
+
+        downstreamMgr.sendConnectRsp(_deviceId, rsp);
+    }
+
+    public void sendSensorCommand(String _deviceId, JsonRequest _req)
+        throws IOException, GatewayException {
+
+        if (downstreamMgr == null) {
+            throw new GatewayException("missing downstream manager reference");
+        }
+        downstreamMgr.sendCommand(_deviceId, _req);
+    }
+
+    // This is a workaround for the API which does not have an explicit message
+    // to cause a sensor to reconnect. The main use case for this is a runtime
+    // provision token configuration change requiring sensors to re-authenticate 
+    public void disconnectAll() {
+        if (downstreamMgr != null) {
+            downstreamMgr.sendGWStatus(GatewayStatusUpdate.SHUTTING_DOWN);
+        }
+
+        // mark all sensors as disconnected
+        // assumption here is that all sensors will process the shutting down message
+        // and will disconnect without any upstream indication.
+        // if they are not marked here as disconnected, then sensor status reports and
+        // reconnect sequence is incorrect.
+        synchronized (deviceIdToRSP) {
+            for (SensorPlatform rsp : deviceIdToRSP.values()) {
+                rsp.changeConnectionState(ConnectionState.DISCONNECTED,
+                                          ConnectionStateEvent.Cause.FORCED_DISCONNECT);
+            }
+        }
     }
 
     /**
@@ -403,14 +461,17 @@ public class SensorManager {
             public String faciiltyId;
             public Personality personality;
             public String provisionToken;
+            public List<String> aliases = new ArrayList<>();
 
             public Sensor() { }
 
-            public Sensor(String _deviceId, String _faciiltyId, Personality _personality, String _provisionToken) {
+            public Sensor(String _deviceId, String _faciiltyId, Personality _personality, String _provisionToken,
+                          List<String> _aliases) {
                 deviceId = _deviceId;
                 faciiltyId = _faciiltyId;
                 personality = _personality;
                 provisionToken = _provisionToken;
+                aliases.addAll(_aliases);
             }
         }
 
@@ -424,7 +485,8 @@ public class SensorManager {
                 cache.sensors.add(new Cache.Sensor(rsp.getDeviceId(),
                                                    rsp.getFacilityId(),
                                                    rsp.getPersonality(),
-                                                   rsp.getProvisionToken()));
+                                                   rsp.getProvisionToken(),
+                                                   rsp.getAliases()));
             }
         }
 
@@ -464,6 +526,7 @@ public class SensorManager {
                 realSensor.setPersonality(cachedSensor.personality);
                 realSensor.setFacilityId(cachedSensor.faciiltyId);
                 realSensor.setProvisionToken(cachedSensor.provisionToken);
+                realSensor.setAliases(cachedSensor.aliases);
             }
         }
 

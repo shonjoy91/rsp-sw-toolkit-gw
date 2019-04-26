@@ -18,6 +18,10 @@ public class ListLooper<T> {
         iterator = _collection.iterator();
     }
 
+    public boolean isEmpty() {
+        return backingCollection.isEmpty();
+    }
+
     public T next() {
         if (!iterator.hasNext()) {
             iterator = backingCollection.iterator();

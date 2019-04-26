@@ -12,7 +12,8 @@ public class ConnectionStateEvent {
         LOST_HEARTBEAT,
         READY,
         IN_RESET,
-        RESYNC
+        RESYNC,
+        FORCED_DISCONNECT
     }
 
     public final SensorPlatform rsp;

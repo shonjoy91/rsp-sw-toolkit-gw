@@ -7,6 +7,8 @@ package com.intel.rfid.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.ProvisionToken;
 import com.intel.rfid.api.SensorCredentials;
+import com.intel.rfid.exception.ExpiredTokenException;
+import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.sensor.SensorManager;
@@ -44,7 +46,7 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
     }
 
     private void processRequest(HttpServletRequest _req, HttpServletResponse _rsp)
-        throws IOException, ServletException {
+        throws IOException {
 
         ConfigManager cm = ConfigManager.instance;
 
@@ -55,30 +57,25 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
         String request;
         request = _req.getReader().lines().collect(Collectors.joining());
 
-        // Execute only if the schema validation of the http request passes
         ProvisionToken pToken = mapper.readValue(request, ProvisionToken.class);
-        log.info(pToken.toString());
 
-        // check for user name, can't proceed without it
-        if (pToken.username.isEmpty()) {
-            setErr(_rsp, HttpStatus.UNAUTHORIZED_401, "Invalid username.");
-            return;
-        }
+        try {
 
-        boolean tokenIsValid = sensorMgr.registerSensor(pToken.username, pToken.token);
+            // sensor is always registered regardless if a token is required or not
+            sensorMgr.registerSensor(pToken.username, pToken.token);
 
-        if (cm.getProvisionSensorTokenRequired() && !tokenIsValid) {
+            log.info(pToken.toString());
 
+            SensorCredentials credentials = cm.getSensorCredentials();
+            _rsp.setStatus(HttpStatus.OK_200);
+            _rsp.getWriter().println(mapper.writeValueAsString(credentials));
+
+        } catch (InvalidTokenException | ExpiredTokenException _e) {
+            log.info("sensor {} attempting to connect with invalid token {} {}", 
+                     pToken.username, pToken.token, _e.getMessage());
             setErr(_rsp, HttpStatus.UNAUTHORIZED_401, "Invalid token.");
-            return;
-
-        } else {
-            log.info("skipping token authentication, not required");
         }
 
-        SensorCredentials credentials = cm.getSensorCredentials();
-        _rsp.setStatus(HttpStatus.OK_200);
-        _rsp.getWriter().println(mapper.writeValueAsString(credentials));
     }
 
     static final String JSON_CONTENT_TYPE = "application/json";

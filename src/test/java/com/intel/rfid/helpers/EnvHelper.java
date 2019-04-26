@@ -18,28 +18,18 @@ import static org.junit.Assert.assertTrue;
 
 public class EnvHelper {
 
-    public static boolean isLinux() {
-        return System.getProperty("os.name").toLowerCase().startsWith("linux");
-    }
-
     private static Path configResourceDirPath = null;
     private static Path testResourceDirPath = null;
     private static Path testRunPath = null;
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void beforeTests() throws IOException {
         beforeBasicTests();
-        // be sure to not reference the ConfigManager
-        // until AFTER the environment variables are all set up.
-        // SecurityTestHelper.initForTesting();
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void beforeBasicTests() throws IOException {
         establishTestDir();
         copyConfig();
         adjustLogs();
-        //ConfigManagerHelper.initForTesting();
     }
 
     public static void afterTests() {

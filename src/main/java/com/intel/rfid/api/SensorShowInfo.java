@@ -17,10 +17,11 @@ public class SensorShowInfo {
         public String behavior_id;
         public String facility;
         public Personality personality;
+        public String aliases;
         public List<DeviceAlertDetails> alerts = new ArrayList<>();
 
         Info(String _id, ConnectionState _connectionState, ReadState _readState, 
-             String _behaviorId, String _facility, Personality _personality, List<DeviceAlertDetails> _alerts) {
+             String _behaviorId, String _facility, Personality _personality, String _aliases, List<DeviceAlertDetails> _alerts) {
 
             id = _id;
             connection_state = _connectionState;
@@ -28,14 +29,15 @@ public class SensorShowInfo {
             behavior_id = _behaviorId;
             facility = _facility;
             personality = _personality;
+            aliases = _aliases;
             alerts.addAll(_alerts);
         }
     }
 
     public void add(String _id, ConnectionState _connectionState, ReadState _readState,
-                    String _behaviorId, String _facility, Personality _personality, List<DeviceAlertDetails> _alerts) {
+                    String _behaviorId, String _facility, Personality _personality, String _aliases, List<DeviceAlertDetails> _alerts) {
 
-        info_list.add(new Info(_id, _connectionState, _readState, _behaviorId, _facility, _personality, _alerts));
+        info_list.add(new Info(_id, _connectionState, _readState, _behaviorId, _facility, _personality, _aliases, _alerts));
     }
 
     public void copyFrom(SensorShowInfo _other) {

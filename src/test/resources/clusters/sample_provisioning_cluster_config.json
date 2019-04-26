@@ -42,6 +42,7 @@
       "facility_id": "SalesFloor",
       "behavior_id": "ClusterExit_PORTS_1",
       "personality": "EXIT",
+      "aliases": ["ExitLeft", "ExitOverhead", "ExitRight", null],
       "tokens": [
         {
           "username": "SF_EXIT_001",
@@ -55,6 +56,7 @@
       "facility_id": "SalesFloor",
       "behavior_id": "ClusterPOS_PORTS_1",
       "personality": "POS",
+      "aliases": ["Register1", "Register2", "Register3", "Register4"],
       "tokens": [
         {
           "username": "SF_POS_001",
@@ -68,6 +70,7 @@
       "facility_id": "SalesFloor",
       "behavior_id": "ClusterFittingRoom_PORTS_1",
       "personality": "FITTING_ROOM",
+      "aliases": ["FittingRoom1", "FittingRoom2", "FittingRoom3", "FittingRoom4"],
       "tokens": [
         {
           "username": "SF_FITTING_ROOM_001",

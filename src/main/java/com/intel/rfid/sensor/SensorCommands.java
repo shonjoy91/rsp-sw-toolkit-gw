@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -59,6 +60,7 @@ public class SensorCommands implements CLICommander.Support {
     public static final String SET_BEHAVIOR = "set.behavior";
     public static final String START_READING = "start.reading";
     public static final String STOP_READING = "stop.reading";
+    public static final String FORCE_ALL_DISCONNECT = "force.all.disconnect";
     public static final String RESET = "reset";
     public static final String REBOOT = "reboot";
     public static final String SHUTDOWN = "shutdown";
@@ -72,6 +74,8 @@ public class SensorCommands implements CLICommander.Support {
     public static final String SET_FACILITY = "set.facility";
     public static final String SET_PERSONALITY = "set.personality";
     public static final String CLEAR_PERSONALITY = "clear.personality";
+    public static final String SET_ALIAS = "set.alias";
+    public static final String GET_ALIASES = "get.aliases";
     public static final String SEND_EVENTS = "send.events";
     public static final String CAPTURE_IMG = "capture.images";
     public static final String SET_ALERT_THRESHOLD = "set.alert.threshold";
@@ -100,6 +104,12 @@ public class SensorCommands implements CLICommander.Support {
                                  GET_SW_VERS,
                                  TOKENS),
             new SensorIdCompleter(sensorMgr),
+            new NullCompleter()
+        ));
+
+        _comps.add(new ArgumentCompleter(
+            new StringsCompleter(CMD_ID),
+            new StringsCompleter(FORCE_ALL_DISCONNECT),
             new NullCompleter()
         ));
 
@@ -150,6 +160,31 @@ public class SensorCommands implements CLICommander.Support {
             new NullCompleter()
         ));
 
+        _comps.add(new ArgumentCompleter(
+            new StringsCompleter(CMD_ID),
+            new StringsCompleter(SET_ALIAS),
+            new AnyStringCompleter(),
+            new BetterEnumCompleter(AntennaPort.class),
+            new SensorIdCompleter(sensorMgr),
+            new NullCompleter()
+        ));
+
+        _comps.add(new ArgumentCompleter(
+            new StringsCompleter(CMD_ID),
+            new StringsCompleter(SET_ALIAS),
+            new StringsCompleter(SensorPlatform.ALIAS_KEY_DEFAULT, SensorPlatform.ALIAS_KEY_DEVICE_ID),
+            new BetterEnumCompleter(AntennaPort.class),
+            new SensorIdCompleter(sensorMgr),
+            new NullCompleter()
+        ));
+
+
+        _comps.add(new ArgumentCompleter(
+            new StringsCompleter(CMD_ID),
+            new StringsCompleter(GET_ALIASES),
+            new SensorIdCompleter(sensorMgr),
+            new NullCompleter()
+        ));
 
         _comps.add(new ArgumentCompleter(
             new StringsCompleter(CMD_ID),
@@ -192,6 +227,9 @@ public class SensorCommands implements CLICommander.Support {
         _out.indent(0, "> " + CMD_ID + " " + STOP_READING + " <device_id>...");
         _out.indent(1, "Stop reading");
         _out.blank();
+        _out.indent(0, "> " + CMD_ID + " " + FORCE_ALL_DISCONNECT);
+        _out.indent(1, "forces a disconnect of ALL sensors (sends gateway shutting down message)");
+        _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + RESET + " <device_id>...");
         _out.indent(1, "Command device to perform a reset");
         _out.blank();
@@ -232,6 +270,12 @@ public class SensorCommands implements CLICommander.Support {
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + CLEAR_PERSONALITY + " <device_id>...");
         _out.indent(1, "Clears a personality");
+        _out.blank();
+        _out.indent(0, "> " + CMD_ID + " " + SET_ALIAS + " <alias> <antenna-port> <device_id>...");
+        _out.indent(1, "Add an alias to a device:antenna-port combination");
+        _out.blank();
+        _out.indent(0, "> " + CMD_ID + " " + GET_ALIASES + " <antenna-port> <device_id>...");
+        _out.indent(1, "Retrieve the alias assigned to a device:antenna-port combination");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + SET_LED + " <led_state> <device_id>...");
         _out.indent(1, "Apply a visual indicator behavior");
@@ -299,6 +343,11 @@ public class SensorCommands implements CLICommander.Support {
                         return _rsp.stopReading();
                     }
                 };
+                break;
+
+            case FORCE_ALL_DISCONNECT:
+                _out.line("Forcing sensors to disconnect: ");
+                sensorMgr.disconnectAll();
                 break;
 
             case RESET:
@@ -443,6 +492,19 @@ public class SensorCommands implements CLICommander.Support {
             }
             break;
 
+            case SET_ALIAS: {
+                doSetAlias(_argIter, _out);
+            }
+            break;
+
+            case GET_ALIASES: {
+                final AntennaPort port = AntennaPort.valueOf(_argIter.next());
+                for (SensorPlatform rsp : getRSPs(_argIter, _out)) {
+                    showCmdResult(rsp, rsp.getAliasesAsString(), true, _out);
+                }
+            }
+            break;
+
             default:
                 usage(_out);
         }
@@ -453,10 +515,53 @@ public class SensorCommands implements CLICommander.Support {
 
     }
 
+    public void doSetAlias(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+
+        String alias = _argIter.next();
+        AntennaPort port = AntennaPort.valueOf(_argIter.next());
+
+        ArrayList<Integer> portIndexes = new ArrayList<>();
+
+        switch (port) {
+            case PORT_0:
+                portIndexes.add(0);
+                break;
+            case PORT_1:
+                portIndexes.add(1);
+                break;
+            case PORT_2:
+                portIndexes.add(2);
+                break;
+            case PORT_3:
+                portIndexes.add(3);
+                break;
+            case PORTS_0_1:
+                portIndexes.add(0);
+                portIndexes.add(1);
+                break;
+            case PORTS_2_3:
+                portIndexes.add(2);
+                portIndexes.add(3);
+                break;
+            case ALL_PORTS:
+            default:
+                for (int j = 0; j < SensorPlatform.NUM_ALIASES; j++) {
+                    portIndexes.add(j);
+                }
+                break;
+        }
+
+        for (SensorPlatform rsp : getRSPs(_argIter, _out)) {
+            for (int portIndex : portIndexes) {
+                rsp.setAlias(portIndex, alias);
+                showCmdResult(rsp, SET_ALIAS, true, _out);
+            }
+        }
+    }
+
     public void doShow(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
 
-        TreeSet<SensorPlatform> sensors = new TreeSet<>();
-        sensors.addAll(getRSPs(_argIter, _out));
+        TreeSet<SensorPlatform> sensors = new TreeSet<>(getRSPs(_argIter, _out));
         if (sensors.isEmpty()) { return; }
 
         _out.println(SensorPlatform.HDR);
@@ -523,14 +628,13 @@ public class SensorCommands implements CLICommander.Support {
 
     public void doTokens(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
 
-        TreeSet<SensorPlatform> sensors = new TreeSet<>();
-        sensors.addAll(getRSPs(_argIter, _out));
+        TreeSet<SensorPlatform> sensors = new TreeSet<>(getRSPs(_argIter, _out));
         if (sensors.isEmpty()) { return; }
 
         _out.println("device      token");
         _out.println();
         for (SensorPlatform rsp : sensors) {
-            _out.println(rsp.getDeviceId() + "  " +rsp.getProvisionToken());
+            _out.println(rsp.getDeviceId() + "  " + rsp.getProvisionToken());
         }
     }
 

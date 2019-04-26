@@ -4,8 +4,9 @@
  */
 package com.intel.rfid.schedule;
 
+import com.intel.rfid.api.SchedulerSummary;
+import com.intel.rfid.cluster.Cluster;
 import com.intel.rfid.console.ArgumentIterator;
-import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
@@ -15,7 +16,6 @@ import jline.console.completer.StringsCompleter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.intel.rfid.console.CLICommander.INFO;
@@ -87,8 +87,7 @@ public class ScheduleManagerCommands implements Support {
     }
 
     @Override
-    public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws IOException, GatewayException {
+    public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out) {
 
         switch (_action) {
 
@@ -101,15 +100,14 @@ public class ScheduleManagerCommands implements Support {
                 doDeactivate(_out);
                 break;
             case SHOW:
-                scheduleMgr.show(_out);
+                doShow(_out);
                 break;
             default:
                 usage(_out);
         }
     }
 
-    private void doActivate(String _action, PrettyPrinter _out)
-        throws IOException, GatewayException {
+    private void doActivate(String _action, PrettyPrinter _out) {
 
         switch (_action) {
             case ACTIVATE_FROM_CFG:
@@ -131,6 +129,30 @@ public class ScheduleManagerCommands implements Support {
     private void doDeactivate(PrettyPrinter _out) {
         scheduleMgr.deactivate();
         _out.line("completed");
+    }
+    
+    private void doShow(PrettyPrinter _out) {
+
+        SchedulerSummary summary = scheduleMgr.getSummary();
+
+        _out.line("runState: " + summary.run_state);
+        _out.divider();
+        _out.line("clusters:");
+        for (Cluster cluster : summary.clusters) {
+            _out.line("      id: " + cluster.id);
+            _out.line("behavior: " + cluster.behavior_id);
+            for (List<String> sensors : cluster.sensor_groups) {
+                _out.chunk("sensors: [");
+                for (String sensorId : sensors) {
+                    _out.chunk(sensorId + " ");
+                }
+                _out.endln("]");
+            }
+            _out.endln();
+            _out.divider();
+        }
+        _out.blank();
+
     }
 
 

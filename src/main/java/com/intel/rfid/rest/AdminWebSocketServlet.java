@@ -20,7 +20,6 @@ import com.intel.rfid.api.TagStateSummaryNotification;
 import com.intel.rfid.api.TagStatsUpdateNotification;
 import com.intel.rfid.api.UpstreamManagerSummaryNotification;
 import com.intel.rfid.downstream.DownstreamManager;
-import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.inventory.InventoryManager;
@@ -146,7 +145,7 @@ public class AdminWebSocketServlet
         @Override
         public void onWebSocketError(Throwable _cause) {
             super.onWebSocketError(_cause);
-            log.error("Socket Error: {}", _cause);
+            log.error("Socket Error ", _cause);
         }
 
         protected void onInboundText(String _text) {
@@ -181,17 +180,17 @@ public class AdminWebSocketServlet
                 }
 
             } catch (InterruptedException _e) {
-                log.error("interrupted servicing request: {}", _e);
+                log.error("interrupted servicing request", _e);
                 Thread.currentThread().interrupt();
             } catch (IOException _e) {
-                log.error("bad json: {}", _e);
+                log.error("bad json", _e);
                 send(new JsonResponseErr("x", JsonRPCError.Type.PARSE_ERROR, null));
             }
         }
     }
 
     protected void onSensorCommand(JsonNode _rootNode, JsonNode _idNode, JsonNode _methodNode)
-        throws IOException, InterruptedException {
+        throws InterruptedException {
 
         if (_rootNode.get("params") == null || _rootNode.get("params").get("sensor_id") == null) {
             log.warn("onSensorCommand incorrect request");
@@ -243,7 +242,7 @@ public class AdminWebSocketServlet
 
     }
 
-    protected void onSchedulerActivate(JsonNode _rootNode, JsonNode _idNode) throws IOException {
+    protected void onSchedulerActivate(JsonNode _rootNode, JsonNode _idNode) {
         if (_rootNode.get("params") == null || _rootNode.get("params").get("run_state") == null) {
             log.warn("onSchedulerActivate incorrect request");
             return;
@@ -255,8 +254,8 @@ public class AdminWebSocketServlet
             scheduleMgr.activate(runState);
             send(new JsonResponseOK(_idNode.asText(), null));
             send(new SchedulerSummaryNotification(scheduleMgr.getSummary()));
-        } catch (IllegalArgumentException | ConfigException _e) {
-            log.error("error activating scheduler: {}", _e);
+        } catch (IllegalArgumentException _e) {
+            log.error("error activating scheduler", _e);
         }
 
     }

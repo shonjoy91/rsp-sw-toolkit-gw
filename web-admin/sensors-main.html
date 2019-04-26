@@ -109,6 +109,10 @@
                 document.getElementById(curSensor.id + ".personality").innerHTML = curSensor.personality;
             }
 
+            if (curSensor.aliases !== null) {
+                document.getElementById(curSensor.id + ".aliases").innerHTML = curSensor.aliases;
+            }
+
             if (curSensor.alerts !== null) {
                 e = document.getElementById(curSensor.id + ".alerts");
                 e.innerHTML = curSensor.alerts.length;
@@ -125,6 +129,7 @@
         tRow.appendChild(createCell(sensorId + ".behavior_id"));
         tRow.appendChild(createCell(sensorId + ".facility"));
         tRow.appendChild(createCell(sensorId + ".personality"));
+        tRow.appendChild(createCell(sensorId + ".aliases"));
         tRow.appendChild(createAlertsCell(sensorId));
     }
 
@@ -345,6 +350,7 @@
                 <th>Behavior</th>
                 <th>Facility</th>
                 <th>Personality</th>
+                <th>Aliases</th>
                 <th>Alerts</th>
             </tr>
         </table>

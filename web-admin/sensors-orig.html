@@ -104,6 +104,10 @@
                 document.getElementById(curSensor.id + ".personality").innerHTML = curSensor.personality;
             }
 
+            if (curSensor.aliases !== null) {
+                document.getElementById(curSensor.id + ".aliases").innerHTML = curSensor.aliases;
+            }
+
             if (curSensor.alerts !== null) {
                 document.getElementById(curSensor.id + ".alerts").innerHTML = curSensor.facility;
             }
@@ -120,6 +124,7 @@
         cells += createCell(sensorId + ".behavior_id");
         cells += createCell(sensorId + ".facility");
         cells += createCell(sensorId + ".personality");
+        cells += createCell(sensorId + ".aliases");
         cells += createCell(sensorId + ".alerts");
         tRow.innerHTML = cells;
     }
@@ -245,6 +250,7 @@
                 <th>Behavior</th>
                 <th>Facility</th>
                 <th>Personality</th>
+                <th>Aliases</th>
                 <th>Alerts</th>
             </tr>
         </table>

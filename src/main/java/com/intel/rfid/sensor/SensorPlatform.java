@@ -11,7 +11,6 @@ import com.intel.rfid.api.AckAlert;
 import com.intel.rfid.api.ApplyBehavior;
 import com.intel.rfid.api.Behavior;
 import com.intel.rfid.api.ConnectRequest;
-import com.intel.rfid.api.ConnectResponse;
 import com.intel.rfid.api.DeviceAlert;
 import com.intel.rfid.api.DeviceAlertDetails;
 import com.intel.rfid.api.GetBISTResults;
@@ -34,16 +33,16 @@ import com.intel.rfid.api.SetLED;
 import com.intel.rfid.api.SetMotionEvent;
 import com.intel.rfid.api.Shutdown;
 import com.intel.rfid.api.StatusUpdate;
-import com.intel.rfid.downstream.DownstreamManager;
-import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.schedule.AtomicTimeMillis;
-import com.intel.rfid.security.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,11 +53,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.intel.rfid.api.ApplyBehavior.Action.START;
 
-public class SensorPlatform 
+public class SensorPlatform
     implements Comparable<SensorPlatform> {
 
     public static final long LOST_COMMS_THRESHOLD = 90000;
@@ -74,6 +72,10 @@ public class SensorPlatform
     protected String facilityId = DEFAULT_FACILITY_ID;
     protected Personality personality;
     protected final String deviceId;
+
+    public static final int NUM_ALIASES = 4;
+    protected final List<String> aliases = new ArrayList<>(NUM_ALIASES);
+
     protected final Logger logRSP; // created on construction using the deviceId
     protected final Logger logAlert = LoggerFactory.getLogger("rsp.alert");
     protected final Logger logHeartbeat = LoggerFactory.getLogger("rsp.heartbeat");
@@ -98,12 +100,8 @@ public class SensorPlatform
     protected ReadState readState = ReadState.STOPPED;
     protected final AtomicTimeMillis lastCommsMillis = new AtomicTimeMillis();
     private final AtomicTimeMillis lastStartFailure = new AtomicTimeMillis();
-    private final AtomicInteger startReadingErrors = new AtomicInteger(0);
     protected boolean inDeepScan = false;
     protected String provisionToken;
-
-    protected final Object downstreamLock = new Object();
-    protected DownstreamManager downstream;
 
     public SensorPlatform(String _deviceId,
                           SensorManager _sensorMgr) {
@@ -114,6 +112,10 @@ public class SensorPlatform
         // only have a single thread because reading commands should never be in parallel
         readExecutor = Executors.newFixedThreadPool(1,
                                                     new ExecutorUtils.NamedThreadFactory(deviceId));
+
+        for (int i = 0; i < NUM_ALIASES; i++) {
+            aliases.add(deviceId + "-" + i);
+        }
     }
 
     /**
@@ -139,12 +141,6 @@ public class SensorPlatform
                 break;
         }
         return valid;
-    }
-
-    public void setDownstream(DownstreamManager _downstream) {
-        synchronized (downstreamLock) {
-            downstream = _downstream;
-        }
     }
 
     public String getDeviceId() {
@@ -209,6 +205,54 @@ public class SensorPlatform
 
     public boolean hasPersonality(Personality _personality) {
         return personality != null && personality == _personality;
+    }
+
+    public static final String ALIAS_KEY_DEFAULT = "DEFAULT";
+    public static final String ALIAS_KEY_DEVICE_ID = "DEVICE_ID";
+
+    public void setAlias(int _portIndex, String _alias) {
+        if (_portIndex < 0 || _portIndex >= NUM_ALIASES) {
+            logRSP.debug("alias index out of bounds {}", _portIndex);
+            return;
+        }
+
+        // figure out the intended alias
+        String interpretedAlias;
+        if (_alias == null || _alias.isEmpty() || ALIAS_KEY_DEFAULT.equals(_alias)) {
+            interpretedAlias = getDefaultAlias(_portIndex);
+        } else if (ALIAS_KEY_DEVICE_ID.equals(_alias)) {
+            interpretedAlias = deviceId;
+        } else {
+            interpretedAlias = _alias;
+        }
+
+        aliases.set(_portIndex, interpretedAlias);
+    }
+
+    public void setAliases(List<String> _aliases) {
+        // these need interpreting so have to loop;
+        for (int i = 0; i < _aliases.size(); i++) {
+            setAlias(i, _aliases.get(i));
+        }
+    }
+
+    public String getAlias(int _portIndex) {
+        if (_portIndex < 0 || _portIndex >= aliases.size()) {
+            return getDefaultAlias(_portIndex);
+        }
+        return aliases.get(_portIndex);
+    }
+
+    public List<String> getAliases() {
+        return new ArrayList<>(aliases);
+    }
+
+    public String getAliasesAsString() {
+        return Arrays.toString(aliases.toArray());
+    }
+
+    public String getDefaultAlias(int _portIndex) {
+        return deviceId + "-" + _portIndex;
     }
 
     public String getProvisionToken() {
@@ -320,11 +364,11 @@ public class SensorPlatform
         // this call in this current thread, deadlock
         acknowledgeAlert(_msg.params.alert_number, true);
     }
-    
+
     protected List<DeviceAlertDetails> getAlerts() {
-        List<DeviceAlertDetails> l = new ArrayList<>();
+        List<DeviceAlertDetails> l;
         synchronized (alerts) {
-            l.addAll(alerts);
+            l = new ArrayList<>(alerts);
         }
         return l;
     }
@@ -407,8 +451,11 @@ public class SensorPlatform
 
     private void onConnect(ConnectRequest _msg) {
         logInboundJson(logConnect, _msg.getMethod(), _msg.params);
-        if (sendConnectResponse(_msg)) {
+        try {
+            sensorMgr.sendConnectResponse(_msg.getId(), deviceId, facilityId);
             changeConnectionState(ConnectionState.CONNECTING, null);
+        } catch (IOException | GatewayException _e) {
+            logRSP.error("error sending connect response", _e);
         }
     }
 
@@ -472,30 +519,6 @@ public class SensorPlatform
         }
     }
 
-    private boolean sendConnectResponse(ConnectRequest _msg) {
-        ConfigManager cm = ConfigManager.instance;
-        try {
-            ConnectResponse rsp = new ConnectResponse(_msg.getId(),
-                                                      facilityId,
-                                                      System.currentTimeMillis(),
-                                                      cm.getLocalHost("ntp.server.host"),
-                                                      cm.getRSPSoftwareRepos(),
-                                                      SecurityContext.instance().getKeyMgr().getSshEncodedPublicKey());
-
-            synchronized (downstreamLock) {
-                if (downstream == null) {
-                    logRSP.error("No downstream manager for {}", deviceId);
-                    return false;
-                }
-                downstream.sendConnectRsp(deviceId, rsp);
-            }
-        } catch (Exception e) {
-            logRSP.error("{} error sending connect response:", deviceId, e);
-            return false;
-        }
-        return true;
-    }
-
     public ResponseHandler setBehavior(Behavior _behavior) {
         if (_behavior == null) {
             return new ResponseHandler(deviceId,
@@ -512,10 +535,10 @@ public class SensorPlatform
                                        "behavior is now " + currentBehavior.id);
         }
     }
-    
+
     public String getBehaviorId() {
         String id = null;
-        if(currentBehavior != null) {
+        if (currentBehavior != null) {
             id = currentBehavior.id;
         }
         return id;
@@ -574,7 +597,7 @@ public class SensorPlatform
         currentBehavior = _behavior;
         return startReading();
     }
-    
+
     public ResponseHandler startReading() {
         ResponseHandler rh;
 
@@ -717,17 +740,6 @@ public class SensorPlatform
             return new ResponseHandler(deviceId, JsonRPCError.Type.WRONG_STATE, errMsg);
         }
 
-        // if it weren't possible to set the downstream manager, this wouldn't be necessary
-        DownstreamManager downstreamManager;
-        synchronized (downstreamLock) {
-            if (downstream == null) {
-                String errMsg = "missing mqttDownstream reference";
-                logRSP.info("Cannot execute {}: {} - {}", deviceId, _req.getMethod(), errMsg);
-                return new ResponseHandler(deviceId, JsonRPCError.Type.WRONG_STATE, errMsg);
-            }
-            downstreamManager = downstream;
-        }
-
         _req.generateId();
         ResponseHandler rh;
 
@@ -750,7 +762,7 @@ public class SensorPlatform
 
         try {
             rh.setRequest(_req);
-            downstreamManager.sendCommand(deviceId, _req);
+            sensorMgr.sendSensorCommand(deviceId, _req);
         } catch (Exception e) {
             synchronized (msgHandleLock) {
                 responseHandlers.remove(_req.getId());
@@ -781,9 +793,9 @@ public class SensorPlatform
         return Objects.hashCode(deviceId);
     }
 
-    private static final String FMT = "%-10s %-12s %-10s %-25s %-18s %s";
+    private static final String FMT = "%-10s %-12s %-10s %-25s %-18s %-12s %s";
     public static final String HDR = String
-        .format(FMT, "device", "connect", "reading", "behavior", "facility", "personality");
+        .format(FMT, "device", "connect", "reading", "behavior", "facility", "personality", "aliases");
 
     @Override
     public String toString() {
@@ -793,7 +805,8 @@ public class SensorPlatform
                              readState,
                              currentBehavior.id,
                              facilityId,
-                             personality == null ? "" : personality);
+                             personality == null ? "" : personality,
+                             getAliasesAsString());
     }
 
     private void logInboundJson(Logger _log, String _prefix, Object _msg) {

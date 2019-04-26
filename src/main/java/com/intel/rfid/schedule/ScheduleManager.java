@@ -5,17 +5,17 @@
 package com.intel.rfid.schedule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.Behavior;
 import com.intel.rfid.api.SchedulerSummary;
+import com.intel.rfid.behavior.BehaviorConfig;
+import com.intel.rfid.cluster.Cluster;
 import com.intel.rfid.cluster.ClusterManager;
-import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
-import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.helpers.Publisher;
 import com.intel.rfid.sensor.ConnectionState;
 import com.intel.rfid.sensor.ConnectionStateEvent;
-import com.intel.rfid.sensor.SensorGroup;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.slf4j.Logger;
@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.intel.rfid.schedule.ScheduleManager.RunState.ALL_ON;
 import static com.intel.rfid.schedule.ScheduleManager.RunState.ALL_SEQUENCED;
 import static com.intel.rfid.schedule.ScheduleManager.RunState.INACTIVE;
 
@@ -48,19 +49,17 @@ public class ScheduleManager
 
     protected volatile RunState runState = INACTIVE;
 
-    protected final Object executorLock = new Object();
+    protected final Object publisherLock = new Object();
     protected ExecutorService runStatePubExec = ExecutorUtils.newSingleThreadedEventExecutor(log);
-    protected Publisher<RunStateListener> runStatePublisher = new Publisher<>(executorLock, runStatePubExec);
+    protected Publisher<RunStateListener> runStatePublisher = new Publisher<>(publisherLock, runStatePubExec);
 
     public static final String BEHAVIOR_ID_ALL_ON = "ClusterAllOn_PORTS_1";
     public static final String BEHAVIOR_ID_ALL_SEQ = "ClusterAllSeq_PORTS_1";
 
-    protected final List<ScheduleCluster> clusters = new ArrayList<>();
     protected final ExecutorService clusterExec = Executors.newCachedThreadPool();
-    protected final Collection<ClusterRunner> clusterRunners = new ArrayList<>();
+    protected final List<ClusterRunner> clusterRunners = new ArrayList<>();
     protected final Collection<Future<?>> clusterFutures = new ArrayList<>();
     protected final ClusterManager clusterMgr;
-
 
     public static class CacheState {
         public RunState runState;
@@ -70,11 +69,11 @@ public class ScheduleManager
         void onScheduleRunState(RunState _current);
     }
 
-    public void addRunStateListener(RunStateListener _l) {
+    public synchronized void addRunStateListener(RunStateListener _l) {
         runStatePublisher.subscribe(_l);
     }
 
-    public void removeRunStateListener(RunStateListener _l) {
+    public synchronized void removeRunStateListener(RunStateListener _l) {
         runStatePublisher.unsubscribe(_l);
     }
 
@@ -82,15 +81,14 @@ public class ScheduleManager
         clusterMgr = _clusterMgr;
     }
 
-
-    public boolean start() {
+    public synchronized boolean start() {
 
         if (runState != INACTIVE) {
             log.warn("already started");
             return true;
         }
 
-        synchronized (executorLock) {
+        synchronized (publisherLock) {
             runStatePubExec = ExecutorUtils.ensureValidParallel(runStatePubExec);
             runStatePublisher.replaceExecutor(runStatePubExec);
         }
@@ -113,7 +111,7 @@ public class ScheduleManager
             // gripe about empty catch blocks
             log.debug("cache file does not yet exist");
         } catch (IOException _e) {
-            log.error("Failed to restore {}", CACHE_PATH, _e);
+            log.error("Failed to restore {} {}", CACHE_PATH, _e.getClass());
         }
 
         changeRunState(startupRunState);
@@ -122,33 +120,35 @@ public class ScheduleManager
 
     }
 
-    public boolean stop() {
+    public synchronized boolean stop() {
         // save the state before stopping so it will be able to restart
         // correctly if gateway is going down (and back up)
         persistState();
-        deactivate();
-        synchronized (executorLock) {
-            runStatePublisher.clearSubscribers();
-            try {
-                ExecutorUtils.shutdownExecutor(log, runStatePubExec);
-            } catch (InterruptedException _e) {
-                Thread.currentThread().interrupt();
-            }
+        changeRunState(INACTIVE);
+        runStatePublisher.clearSubscribers();
+        try {
+            ExecutorUtils.shutdownExecutor(log, runStatePubExec);
+        } catch (InterruptedException _e) {
+            Thread.currentThread().interrupt();
         }
         log.info("ScheduleManager stopped");
         return true;
     }
 
-    public void deactivate() {
-        changeRunState(INACTIVE);
-    }
-
-    public void activate(RunState _runState) throws IOException, ConfigException {
+    public synchronized void activate(RunState _runState) {
         changeRunState(_runState);
     }
 
+    public synchronized void deactivate() {
+        changeRunState(INACTIVE);
+    }
+
+    public synchronized RunState getRunState() {
+        return runState;
+    }
+
     @Override
-    public void onConnectionStateChange(ConnectionStateEvent _cse) {
+    public synchronized void onConnectionStateChange(ConnectionStateEvent _cse) {
 
         // don't care
         if (_cse.current != ConnectionState.CONNECTED) { return; }
@@ -156,56 +156,64 @@ public class ScheduleManager
         // don't care
         if (runState == INACTIVE) { return; }
 
-        // already included
-        synchronized (clusters) {
-            for (ScheduleCluster sc : clusters) {
-                if (sc.contains(_cse.rsp)) {
-                    return;
+        // already handled at least once
+        for (ClusterRunner cr : clusterRunners) {
+            if (cr.knowsOf(_cse.rsp)) {
+                return;
+            }
+        }
+
+        // if sensor isn't included already ...
+        if (runState == ALL_ON) {
+            try {
+                Behavior behavior = BehaviorConfig.getBehavior(BEHAVIOR_ID_ALL_ON);
+                ClusterRunner runner = new ClusterRunner(clusterMgr, 
+                                                         _cse.rsp,
+                                                         behavior);
+                clusterFutures.add(clusterExec.submit(runner));
+                clusterRunners.add(runner);
+            } catch (IOException _e) {
+                log.error("unable to build cluster runner {}", _e.getMessage());
+            }
+        } else if (runState == ALL_SEQUENCED) {
+            // there should only be a single cluster in here, 
+            // but it is not this method's responsibility to enforce that
+            for (ClusterRunner runner : clusterRunners) {
+                runner.notifyNewSensor();
+            }
+        } else {
+            Cluster cluster = clusterMgr.lookup(_cse.rsp);
+            if (cluster == null) { return; }
+            for (ClusterRunner runner : clusterRunners) {
+                if (runner.getClusterId().equals(cluster.id)) {
+                    runner.notifyNewSensor();
+                    break;
                 }
             }
         }
 
-        // This has to be on a different thread
-        clusterExec.submit(() -> changeRunState(runState));
     }
 
-    public SchedulerSummary getSummary() {
+    public synchronized SchedulerSummary getSummary() {
         SchedulerSummary summary = new SchedulerSummary();
         summary.run_state = runState;
-        synchronized (clusters) {
-            for (ScheduleCluster sc : clusters) {
-                summary.clusters.add(sc.asCluster());
+        for (ClusterRunner runner : clusterRunners) {
+            Cluster c = new Cluster();
+            summary.clusters.add(c);
+            c.id = runner.clusterId;
+            c.behavior_id = runner.behavior.id;
+            for (List<SensorPlatform> sensors : runner.sensorGroups) {
+                List<String> sensorIds = new ArrayList<>();
+                for (SensorPlatform sensor : sensors) {
+                    sensorIds.add(sensor.getDeviceId());
+                }
+                c.sensor_groups.add(sensorIds);
             }
         }
         return summary;
     }
 
-    public void show(PrettyPrinter _out) {
-        List<ScheduleCluster> clustersCopy = new ArrayList<>();
-        synchronized (clusters) {
-            clustersCopy.addAll(clusters);
-        }
-
-        _out.line("runState: " + runState);
-        _out.divider();
-        _out.line("clusters:");
-        for (ScheduleCluster cluster : clustersCopy) {
-            _out.line("      id: " + cluster.id);
-            _out.line("behavior: " + cluster.behavior.id);
-            for (SensorGroup group : cluster.sensorGroups) {
-                _out.chunk("sensors: [");
-                for (SensorPlatform sensor : group.sensors) {
-                    _out.chunk(sensor.getDeviceId() + " ");
-                }
-                _out.endln("]");
-            }
-            _out.endln();
-            _out.divider();
-        }
-        _out.blank();
-    }
-
-    protected synchronized void changeRunState(RunState _next)  {
+    protected void changeRunState(RunState _next) {
         // calling this method with a mode that is currently running will trigger a "reset" of that mode
         boolean actuallyChanged = false;
 
@@ -223,20 +231,25 @@ public class ScheduleManager
         }
 
         // generate clusters as needed
-        synchronized (clusters) {
-            clusters.clear();
-            switch (_next) {
-                case ALL_ON:
-                    clusterMgr.generateClusterPerSensor(clusters, BEHAVIOR_ID_ALL_ON);
-                    break;
-                case ALL_SEQUENCED:
-                    clusterMgr.generateSequenceCluster(clusters, BEHAVIOR_ID_ALL_SEQ);
-                    break;
-                case FROM_CONFIG:
-                    clusterMgr.generateFromConfig(clusters);
-                    break;
-            }
+        if(!clusterRunners.isEmpty() && !clusterFutures.isEmpty()) {
+            log.warn("bad threading is occuring with cluster runners {} and futures {}",
+                     clusterRunners.size(), clusterFutures.size());
+            clusterRunners.clear();
+            clusterFutures.clear();
         }
+
+        switch (_next) {
+            case ALL_ON:
+                clusterMgr.generateClusterPerSensor(clusterRunners, BEHAVIOR_ID_ALL_ON);
+                break;
+            case ALL_SEQUENCED:
+                clusterMgr.generateSequenceCluster(clusterRunners, BEHAVIOR_ID_ALL_SEQ);
+                break;
+            case FROM_CONFIG:
+                clusterMgr.generateFromConfig(clusterRunners);
+                break;
+        }
+
         // state entry
         switch (_next) {
             case ALL_ON:
@@ -256,40 +269,22 @@ public class ScheduleManager
             runStatePublisher.notifyListeners(l -> l.onScheduleRunState(runState));
         }
     }
-
+    
     protected void startClusters() {
-        List<ScheduleCluster> clustersCopy = new ArrayList<>();
-        synchronized (clusters) {
-            clustersCopy.addAll(clusters);
-        }
-
-        synchronized (clusterRunners) {
-            if (!clusterRunners.isEmpty()) {
-                log.warn("refusing to start clusters due to improper state -- " +
-                         "cluster futures have not been cleared");
-                return;
-            }
-
-            log.info("Starting {} clusters", clusters.size());
-
-            for (ScheduleCluster cluster : clustersCopy) {
-                ClusterRunner cr = new ClusterRunner(cluster);
-                clusterRunners.add(cr);
-                clusterFutures.add(clusterExec.submit(cr));
-            }
+        log.info("Starting {} clusters", clusterRunners.size());
+        for(ClusterRunner runner : clusterRunners) {
+            clusterFutures.add(clusterExec.submit(runner));
         }
     }
 
     protected void stopClusters() {
-        synchronized (clusterRunners) {
-            log.info("Stopping {} clusters", clusterRunners.size());
-            // cannot just cancel the thread without giving it time to finish
-            // otherwise, it will keep running and state ??
-            clusterFutures.forEach(f -> f.cancel(true));
-            clusterFutures.clear();
-            clusterRunners.forEach(ClusterRunner::awaitFinish);
-            clusterRunners.clear();
-        }
+        log.info("Stopping {} clusters", clusterRunners.size());
+        clusterFutures.forEach(f -> f.cancel(true));
+        clusterFutures.clear();
+        // cannot just cancel the thread without giving it time to finish
+        // otherwise, it will keep running and state ??
+        clusterRunners.forEach(ClusterRunner::awaitFinish);
+        clusterRunners.clear();
     }
 
     public static final Path CACHE_PATH = Env.resolveCache("schedule_manager.json");

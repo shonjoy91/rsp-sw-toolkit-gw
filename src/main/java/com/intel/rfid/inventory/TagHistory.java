@@ -11,7 +11,7 @@ import java.util.List;
 public class TagHistory {
 
     public static class Waypoint implements Comparable<Waypoint> {
-        public String deviceId = "";
+        public String deviceId;
         public long timestamp;
 
         public Waypoint(String _deviceId, long _timestamp) {

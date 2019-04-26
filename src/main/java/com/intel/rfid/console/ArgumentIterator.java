@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class ArgumentIterator {
 
     private int position = 0;
-    private String[] argIter = null;
+    private String[] argIter;
     private String cmdLine;
 
     public ArgumentIterator(String _cmdLine) {

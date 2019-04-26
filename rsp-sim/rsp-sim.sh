@@ -303,6 +303,7 @@ generate_tag_reads_from_file () {
 #
 
 # Get the root certificate
+echo "requesting root certificate from $ROOT_CERT_URL"
 RAW=$(curl --request GET $ROOT_CERT_URL)
 IFS=’\"’ read -ra ARRAY <<< "$RAW"
 ROOT_CERT=${ARRAY[3]}

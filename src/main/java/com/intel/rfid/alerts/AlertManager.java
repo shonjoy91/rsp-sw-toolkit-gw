@@ -68,6 +68,12 @@ public class AlertManager
                                                        GatewayStatus.RSP_SHUTTING_DOWN,
                                                        DeviceAlert.Severity.warning));
 
+            } else if (_cse.cause == ConnectionStateEvent.Cause.FORCED_DISCONNECT) {
+
+                upstreamMgr.send(new SensorStatusAlert(_cse.rsp,
+                                                       GatewayStatus.GATEWAY_TRIGGERED_RSP_DISCONNECT,
+                                                       DeviceAlert.Severity.warning));
+
             }
         }
     }

@@ -5,10 +5,9 @@
 package com.intel.rfid.exception;
 
 @SuppressWarnings({"serial"})
-public class GatewayException extends Exception {
+public class ExpiredTokenException extends GatewayException {
 
-    public GatewayException(String _msg) {
-        super(_msg);
+    public ExpiredTokenException(String _connectionId) {
+        super(_connectionId);
     }
-
 }

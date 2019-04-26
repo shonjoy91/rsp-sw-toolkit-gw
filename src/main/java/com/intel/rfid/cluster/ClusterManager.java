@@ -4,11 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.Behavior;
 import com.intel.rfid.api.ProvisionToken;
 import com.intel.rfid.behavior.BehaviorConfig;
+import com.intel.rfid.downstream.DownstreamManager;
+import com.intel.rfid.exception.ConfigException;
+import com.intel.rfid.exception.ExpiredTokenException;
+import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
-import com.intel.rfid.schedule.ScheduleCluster;
-import com.intel.rfid.sensor.SensorGroup;
+import com.intel.rfid.schedule.ClusterRunner;
+import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.slf4j.Logger;
@@ -20,10 +25,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ClusterManager {
 
@@ -33,39 +41,125 @@ public class ClusterManager {
     protected final ObjectMapper mapper = Jackson.getMapper();
 
     protected SensorManager sensorMgr;
+    protected ScheduleManager schedMgr;
+    protected DownstreamManager downstreamMgr;
     protected final Object clusterCfgLock = new Object();
     protected ClusterConfig clusterCfg;
     protected Map<String, ProvisionToken> tokens = new HashMap<>();
+
+
+    public void start() {
+        try {
+            restore();
+        } catch (IOException | GatewayException _e) {
+            log.warn("failed restoring {} {}", CACHE_PATH, _e.getMessage());
+        }
+        log.info("started");
+    }
+
+    public void stop() {
+        persist();
+    }
+
+    public void loadConfig(Path _clusterCfgPath) throws IOException, ConfigException {
+        ClusterConfig newConfig = fromFile(_clusterCfgPath);
+        validate(newConfig);
+
+        synchronized (clusterCfgLock) {
+            clusterCfg = newConfig;
+            persist();
+            updateTokenMap();
+        }
+
+        if (sensorMgr == null) {
+            log.warn("missing reference to sensor manager");
+            return;
+        }
+
+        boolean restartScheduler = false;
+        if (schedMgr != null && schedMgr.getRunState() == ScheduleManager.RunState.FROM_CONFIG) {
+            log.info("deactivating scheduler to trigger load new cluster configuration");
+            restartScheduler = true;
+            schedMgr.deactivate();
+        }
+
+        if (tokens.isEmpty()) {
+            final Set<String> sensorIDsInConfig = new HashSet<>();
+
+            for(Cluster cluster : newConfig.clusters) {
+                for(List<String> sensorGroup : cluster.sensor_groups) {
+                    sensorIDsInConfig.addAll(sensorGroup);
+                }
+            }
+
+            for(String id : sensorIDsInConfig) {
+                SensorPlatform sensor = sensorMgr.establishRSP(id);
+                alignSensor(sensor);
+            }
+        } else {
+            // need to kick all sensors off so they will reconnect and establish their credentials
+            // but then the align might not work because the disconnect sequencing / messaging is asynchronous
+            // mostly need to kick off if using provisioning tokens (what if they have changed in new file??)
+            sensorMgr.disconnectAll();
+        }
+
+        if (restartScheduler) {
+            schedMgr.activate(ScheduleManager.RunState.FROM_CONFIG);
+        }
+    }
+
 
     public void setSensorManager(SensorManager _sensorMgr) {
         sensorMgr = _sensorMgr;
     }
 
-    public boolean isTokenValid(String _token) {
+    public void setScheduleManager(ScheduleManager _schedMgr) {
+        schedMgr = _schedMgr;
+    }
+
+    public void setDownstreamManager(DownstreamManager _downstreamMgr) {
+        downstreamMgr = _downstreamMgr;
+    }
+
+    public void validateToken(String _token) throws InvalidTokenException, ExpiredTokenException {
+        if (_token == null) {
+            throw new InvalidTokenException("null tokens do not work");
+        }
         synchronized (clusterCfgLock) {
             ProvisionToken pt = tokens.get(_token);
-            return pt != null && !isExpired(pt);
+            if (pt == null) {
+                throw new InvalidTokenException("unknown token");
+            }
+            if (isExpired(pt)) {
+                throw new ExpiredTokenException("token expired");
+            }
         }
     }
-    
+
     public static boolean isExpired(ProvisionToken _pt) {
         return _pt.expirationTimestamp != ProvisionToken.NEVER_EXPIRES &&
-               _pt.expirationTimestamp > 0 &&
                _pt.expirationTimestamp < System.currentTimeMillis();
     }
 
     public List<ProvisionToken> getProvionTokens() {
         synchronized (clusterCfgLock) {
-          return new ArrayList<>(tokens.values());
+            return new ArrayList<>(tokens.values());
         }
     }
 
-    public void alignSensor(SensorPlatform _sensor) {
+    public Cluster lookup(SensorPlatform _sensor) {
         Cluster cluster = findClusterByToken(_sensor.getProvisionToken());
         if (cluster == null) {
             cluster = findClusterByDeviceId(_sensor.getDeviceId());
         }
+        return cluster;
+    }
+
+    public void alignSensor(SensorPlatform _sensor) {
+        log.debug("aligning {}", _sensor.getDeviceId());
+        Cluster cluster = lookup(_sensor);
         if (cluster == null) {
+            log.debug("no cluster found for {}", _sensor.getDeviceId());
             return;
         }
         // look up by groups
@@ -75,6 +169,9 @@ public class ClusterManager {
         if (cluster.personality != _sensor.getPersonality()) {
             _sensor.setPersonality(cluster.personality);
         }
+        if (cluster.aliases != null) {
+            _sensor.setAliases(cluster.aliases);
+        }
     }
 
     public Cluster getCluster(String _clusterId) {
@@ -83,7 +180,7 @@ public class ClusterManager {
                 return null;
             }
             for (Cluster c : clusterCfg.clusters) {
-                if(_clusterId.equals(c.id)) {
+                if (_clusterId.equals(c.id)) {
                     return c;
                 }
             }
@@ -114,9 +211,10 @@ public class ClusterManager {
             }
             for (Cluster c : clusterCfg.clusters) {
                 for (List<String> groups : c.sensor_groups) {
-                    for (String id : groups) {
+                    for (String sensorId : groups) {
+                        log.debug("sensorId {} deviceId {}", sensorId, _deviceId);
 
-                        if (id.equals(_deviceId)) {
+                        if (sensorId.equals(_deviceId)) {
                             return c;
                         }
                     }
@@ -127,12 +225,16 @@ public class ClusterManager {
     }
 
 
-    public void generateFromConfig(List<ScheduleCluster> _clusters) {
+    public void generateFromConfig(Collection<ClusterRunner> _runners) {
+        if (sensorMgr == null) {
+            log.warn("missing sensor manager");
+            return;
+        }
         synchronized (clusterCfgLock) {
 
-            if (sensorMgr == null || clusterCfg == null) { 
-                log.error("improper state: sensorMgr or clusterCfg is null");
-                return; 
+            if (clusterCfg == null) {
+                log.warn("missing cluster configuration");
+                return;
             }
 
             for (Cluster cluster : clusterCfg.clusters) {
@@ -141,25 +243,24 @@ public class ClusterManager {
                     log.warn("cluster: {} unknown behavior: {} ", cluster.id, cluster.behavior_id);
                     continue;
                 }
-                List<SensorGroup> groups = getSensorGroupsForCluster(cluster);
-                if (groups == null) { continue; }
-
-                _clusters.add(new ScheduleCluster(cluster.id, behavior, groups));
+                _runners.add(new ClusterRunner(this, cluster.id, behavior));
             }
         }
     }
 
-    private List<SensorGroup> getSensorGroupsForCluster(Cluster _cluster) {
-        List<SensorGroup> _groups = new ArrayList<>();
+    protected void getSensorGroupsForCluster(Cluster _cluster, List<List<SensorPlatform>> _groups) {
 
         for (ProvisionToken pt : _cluster.tokens) {
-            _groups.add(sensorMgr.groupForProvisioningToken(pt.token));
+            ArrayList<SensorPlatform> sensors = new ArrayList<>();
+            sensorMgr.groupForProvisioningToken(pt.token, sensors);
+            _groups.add(sensors);
         }
 
         for (Collection<String> devices : _cluster.sensor_groups) {
-            _groups.add(sensorMgr.groupForIds(devices));
+            ArrayList<SensorPlatform> sensors = new ArrayList<>();
+            sensorMgr.groupForIds(devices, sensors);
+            _groups.add(sensors);
         }
-        return _groups;
     }
 
     private Behavior getBehavior(String _id) {
@@ -171,84 +272,78 @@ public class ClusterManager {
         return null;
     }
 
+    public static final String CLUSTER_ID_ALL_SEQ = "cluster_all_seq";
 
-    public void generateClusterPerSensor(List<ScheduleCluster> _clusters, String _behaviorId) {
-        // this should not happen
-        if (sensorMgr == null) { return; }
-        Behavior behavior = getBehavior(_behaviorId);
-        if (behavior == null) { return; }
+    public void getSensorGroups(String _clusterId, List<List<SensorPlatform>> _sensorGroups) {
 
-        for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
-            SensorGroup sensorGroup = new SensorGroup();
-            sensorGroup.sensors.add(sensor);
-            List<SensorGroup> sensorGroups = new ArrayList<>();
-            sensorGroups.add(sensorGroup);
-            ScheduleCluster sc = new ScheduleCluster(sensor.getDeviceId(),
-                                                     behavior,
-                                                     sensorGroups);
-            _clusters.add(sc);
-        }
-    }
+        if (CLUSTER_ID_ALL_SEQ.equals(_clusterId)) {
+            for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
+                ArrayList<SensorPlatform> sensorGroup = new ArrayList<>();
+                sensorGroup.add(sensor);
+                _sensorGroups.add(sensorGroup);
+            }
+        } else {
+            synchronized (clusterCfgLock) {
+                if (clusterCfg == null) {
+                    log.warn("missing cluster configuration");
+                    return;
+                }
 
-    public void generateSequenceCluster(List<ScheduleCluster> _clusters, String _behaviorId) {
-        // this should not happen
-        if (sensorMgr == null) { return; }
-        Behavior behavior = getBehavior(_behaviorId);
-        if (behavior == null) { return; }
-
-        List<SensorGroup> sensorGroups = new ArrayList<>();
-        for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
-            // sensor should be in the correct state.
-            SensorGroup sensorGroup = new SensorGroup();
-            sensorGroup.sensors.add(sensor);
-            sensorGroups.add(sensorGroup);
-        }
-        _clusters.add(new ScheduleCluster("Sequence",
-                                          behavior,
-                                          sensorGroups));
-    }
-
-
-    public void start() {
-        try {
-            restore(CACHE_PATH);
-        } catch(IOException _e) {
-            log.warn("failed restoring {} {}", CACHE_PATH, _e.getMessage());
-        }
-        log.info("started");
-    }
-
-    public void stop() {
-        persist();
-    }
-
-    public void loadConfig(Path _clusterCfgPath) throws IOException {
-        restore(_clusterCfgPath);
-        persist();
-
-        if (sensorMgr == null) { return; }
-
-        for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
-            alignSensor(sensor);
-        }
-    }
-
-    private void restore(Path _path) throws IOException {
-        synchronized (clusterCfgLock) {
-            if (Files.exists(_path)) {
-                try (InputStream fis = Files.newInputStream(_path)) {
-                    clusterCfg = mapper.readValue(fis, ClusterConfig.class);
-                    tokens.clear();
-                    for (Cluster c : clusterCfg.clusters) {
-                        for (ProvisionToken pt : c.tokens) {
-                            tokens.put(pt.token, pt);
-                        }
+                for (Cluster cluster : clusterCfg.clusters) {
+                    if (cluster.id.equals(_clusterId)) {
+                        getSensorGroupsForCluster(cluster, _sensorGroups);
+                        break;
                     }
                 }
             }
         }
     }
 
+    public void generateClusterPerSensor(List<ClusterRunner> _runners, String _behaviorId) {
+
+        // this should not happen
+        if (sensorMgr == null) { return; }
+        Behavior behavior = getBehavior(_behaviorId);
+        if (behavior == null) { return; }
+
+        for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
+            _runners.add(new ClusterRunner(this, sensor, behavior));
+        }
+    }
+
+    public void generateSequenceCluster(List<ClusterRunner> _runners, String _behaviorId) {
+        // this should not happen
+        if (sensorMgr == null) { return; }
+        Behavior behavior = getBehavior(_behaviorId);
+        if (behavior == null) { return; }
+
+        _runners.add(new ClusterRunner(this,
+                                       CLUSTER_ID_ALL_SEQ,
+                                       behavior));
+    }
+
+
+    private void restore() throws IOException, ConfigException {
+        synchronized (clusterCfgLock) {
+            if (Files.exists(CACHE_PATH)) {
+                try (InputStream fis = Files.newInputStream(CACHE_PATH)) {
+                    clusterCfg = mapper.readValue(fis, ClusterConfig.class);
+                    validate(clusterCfg);
+                    updateTokenMap();
+                }
+            }
+        }
+    }
+
+    // assumption that appropriate synchronization occurs before calling
+    private void updateTokenMap() {
+        tokens.clear();
+        for (Cluster c : clusterCfg.clusters) {
+            for (ProvisionToken pt : c.tokens) {
+                tokens.put(pt.token, pt);
+            }
+        }
+    }
 
     private void persist() {
         synchronized (clusterCfgLock) {
@@ -262,6 +357,39 @@ public class ClusterManager {
             }
         }
     }
+
+    private ClusterConfig fromFile(Path _path) throws IOException {
+        try (InputStream fis = Files.newInputStream(_path)) {
+            return mapper.readValue(fis, ClusterConfig.class);
+        }
+    }
+
+    public static final String VAL_ERR_NULL_CFG = "null cluster configuration";
+    public static final String VAL_ERR_MISSING_CLUSTERS = "missing clusters";
+
+    public static void validate(ClusterConfig _cfg) throws ConfigException {
+        if (_cfg == null) {
+            throw new ConfigException(VAL_ERR_NULL_CFG);
+        }
+
+        if (_cfg.clusters == null || _cfg.clusters.isEmpty()) {
+            throw new ConfigException(VAL_ERR_MISSING_CLUSTERS);
+        }
+
+        List<String> badBehaviors = new ArrayList<>();
+        for (Cluster c : _cfg.clusters) {
+            try {
+                BehaviorConfig.getBehavior(c.behavior_id);
+            } catch (IOException _e) {
+                badBehaviors.add(c.behavior_id);
+            }
+        }
+
+        if (!badBehaviors.isEmpty()) {
+            throw new ConfigException("Bad cluster behaviors " + Arrays.toString(badBehaviors.toArray()));
+        }
+    }
+
 
     public void show(PrettyPrinter _out) {
         synchronized (clusterCfgLock) {

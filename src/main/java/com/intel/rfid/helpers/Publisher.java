@@ -44,7 +44,7 @@ public class Publisher<T> {
     // located in a central place (the gateway?) or passed to the manager 
     // instances, so they can fire-and-forget messages
     // that other service need to act upon.
-    private final Set<T> listeners = Collections.newSetFromMap(new WeakHashMap<T, Boolean>());
+    private final Set<T> listeners = Collections.newSetFromMap(new WeakHashMap<>());
     private ExecutorService executorService;
     private final Object executorLock;
 

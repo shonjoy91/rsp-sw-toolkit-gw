@@ -18,7 +18,7 @@ Instead of connecting real hardware (i.e. "Connect an Intel® RFID Sensor Platfo
 
 Additional dependencies need to be installed in order to use the RSP simulation script.
 ```
-:~$ sudo apt install mosquitto-clients
+:~$ sudo apt install mosquitto-clients curl
 ```
 
 

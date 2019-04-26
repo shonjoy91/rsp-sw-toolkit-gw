@@ -11,7 +11,4 @@ public class ConfigException extends GatewayException {
         super(_msg);
     }
 
-    public ConfigException(String _msg, Throwable t) {
-        super(_msg, t);
-    }
 }
