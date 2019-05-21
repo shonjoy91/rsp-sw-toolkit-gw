@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Inventory</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+
+    var currentPage = "inventory";
+
+    var gwSocket = new GatewayWebSocket();
+
+    gwSocket.topics = ["inventory_list"];
+
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case "inventory_list":
+                onInventoryList(jsonNot.params);
+                break;
+            case "epc_filter_pattern":
+                alignEpcFilterPattern(jsonNot.params.epc_filter_pattern);
+                break;
+        }
+    };
+
+    function onInventoryList(list) {
+
+        var table = document.getElementById("inventory_table");
+
+        for (var i = 0; i < list.length; i++) {
+
+            var curTag = list[i];
+            var tRow = document.getElementById("row_" + curTag.epc);
+            if (tRow === null) {
+                tRow = createRow(table, curTag.epc);
+            }
+
+            document.getElementById(curTag.epc + ".epc").innerHTML = curTag.epc;
+            document.getElementById(curTag.epc + ".tid").innerHTML = curTag.tid;
+            document.getElementById(curTag.epc + ".state").innerHTML = curTag.state;
+            document.getElementById(curTag.epc + ".location").innerHTML = curTag.location;
+            document.getElementById(curTag.epc + ".lastRead").innerHTML = epochToGMT(curTag.lastRead);
+            document.getElementById(curTag.epc + ".facility").innerHTML = curTag.facility;
+        }
+    }
+
+    function sendEpcFilterPattern() {
+        var table = document.getElementById("inventory_table");
+        var index = table.rows.length - 1;
+        while (index > 0) {
+            table.deleteRow(index);
+            index--;
+        }
+        var pattern = document.getElementById("epc_filter_pattern").value;
+        gwSocket.sendJsonRequest("set_epc_filter_pattern", {epc_filter_pattern: pattern});
+    }
+    
+    function alignEpcFilterPattern(pattern) {
+        document.getElementById("epc_filter_pattern").value = pattern;
+    }
+
+    function initEpcFilterInput() {
+        var e = document.getElementById("epc_filter_pattern");
+        e.addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendEpcFilterPattern();
+            }
+        });
+    }
+
+    function createRow(table, id) {
+        tRow = table.insertRow();
+        tRow.id = "row_" + id;
+        var cells = "";
+        cells += createCell(id + ".epc");
+        cells += createCell(id + ".tid");
+        cells += createCell(id + ".state");
+        cells += createCell(id + ".location");
+        cells += createCell(id + ".lastRead");
+        cells += createCell(id + ".facility");
+        tRow.innerHTML = cells;
+    }
+
+    function createCell(cellId) {
+        return "<td id=\"" + cellId + "\" class=\"w3-border-bottom w3-border-dark-grey\"></td>";
+    }
+
+    function init() {
+        initEpcFilterInput();
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+<!-- Header -->
+<script src="header.js"></script>
+
+<!-- Content -->
+<div class="w3-row">
+
+    <div class="w3-padding-small w3-blue">
+        <label class="w3-opacity" for="epc_filter_pattern"><b>Filter Pattern</b></label>
+        <input type="text" id="epc_filter_pattern"/>
+        <button class="w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i></button>
+    </div>
+    <table id="inventory_table" class="w3-table">
+        <tr class="w3-grey">
+            <th>EPC</th>
+            <th>TID</th>
+            <th>State</th>
+            <th>Location</th>
+            <th>Last Read</th>
+            <th>Facility</th>
+        </tr>
+    </table>
+
+    <script src="table-support.js"></script>
+    <script>
+        initTableSort("inventory_table");
+    </script>
+
+</div>
+
+</body>
+
+</html>

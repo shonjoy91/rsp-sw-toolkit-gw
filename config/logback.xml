@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!--See also http://logback.qos.ch/manual/appenders.html-->
+        <encoder>
+            <pattern>%d{MM/dd HH:mm:ss.SSS} %-5p %F:%L: %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="R" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--See also http://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy-->
+        <File>log/data.log</File>
+        <encoder>
+            <pattern>%d{MM/dd HH:mm:ss.SSS} %-5p %F:%L: %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- hourly rollover, gzip compressed -->
+            <FileNamePattern>log/data-%d{yyyy-MM-dd_HH}.log.gz</FileNamePattern>
+            <!-- Keep 1 week worth of history -->
+            <maxHistory>168</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="tag.read" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--See also http://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy-->
+        <File>tagread/tagreads.json</File>
+        <encoder>
+            <pattern>%m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- hourly rollover, gzip compressed -->
+            <FileNamePattern>tagread/tagreads-%d{yyyy-MM-dd_HH}.json.gz</FileNamePattern>
+            <!-- Keep 2 weeks worth of history -->
+            <maxHistory>336</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <logger name="rsp.inventory" level="INFO"/>
+
+    <!-- Set this to INFO to know when the service starts and stops -->
+    <logger name="com.intel.rfid.gateway.Gateway" level="INFO"/>
+
+    <!-- To enable or disable raw json logging, set level to ALL or OFF -->
+    <logger name="tag.read" level="OFF" additivity="false">
+        <appender-ref ref="tag.read"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="R"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

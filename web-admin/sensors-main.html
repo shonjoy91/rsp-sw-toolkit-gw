@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Sensors</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "sensors";
+
+    var gwSocket = new GatewayWebSocket();
+    gwSocket.topics = [
+        "sensor_alerts",
+        "sensor_basic_info",
+        "sensor_connection_state",
+        "sensor_read_state",
+        "sensor_config"
+    ];
+
+    gwSocket.inboundResponse = function (jsonRsp) {
+        var e = document.getElementById("modal_content");
+        e.classList.add("w3-container");
+        var s = "response error";
+        if (typeof jsonRsp["result"] !== 'undefined') {
+            s = JSON.stringify(jsonRsp["result"], null, ' ');
+        } else if (typeof jsonRsp["error"] !== 'undefined') {
+            s = JSON.stringify(jsonRsp["error"], null, ' ');
+        }
+        e.innerHTML = '<pre>' + s + '</pre>';
+    };
+
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case "sensor_basic_info":
+                onSensorBasicInfo(jsonNot.params);
+                break;
+            case "sensor_connection_state":
+                handleConnectionState(jsonNot.params.device_id, jsonNot.params.current);
+                break;
+            case "read_state_notification":
+                handleReadState(jsonNot.params.device_id, jsonNot.params.current);
+                break;
+            case "sensor_config":
+                handleConfig(jsonNot.params.device_id,
+                    jsonNot.params.facility_id,
+                    jsonNot.params.personality,
+                    jsonNot.params.behavior_id,
+                    jsonNot.params.aliases)
+                break;
+            case "device_alert":
+                onDeviceAlert(jsonNot.params);
+                break;
+        }
+    };
+
+    function selectSensorClosure(sensorId) {
+        return function () {
+            selectSensor(sensorId);
+        }
+    }
+
+    function showAlertsClosure(sensorId) {
+        return function () {
+            showAlerts(sensorId);
+        }
+    }
+
+
+    function showAlerts(sensorId) {
+
+        if (typeof sensorAlerts[sensorId] === 'undefined') { return; }
+        var alerts = sensorAlerts[sensorId];
+        if (alerts.length <= 0) { return; }
+
+        document.getElementById("modal_sensor_id").innerHTML = sensorId;
+        document.getElementById("modal_label").innerHTML = "Alerts";
+        var content = document.getElementById("modal_content");
+        while (content.firstChild) {
+            content.removeChild(content.firstChild);
+        }
+        for (var j = 0; j < alerts.length; j++) {
+            var alert = alerts[j];
+
+            var row = document.createElement("div");
+            row.classList.add("w3-content");
+            row.classList.add(mapSeverityToColor(alert.severity));
+            row.appendChild(createAlertColumn("s2", alert.alert_number));
+            row.appendChild(createAlertColumn("s2", alert.severity));
+            row.appendChild(createAlertColumn("s4", alert.alert_description));
+            row.appendChild(createAlertColumn("s4", epochToGMT(alert.sent_on)));
+
+            content.appendChild(row);
+        }
+
+        showResultsModal();
+    }
+
+    function createAlertColumn(col_span, content) {
+        var col = document.createElement("div");
+        col.classList.add("w3-col");
+        col.classList.add("w3-border-bottom");
+        col.classList.add(col_span);
+        col.innerHTML = content;
+        return col;
+    }
+
+    var commands = [
+        "get_bist_results",
+        "get_sw_version",
+        "get_state"
+    ];
+
+    var selectedSensorId = "";
+
+    function selectSensor(sensorId) {
+        selectedSensorId = sensorId;
+        var e = document.getElementById("sensor_commands_sensor_id");
+        e.innerHTML = selectedSensorId;
+    }
+
+    function showResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+    function closeResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+    function setupResults(sensorId, command) {
+        document.getElementById("modal_sensor_id").innerHTML = selectedSensorId;
+        document.getElementById("modal_label").innerHTML = command;
+        var e = document.getElementById("modal_content");
+        e.innerHTML = '<br>&nbsp;<br>...results pending <i class="fas fa-spinner fa-pulse"></i><br>&nbsp;<br>&nbsp;'
+        e.classList.add("w3-container");
+    }
+
+
+    var sensorAlerts = {};
+
+    function onDeviceAlert(details) {
+        if (sensorAlerts[details.device_id] === 'undefined') {
+            return;
+        }
+        sensorAlerts[details.device_id].push(details);
+        updateAlerts(details.device_id);
+    }
+
+    function onSensorBasicInfo(sensors) {
+        for (var i = 0; i < sensors.length; i++) {
+            var sensor = sensors[i];
+            handleConnectionState(sensor.device_id, sensor.connection_state);
+            handleReadState(sensor.device_id, sensor.read_state);
+            handleConfig(sensor.device_id, sensor.facility_id, sensor.personality, sensor.behavior_id, sensor.aliases);
+            sensorAlerts[sensor.device_id] = sensor.alerts;
+            updateAlerts(sensor.device_id);
+        }
+    }
+
+    function handleConnectionState(sensorId, state) {
+        var e = establishSensorElement(sensorId, ".connection_state");
+        if (state === "CONNECTED") {
+            e.className = icons.connected;
+        } else {
+            e.className = icons.disconnected;
+        }
+    }
+
+    function handleReadState(sensorId, state) {
+        var e = establishSensorElement(sensorId, ".read_state");
+        if (state === "STARTED") {
+            e.className = icons.reading;
+        } else {
+            e.className = "";
+        }
+    }
+
+    function handleConfig(sensorId, facility, personality, behavior, aliases) {
+        establishSensorElement(sensorId, ".facility").innerHTML = facility;
+        establishSensorElement(sensorId, ".personality").innerHTML = (personality !== null ? personality : "&nbsp;");
+        establishSensorElement(sensorId, ".behavior").innerHTML = behavior;
+        establishSensorElement(sensorId, ".aliases").innerHTML = aliases;
+    }
+
+
+    function updateAlerts(sensorId) {
+        var e = establishSensorElement(sensorId, ".alerts");
+        if (typeof sensorAlerts[sensorId] === 'undefined') { return; }
+        e.innerHTML = sensorAlerts[sensorId].length;
+    }
+
+    function establishSensorElement(sensorId, elementIdSuffix) {
+        var e = document.getElementById(sensorId + elementIdSuffix);
+        if (e === null) {
+            createSensorRow(sensorId);
+            e = document.getElementById(sensorId + elementIdSuffix);
+        }
+        return e;
+    }
+
+    function createSensorRow(sensorId) {
+
+        var newRow;
+        var col;
+        var e;
+
+        newRow = document.createElement("div");
+        newRow.id = sensorId + ".row";
+        newRow.className = "w3-row w3-padding";
+
+        col = document.createElement("div");
+        col.className = "col_1";
+
+        e = document.createElement("span");
+        e.innerHTML = sensorId;
+        e.onclick = selectSensorClosure(sensorId);
+        e.classList.add("w3-hover-white");
+        e.style.cursor = "default";
+        col.appendChild(e);
+
+        // add 2 spaces
+        col.appendChild(document.createTextNode('\u00A0\u00A0\u00A0'));
+
+        e = document.createElement("i");
+        e.id = sensorId + ".connection_state";
+        col.appendChild(e);
+
+        // add 2 spaces
+        col.appendChild(document.createTextNode('\u00A0\u00A0\u00A0'));
+
+        e = document.createElement("i");
+        e.id = sensorId + ".read_state";
+        col.appendChild(e);
+
+        newRow.appendChild(col);
+
+        newRow.appendChild(createStandardColumn("col_2", sensorId + ".behavior"));
+        newRow.appendChild(createStandardColumn("col_3", sensorId + ".facility"));
+        newRow.appendChild(createStandardColumn("col_4", sensorId + ".personality"));
+        newRow.appendChild(createStandardColumn("col_5", sensorId + ".aliases"));
+
+        col = createStandardColumn("col_6", sensorId + ".alerts");
+        col.onclick = showAlertsClosure(sensorId);
+        col.classList.add("w3-hover-white");
+        col.classList.add("w3-center");
+        col.style.cursor = "default";
+
+        newRow.appendChild(col);
+
+        var table = document.getElementById("table_data");
+        var child = null;
+        for (var i = 0; i < table.childNodes.length; i++) {
+            child = table.childNodes[i];
+            if (child.id > sensorId) {
+                break;
+            }
+            child = null;
+        }
+        if (child === undefined) {
+            table.appendChild(newRow);
+        } else {
+            table.insertBefore(newRow, child);
+        }
+    }
+
+    function createStandardColumn(className, id) {
+        var col = document.createElement("div");
+        col.className = className;
+        col.id = id;
+        col.innerHTML = "&nbsp;";
+        col.appendChild(document.createTextNode('\u00A0\u00A0'));
+        return col;
+    }
+
+    function doSimpleGet(command) {
+        setupResults(selectedSensorId, command);
+        showResultsModal();
+        gwSocket.sendJsonRequest("sensor_" + command, {
+            sensor_id: selectedSensorId
+        });
+    }
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<style>
+    .fixed_header {
+        overflow: visible;
+        width: 100%;
+        top: 0;
+        position: fixed;
+        z-index: 50;
+    }
+
+    .content {
+        margin-top: 170px;
+        z-index: 30;
+    }
+
+    .col_1, .col_2, .col_3, .col_4, .col_5, .col_6 {
+        float: left;
+        position: relative;
+    }
+
+    .col_1, .col_4 {
+        width: 12%;
+    }
+
+    .col_2, .col_3 {
+        width: 18%;
+    }
+
+    .col_6 {
+        width: 5%;
+    }
+
+    .col_5 {
+        width: 35%;
+    }
+
+</style>
+
+<body onload="init()">
+
+
+<!-- Header -->
+<div class="fixed_header w3-black">
+    <script src="header.js"></script>
+
+    <div id="sensor_commands" class="w3-bar w3-blue">
+            <div class="w3-bar-item">
+                <div id="sensor_commands_sensor_id" class="w3-padding-small w3-large">
+                    Select a sensor ...
+                </div>
+            </div>
+            <script type="text/javascript">
+                for (var i in commands) {
+                    document.write('<div class="w3-bar-item">');
+                    document.write('<button class="w3-button" onclick=\'doSimpleGet("');
+                    document.write(commands[i]);
+                    document.write('");\'>');
+                    document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
+                    document.write(commands[i]);
+                    document.write('</button></div>');
+                }
+
+            </script>
+    </div>
+
+    <div id="modal_overlay" class="w3-modal">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+            <div class="w3-bar w3-blue">
+                <div class="w3-bar-item" id="modal_sensor_id"></div>
+                <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
+                <div class="w3-bar-item" id="modal_label"></div>
+                <div class="w3-bar-item">
+                    <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="modal_content"></div>
+        </div>
+    </div>
+
+    <div id="table_header" class="w3-row w3-padding w3-grey">
+        <div class="col_1">Device</div>
+        <div class="col_2">Behavior</div>
+        <div class="col_3">Facility</div>
+        <div class="col_4">Personality</div>
+        <div class="col_5">Aliases</div>
+        <div class="col_6">Alerts</div>
+    </div>
+</div>
+
+<div id="table_data" class="content">
+</div>
+
+</body>
+
+</html>

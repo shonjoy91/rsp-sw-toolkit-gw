@@ -1,0 +1,32 @@
+{
+  "id": "SampleAliasClusterConfig",
+  "clusters": [
+    {
+      "id": "WaysToSpecifyDefaultAlias",
+      "facility_id": "DefaultAliases",
+      "behavior_id": "ClusterDeepScan_PORTS_1",
+      "aliases": ["", null, "DEFAULT", "DEFAULT"],
+      "sensor_groups": [
+        ["RSP-150000"],
+        ["RSP-150001"]
+      ]
+    }, {
+      "id": "ExampleSetting2PortDeviceIdOnly",
+      "facility_id": "DeviceIdOnly2Ports",
+      "behavior_id": "ClusterDeepScan_PORTS_1",
+      "aliases": ["DEVICE_ID", "DEVICE_ID"],
+      "sensor_groups": [
+        ["RSP-150002", "RSP-150003", "RSP-150004"]
+      ]
+    }, {
+      "id": "Example4PortWithPorts2and3",
+      "facility_id": "4PortJust2and3",
+      "behavior_id": "ClusterDeepScan_PORTS_1",
+      "aliases": ["", "", "freezer", "cooler"],
+      "sensor_groups": [
+        ["RSP-150005"]
+      ]
+    }
+  ]
+}
+

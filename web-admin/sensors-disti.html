@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Sensors</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "disti_cfg";
+
+    var gwSocket = new GatewayWebSocket();
+
+    gwSocket.topics = ["sensor_basic_info", "sensor_connection_state", "oem_cfg_update_status"];
+
+    function onSocketState(state) {
+        if (state === "open") {
+            clearAllData();
+            gwSocket.sendJsonRequest("scheduler_activate", {run_state: "INACTIVE"});
+            gwSocket.sendJsonRequest("repo_get_versions");
+            gwSocket.sendJsonRequest("oem_get_available_regions");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        if (jsonRsp.result === 'undefined') {
+            console.log("jsonRsp error: " + JSON.stringify(jsonRsp));
+            return;
+        }
+
+        var sensorId;
+        switch (jsonReq.method) {
+            case "oem_get_available_regions":
+                onOemAvailablRegions(jsonRsp.result);
+                break;
+            case "repo_get_versions":
+                onRepoVersions(jsonRsp.result);
+                break;
+            case "sensor_get_geo_region":
+                sensorId = mapPendingSensor(jsonRsp.id);
+                if (sensorId !== null) {
+                    onGeoRegionResponse(sensorId, jsonRsp.result);
+                }
+                break;
+            case "sensor_get_sw_version":
+                sensorId = mapPendingSensor(jsonRsp.id);
+                if (sensorId !== null) {
+                    onSoftwareVersionResponse(sensorId, jsonRsp.result);
+                }
+                break;
+        }
+    };
+
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case "sensor_basic_info":
+                onSensorBasicInfo(jsonNot.params);
+                break;
+            case "sensor_connection_state":
+                onSensorConnectionState(jsonNot.params);
+                break;
+            case "oem_cfg_update_status":
+                onOemCfgUpdateStatus(jsonNot.params);
+                break;
+        }
+    };
+
+
+    function onGeoRegionResponse(sensorId, result) {
+        var e = establishSensorElement(sensorId, ".region");
+        sensors[sensorId].region = result.region;
+        e.innerHTML = result.region;
+        checkSensorConfigStatus(sensorId);
+    }
+
+    function onSoftwareVersionResponse(sensorId, result) {
+        var e;
+        e = establishSensorElement(sensorId, ".app_version");
+        sensors[sensorId].app_version = result.app_version;
+        e.innerHTML = result.app_version;
+
+        e = establishSensorElement(sensorId, ".platform_support_version");
+        sensors[sensorId].platform_support_version = result.platform_support_version;
+        e.innerHTML = result.platform_support_version;
+        // TODO: request software update?
+    }
+
+    // this function is only used to initially populate the list of sensors
+    // it is more accurate to only include connected sensors
+    function onSensorBasicInfo(sensors) {
+        for (var i = 0; i < sensors.length; i++) {
+            var sensor = sensors[i];
+            if (sensor.connection_state === "CONNECTED") {
+                handleConnectionState(sensor.device_id, sensor.connection_state);
+            }
+        }
+    }
+
+    function onSensorConnectionState(params) {
+        handleConnectionState(params.device_id, params.current);
+    }
+
+    var availableAppVersion = "UNKNOWN";
+    var availablePlatformSupportVersion = "UNKNOWN";
+    var selectedRegion = null;
+
+    function onRepoVersions(params) {
+        availableAppVersion = params.app_version;
+        availablePlatformSupportVersion = params.platform_support_version;
+
+        document.getElementById("repo_app_version").innerHTML = params.app_version;
+        document.getElementById("repo_platform_support").innerHTML = params.platform_support_version;
+    }
+
+    function onOemAvailablRegions(params) {
+        var e = document.getElementById("regions_container");
+        while (e.firstChild) {
+            e.removeChild(e.firstChild);
+        }
+
+        for (var i = 0; i < params.length; i++) {
+            var regionElement = document.createElement("div");
+            regionElement.className = "w3-bar-item w3-button";
+            regionElement.innerHTML = params[i];
+            regionElement.onclick = selectRegionClosure(params[i]);
+            e.appendChild(regionElement);
+        }
+    }
+
+    function onOemCfgUpdateStatus(params) {
+        var s = "Setting region " + params.region;
+
+        switch (params.status) {
+            case "IN_PROGRESS":
+                s += ": ";
+                s += (params.total_lines === 0) ? 0 : Math.ceil(params.current_line_num / params.total_lines * 100);
+                s += "% complete <i class=\"fas fa-spinner fa-pulse\"></i>";
+                break;
+            case "ERROR":
+            case "FAIL":
+                // TODO: try again?
+                s += params.status + ": " + params.message;
+                break;
+            case "COMPLETE":
+                // do a round trip geo request rather than "assume"
+                sendSensorRequest(params.device_id, "sensor_get_geo_region");
+                break;
+        }
+        var e = establishSensorElement(params.device_id, ".status");
+        e.innerHTML = s;
+    }
+
+    function clearAllData() {
+        sensors = {};
+        var e = document.getElementById("table_data");
+        while (e.firstChild) {
+            e.removeChild(e.firstChild);
+        }
+
+    }
+
+    function sendSensorRequest(sensorId, method) {
+        var reqId = gwSocket.sendJsonRequest(method, {sensor_id: sensorId});
+        gwSocket.pendingRequests[reqId].sensorId = sensorId;
+    }
+
+    function mapPendingSensor(id) {
+        if (typeof gwSocket.pendingRequests[id].sensorId !== 'undefined') {
+            return gwSocket.pendingRequests[id].sensorId;
+        } else {
+            return null;
+        }
+    }
+
+    function setSelectedRegion(region) {
+        selectedRegion = region;
+        var e = document.getElementById("selected_region");
+        e.innerHTML = region;
+        closeRegionView();
+
+        Object.keys(sensors).forEach(function (sensorId) {
+            checkSensorConfigStatus(sensorId);
+        });
+    }
+
+    function selectRegionClosure(region) {
+        return function () {
+            setSelectedRegion(region);
+        }
+    }
+
+    function toggleRegionView() {
+        var e = document.getElementById("regions_view");
+        if (e.className.indexOf("w3-show") === -1) {
+            e.className += " w3-show";
+        } else {
+            e.className = e.className.replace(" w3-show", "");
+        }
+    }
+
+    function closeRegionView() {
+        var e = document.getElementById("regions_view");
+        e.className = e.className.replace(" w3-show", "");
+    }
+
+    function checkSensorConfigStatus(sensorId) {
+
+        var e;
+        e = establishSensorElement(sensorId, ".status");
+
+        if (sensors[sensorId].connection_state !== "CONNECTED") {
+            e.innerHTML = "Waiting for sensor connection";
+            return;
+        }
+
+        if (availableAppVersion === "UNKNOWN") {
+            e.innerHTML = "";
+            return;
+        }
+
+        if (!availableAppVersion.startsWith(sensors[sensorId].app_version) ||
+            sensors[sensorId].platform_support_version !== availablePlatformSupportVersion) {
+            e.innerHTML = "Requested sensor software update";
+            sendSensorRequest(sensorId, "sensor_software_update");
+            return;
+        }
+
+        if (selectedRegion === null) {
+            e.innerHTML = "&nbsp;";
+            return;
+        }
+
+        if (sensors[sensorId].region === selectedRegion) {
+            e.innerHTML = "OK";
+        } else {
+            // send change region command
+            e.innerHTML = "Changing region";
+            var reqId = gwSocket.sendJsonRequest("sensor_set_geo_region", {
+                sensor_id: sensorId,
+                region: selectedRegion
+            });
+            gwSocket.pendingRequests[reqId].sensorId = sensorId;
+            document.getElementById(sensorId + ".region").innerHTML = "&nbsp;";
+        }
+
+    }
+
+    function handleConnectionState(sensorId, state) {
+        var e = establishSensorElement(sensorId, ".connection_state");
+        sensors[sensorId].connection_state = state;
+        if (state === "CONNECTED") {
+            e.className = icons.connected;
+            sendSensorRequest(sensorId, "sensor_get_sw_version");
+            sendSensorRequest(sensorId, "sensor_get_geo_region");
+        } else {
+            e.className = icons.disconnected;
+        }
+        checkSensorConfigStatus(sensorId);
+    }
+
+    function establishSensorElement(sensorId, elementIdSuffix) {
+        var e = document.getElementById(sensorId + elementIdSuffix);
+        if (e === null) {
+            createSensorRow(sensorId);
+            e = document.getElementById(sensorId + elementIdSuffix);
+        }
+        return e;
+    }
+
+
+    var sensors = {};
+
+    function createSensorRow(sensorId) {
+
+        // need to differentiate unknown information from
+        // javascript initialization and sensor sources
+        // UNKNOWN is a valid return string if the sensor cannot
+        // figure out or does not have the configuration information
+        sensors[sensorId] = {
+            connection_state: "???",
+            app_version: "???",
+            platform_support_version: "???",
+            region: "???"
+        };
+
+        var newRow = document.createElement("div");
+        newRow.id = sensorId + ".row";
+        newRow.className = "w3-row w3-padding";
+
+        var col = document.createElement("div");
+        col.className = "col_1";
+        col.appendChild(document.createTextNode(sensorId));
+        // add 2 spaces
+        col.appendChild(document.createTextNode('\u00A0\u00A0'));
+        var iCnx = document.createElement("i");
+        iCnx.id = sensorId + ".connection_state";
+        col.appendChild(iCnx);
+        newRow.appendChild(col);
+
+        newRow.appendChild(createStandardColumn("col_2", sensorId + ".app_version"));
+        newRow.appendChild(createStandardColumn("col_3", sensorId + ".platform_support_version"));
+        newRow.appendChild(createStandardColumn("col_4", sensorId + ".region"));
+        newRow.appendChild(createStandardColumn("col_5", sensorId + ".status"));
+
+        var table = document.getElementById("table_data");
+        var child = null;
+        for (var i = 0; i < table.childNodes.length; i++) {
+            child = table.childNodes[i];
+            if (child.id > sensorId) {
+                break;
+            }
+            child = null;
+        }
+        if (child === undefined) {
+            table.appendChild(newRow);
+        } else {
+            table.insertBefore(newRow, child);
+        }
+    }
+
+    function createStandardColumn(className, id) {
+        var col = document.createElement("div");
+        col.className = className;
+        col.id = id;
+        col.innerHTML = "&nbsp;";
+        col.appendChild(document.createTextNode('\u00A0\u00A0'));
+        return col;
+    }
+
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<style>
+    .fixed_header {
+        overflow: visible;
+        width: 100%;
+        top: 0;
+        position: fixed;
+    }
+
+    .content {
+        margin-top: 150px;
+    }
+
+    .col_1, .col_2, .col_3, .col_4, .col_5 {
+        float: left;
+    }
+
+    .col_1, .col_2, .col_3, .col_4 {
+        width: 15%;
+    }
+
+    .col_5 {
+        width: 40%;
+    }
+
+</style>
+
+<body onload="init()">
+
+<!-- Header -->
+<div class="fixed_header w3-black">
+    <script src="header.js"></script>
+
+    <div id="available_configuration" class="w3-row w3-padding w3-border w3-blue w3-large">
+        <div class="col_1">Target Configuration</div>
+        <div class="col_2" id="repo_app_version">version pending</div>
+        <div class="col_3" id="repo_platform_support">version pending</div>
+        <div class="col_4 w3-hover-white" id="selected_region" style="cursor: default" onClick="toggleRegionView()">
+            Select a region
+        </div>
+        <div class="col_5">&nbsp;</div>
+    </div>
+    <div id="regions_view" class="w3-hide w3-teal w3-border">
+        <div class="w3-container w3-center w3-xxlarge w3-padding">!!! Changing regions has legal ramifications ... !!!</div>
+        <div class="w3-container w3-padding" id="regions_container"></div>
+    </div>
+    <div id="table_header" class="w3-row w3-padding w3-grey">
+        <div class="col_1">Device</div>
+        <div class="col_2">Version rfid-rsp</div>
+        <div class="col_3">Version platform-support</div>
+        <div class="col_4">Region</div>
+        <div class="col_5">Status</div>
+    </div>
+
+</div>
+
+<!-- Content -->
+<div id="table_data" class="content">
+
+</div>
+
+</body>
+
+</html>

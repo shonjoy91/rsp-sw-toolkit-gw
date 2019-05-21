@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Tag Statistics</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "tag_stats";
+
+    var gwSocket = new GatewayWebSocket();
+
+    gwSocket.topics = ["tag_statistics"];
+
+    var stats_update;
+
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case "tag_stats_update":
+                stats_update = jsonNot.params;
+                onTagStatsUpdate();
+                break;
+            case "epc_filter_pattern":
+                alignEpcFilterPattern(jsonNot.params.epc_filter_pattern);
+                break;
+        }
+    };
+
+    function sendEpcFilterPattern() {
+        var table = document.getElementById("tag_stats_table");
+        var index = table.rows.length - 1;
+        while (index > 0) {
+            table.deleteRow(index);
+            index--;
+        }
+        var pattern = document.getElementById("epc_filter_pattern").value;
+        gwSocket.sendJsonRequest("set_epc_filter_pattern", {epc_filter_pattern: pattern});
+    }
+
+    function alignEpcFilterPattern(pattern) {
+        document.getElementById("epc_filter_pattern").value = pattern;
+    }
+
+    function initEpcFilterInput() {
+        var e = document.getElementById("epc_filter_pattern");
+        e.addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendEpcFilterPattern();
+            }
+        });
+    }
+    
+    // maps sensor id and epc to corresponding indexes;
+    var colLookup = {};
+
+    function onTagStatsUpdate() {
+
+        var table = document.getElementById("tag_stats_table");
+        var row;
+        var cell;
+        var headerRow;
+        var headerCell;
+        var id;
+        var i;
+        table.style.overflow = "auto";
+        // establish sensor id columns for header row
+        headerRow = table.rows[0];
+        
+        for (i = 0; i < stats_update.sensor_ids.length; i++) {
+            id = stats_update.sensor_ids[i];
+            if (typeof colLookup[id] === 'undefined') {
+                var colIndex = headerRow.cells.length;
+                colLookup[id] = colIndex;
+                headerCell = document.createElement("th");
+                // headerCell = headerRow.insertCell(colIndex);
+                headerCell.id = id;
+                headerCell.innerHTML = id;
+                // headerCell.innerHTML = '<span>' + id + '</span>';
+                headerRow.appendChild(headerCell);
+
+                for (var j = 1; j < table.rows.length; j++) {
+                    cell = table.row[j].insertCell(colIndex);
+                    cell.classList.add("w3-border-bottom");
+                    // cell = document.createElement("td");
+                    // table.rows[j].appendChild(cell);
+                }
+            }
+        }
+
+        var now = Date.now();
+
+        for (var epc in stats_update.epc_map) {
+            row = null;
+
+            // skip the header row!!
+            for (i = 1; i < table.rows.length; i++) {
+                // look up row by epc
+                if(table.rows[i].cells[0].innerHTML === epc) {
+                    row = table.rows[i];
+                    break;
+                }
+            }
+
+            if(row === null) {
+                // skip the header row!!
+                for (i = 1; i < table.rows.length; i++) {
+                    if(table.rows[i].cells[0].innerHTML > epc) {
+                        break;
+                    }
+                }
+                row = table.insertRow(i);
+    
+                for (var k = 0; k < table.rows[0].cells.length; k++) {
+                    cell = row.insertCell(k);
+                    cell.classList.add("w3-border-bottom");
+                }
+                row.cells[0].innerHTML = epc;
+            }
+
+            var statsList = stats_update.epc_map[epc];
+            for (i = 0; i < statsList.length; i++) {
+                var stat = statsList[i];
+                for(var x = 0; x < row.cells.length; x++) {
+                    
+                    if(table.rows[0].cells[x].id === stat.device_id) {
+                        cell = row.cells[x];
+                        if (stat.is_location) {
+                            cell.classList.add("w3-dark-grey");
+                        } else {
+                            cell.classList.remove("w3-dark-grey");
+                        }
+                        cell.innerHTML = '<span ' +
+                            'class="w3-button w3-tiny w3-padding-small" onclick=\'showLegend();\' ' +
+                            'style="background-color:' +
+                            getColor(stat.mean, now - stat.last_read) +
+                            '"></span>&nbsp;' +
+                            stat.mean.toFixed(1);
+                    }
+                }
+            }
+        }
+    }
+
+    // time thresholds
+    var t1 = 1000 * 60;
+    var t2 = t1 * 5;
+    var t3 = t2 * 3;
+    // rssi thresholds
+    var r1 = -50;
+    var r2 = -70;
+
+    function getColor(mean, elapsed) {
+        var color = "#020202";
+
+        if (elapsed < t1) {
+            if (mean > r1) {
+                color = "#FF0000";
+            } else if (mean > r2) {
+                color = "#FFFF00";
+            } else {
+                color = "#0000FF";
+            }
+        } else if (elapsed < t2) {
+            if (mean > r1) {
+                color = "#CC0000";
+            } else if (mean > r2) {
+                color = "#CCCC00";
+            } else {
+                color = "#0000CC";
+            }
+        } else if (elapsed < t3) {
+            if (mean > r1) {
+                color = "#990000";
+            } else if (mean > r2) {
+                color = "#999900";
+            } else {
+                color = "#000099";
+            }
+        } else {
+            if (mean > r1) {
+                color = "#660000";
+            } else if (mean > r2) {
+                color = "#666600";
+            } else {
+                color = "#000066";
+            }
+        }
+        return color;
+    }
+
+    function createLegendColors() {
+        var times = [t1 - 10, t2 - 10, t3 - 10, t3 + 10];
+        var rssis = [r1 + 10, r1 - 10, r2 - 10];
+
+        for (var t = 0; t < times.length; t++) {
+            for (var r = 0; r < rssis.length; r++) {
+                var e = document.getElementById("t" + t + "r" + r);
+                e.style.backgroundColor = getColor(rssis[r], times[t]);
+            }
+        }
+    }
+
+    function showLegend() {
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+    function closeResultsModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+    function showLegendOnce() {
+        if (document.cookie.replace(/(?:(?:^|.*;\s*)showLegendOnceAutomatically\s*\=\s*([^;]*).*$)|^.*$/, "$1") !== "true") {
+            showLegend();
+            document.cookie = "showLegendOnceAutomatically=true; expires=Fri, 31 Dec 9999 23:59:59 GMT";
+        }
+    }
+
+    function init() {
+        initEpcFilterInput();
+        createLegendColors();
+        showLegendOnce();
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+<!-- Header -->
+<script src="header.js"></script>
+
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-white">
+        <div class="w3-bar">
+            <div class="w3-bar-item w3-button w3-right" onclick='closeResultsModal();'>
+                    <i class="fa fa-times"></i>
+            </div>
+        </div>
+        
+        <table class="w3-table w3-bordered">
+            <tr>
+                <th class="w3-center"><i class="fas fa-info-circle w3-xxxlarge"></i></th>
+                <td style="vertical-align: top">
+                    The tag statistics table shows the average signal strength (dBm)
+                    of the last 20 tag reads from each sensor/antenna
+                    that has seen the tag.
+                </td>
+            </tr>
+            <tr>
+                <th class="w3-center" style="vertical-align: baseline"><h3>Location</h3></th>
+                <td style="vertical-align: baseline">
+                    Cells with <span class="w3-gray w3-padding">&nbsp;grey&nbsp;</span> background indicate tag's current location
+                </td>
+            </tr>
+            <tr>
+                <th class="w3-center" style="vertical-align: baseline"><h3>Tag Read Quality</h3></th>
+                <td style="vertical-align: baseline">
+                    Hue indicates signal strength.
+                    <br>
+                    Shade indicates time since last read.
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+
+                    <table class="w3-table">
+                        <tr>
+                            <th style="width: 25%;">&nbsp;</th>
+                            <th style="width: 25%;">rssi > -50</th>
+                            <th style="width: 25%;">-50 > rssi > -70</th>
+                            <th style="width: 25%;">-70 > rssi</th>
+                        </tr>
+                        <tr>
+                            <th>less than 01 minute</th>
+                            <td id="t0r0">&nbsp;</td>
+                            <td id="t0r1">&nbsp;</td>
+                            <td id="t0r2">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <th>less than 05 minutes</th>
+                            <td id="t1r0">&nbsp;</td>
+                            <td id="t1r1">&nbsp;</td>
+                            <td id="t1r2">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <th>less than 15 minutes</th>
+                            <td id="t2r0">&nbsp;</td>
+                            <td id="t2r1">&nbsp;</td>
+                            <td id="t2r2">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <th>more than 15 minutes</th>
+                            <td id="t3r0">&nbsp;</td>
+                            <td id="t3r1">&nbsp;</td>
+                            <td id="t3r2">&nbsp;</td>
+                        </tr>
+                    </table>
+
+
+                </td>
+            </tr>
+        </table>
+
+    </div>
+</div>
+
+
+<!-- Content -->
+<div class="w3-row">
+
+    <div class="w3-bar w3-blue">
+        <div class="w3-bar-item">
+            <label class="w3-opacity" for="epc_filter_pattern"><b>Filter Pattern</b></label>
+            <input type="text" id="epc_filter_pattern"/>
+            <button class="w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i></button>
+        </div>
+        <div class="w3-bar-item w3-right w3-button" onclick="showLegend()">
+            <i class="fas fa-info-circle w3-xlarge"></i>
+        </div>
+    </div>
+
+    <table id="tag_stats_table" class="w3-table">
+        <tr class="w3-grey">
+            <th>EPC</th>
+        </tr>
+    </table>
+
+
+</div>
+
+</body>
+
+</html>

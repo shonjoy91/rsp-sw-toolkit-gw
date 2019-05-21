@@ -1,0 +1,292 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+package com.intel.rfid.gpio;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.intel.rfid.api.data.GPIOState;
+import com.intel.rfid.api.data.GPIODeviceInfo;
+import com.intel.rfid.api.data.GPIODirection;
+import com.intel.rfid.api.data.GPIOInfo;
+import com.intel.rfid.api.common.HeartbeatNotification;
+import com.intel.rfid.api.downstream.GPIODeviceConnectRequest;
+import com.intel.rfid.api.downstream.GPIOInputNotification;
+import com.intel.rfid.api.common.JsonRPCError;
+import com.intel.rfid.api.common.JsonRequest;
+import com.intel.rfid.api.downstream.GPIOSetGPIORequest;
+import com.intel.rfid.sensor.ResponseHandler;
+import com.intel.rfid.api.data.ConnectionState;
+import com.intel.rfid.api.data.ConnectionStateEvent;
+import com.intel.rfid.helpers.Jackson;
+import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.schedule.AtomicTimeMillis;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class GPIODevice {
+
+    protected GPIODeviceInfo deviceInfo;
+    protected GPIOManager manager;
+    protected int inputs = 0;
+    protected int outputs = 0;
+
+    protected final Logger logGPIO; // created on construction using the deviceId
+    protected final Logger logAlert = LoggerFactory.getLogger("gpio.alert");
+    protected final Logger logHeartbeat = LoggerFactory.getLogger("gpio.heartbeat");
+    protected final Logger logInputEvent = LoggerFactory.getLogger("gpio.input");
+    protected final Logger logConnect = LoggerFactory.getLogger("rsp.connect");
+
+    protected ConnectionState connectionState = ConnectionState.DISCONNECTED;
+    protected final AtomicTimeMillis lastCommsMillis = new AtomicTimeMillis();
+
+    public static final long LOST_COMMS_THRESHOLD = 90000;
+    protected static final ObjectMapper MAPPER = Jackson.getMapper();
+    protected final Object msgHandleLock = new Object();
+    protected final Map<String, ResponseHandler> responseHandlers = new HashMap<>();
+    
+    public GPIODevice(String _deviceId, GPIOManager _manager) {
+        deviceInfo = new GPIODeviceInfo();
+        deviceInfo.device_id = _deviceId;
+        manager = _manager;
+        logGPIO = LoggerFactory.getLogger(String.format("%s.%s", getClass().getSimpleName(), deviceInfo.device_id));
+    }
+
+    public void setGPIODeviceInfo(GPIODeviceInfo _info) {
+        if (_info.device_id.equals(deviceInfo.device_id)) {
+            deviceInfo = _info;
+            inputs = 0;
+            outputs = 0;
+            for (GPIOInfo info : deviceInfo.gpio_info) {
+                if (info.direction == GPIODirection.INPUT) {
+                    inputs++;
+                } else {
+                    outputs++;
+                }
+            }    
+        } else {
+            logGPIO.warn("Cannot set GPIODeviceInfo, {} does not match {}", deviceInfo.device_id, _info.device_id);
+        }
+    }
+
+    public String getDeviceId() {
+        return deviceInfo.device_id;
+    }
+
+    public ResponseHandler setGPIOState(int _index, GPIOState _state) {
+        // if not connected, this is all that needs to be done
+        if (!isConnected()) {
+            return new ResponseHandler(getDeviceId(),
+                                       JsonRPCError.Type.NO_ERROR,
+                                       "GPIODevice is not connected");
+        }
+        if (!(_index < deviceInfo.gpio_info.size())) {
+            return new ResponseHandler(getDeviceId(),
+                                       JsonRPCError.Type.INVALID_PARAMETER,
+                                       "Index is out of range");
+        }
+        GPIOInfo info = deviceInfo.gpio_info.get(_index);
+        info.state = _state;
+        logGPIO.info("{} {} {}", getDeviceId(), _state, info.name);
+        deviceInfo.gpio_info.set(_index, info);
+        return execute(new GPIOSetGPIORequest(info));
+    }
+
+    private ResponseHandler execute(JsonRequest _req) {
+        if (connectionState != ConnectionState.CONNECTED) {
+            String errMsg = "no connection to device";
+            logGPIO.info("Cannot execute {}: {} - {}", getDeviceId(), _req.getMethod(), errMsg);
+            return new ResponseHandler(getDeviceId(), JsonRPCError.Type.WRONG_STATE, errMsg);
+        }
+
+        _req.generateId();
+        ResponseHandler rh;
+
+        rh = new ResponseHandler(getDeviceId(), _req.getId());
+
+        // be sure to put the handler in before sending the message
+        // risk of the message and response coming back before the handler
+        // can get to it.
+        synchronized (msgHandleLock) {
+            responseHandlers.put(_req.getId(), rh);
+        }
+
+        try {
+            rh.setRequest(_req);
+            manager.sendGPIOCommand(getDeviceId(), _req);
+        } catch (Exception e) {
+            synchronized (msgHandleLock) {
+                responseHandlers.remove(_req.getId());
+            }
+            rh = new ResponseHandler(getDeviceId(), _req.getId(),
+                                     JsonRPCError.Type.INTERNAL_ERROR, e.getMessage());
+            rh.setRequest(_req);
+            logGPIO.error("{} error sending command:", getDeviceId(), e);
+        }
+
+        return rh;
+    }
+
+    public void handleMessage(byte[] _msg) {
+        synchronized (msgHandleLock) {
+            updateLastComms();
+            try {
+
+                JsonNode rootNode = MAPPER.readTree(_msg);
+
+                // check for method object and get out early if missing
+                JsonNode idNode = rootNode.get("id");
+                JsonNode methodNode = rootNode.get("method");
+
+                // both requests and notifications can follow a similar
+                // processing path. The onXXX methods are inherently mapped
+                // to whether this is a request or notification
+                if (methodNode != null) {
+                    handleMethod(methodNode.asText(), rootNode);
+                } else if (idNode != null) {
+                    String id = idNode.asText();
+                    ResponseHandler rh = responseHandlers.get(id);
+                    if (rh != null) {
+                        rh.handleResponse(rootNode);
+                    }
+                    responseHandlers.remove(id);
+                } else {
+                    logGPIO.warn("{} unhandled json msg: {}",
+                                deviceInfo.device_id, MAPPER.writeValueAsString(rootNode));
+                }
+
+            } catch (Exception e) {
+                logGPIO.error("{} Error handling message:", deviceInfo.device_id, e);
+            }
+        }
+    }
+
+    private void handleMethod(String _method, JsonNode _rootNode) {
+
+        try {
+
+            switch (_method) {
+
+                case GPIODeviceConnectRequest.METHOD_NAME:
+                    GPIODeviceConnectRequest conReq = MAPPER.treeToValue(_rootNode, GPIODeviceConnectRequest.class);
+                    onConnect(conReq);
+                    break;
+
+                case GPIOInputNotification.METHOD_NAME:
+                    GPIOInputNotification inputNotification = MAPPER.treeToValue(_rootNode, GPIOInputNotification.class);
+                    onGPIOInputNotification(inputNotification);
+                    break;
+
+                case HeartbeatNotification.METHOD_NAME:
+                HeartbeatNotification hb = MAPPER.treeToValue(_rootNode, HeartbeatNotification.class);
+                    onHeartbeat(hb);
+                    break;
+
+                default:
+                    logGPIO.warn("{} unhandled method: {}", deviceInfo.device_id, _method);
+
+            }
+
+        } catch (JsonProcessingException e) {
+            logGPIO.error("{} Error inbound JsonRPC message:", deviceInfo.device_id, e);
+        } catch (Exception e) {
+            logGPIO.error("{} Error handling message:", deviceInfo.device_id, e);
+        }
+
+    }
+
+    private void onConnect(GPIODeviceConnectRequest _msg) {
+        logInboundJson(logConnect, _msg.getMethod(), _msg.params);
+        if (connectionState != ConnectionState.CONNECTED) {
+            changeConnectionState(ConnectionState.CONNECTED, ConnectionStateEvent.Cause.READY);
+        }
+        setGPIODeviceInfo(_msg.params);
+        try {
+            manager.sendGPIOConnectResponse(_msg.getId(), deviceInfo.device_id);
+        } catch (IOException | GatewayException _e) {
+            logGPIO.error("error sending connect response", _e);
+        }
+    }
+
+    public boolean isConnected() {
+        return connectionState == ConnectionState.CONNECTED;
+    }
+
+    public ConnectionState getConnectionState() {
+        return connectionState;
+    }
+
+    private void onGPIOInputNotification(GPIOInputNotification _notification) {
+        logInboundJson(logConnect, _notification.getMethod(), _notification.params);
+        try {
+            manager.handleGPIOInput(deviceInfo.device_id, _notification);
+            GPIOInfo info = _notification.params.gpio_info;
+            deviceInfo.gpio_info.set(info.index, info);
+        } catch (IOException | GatewayException _e) {
+            logGPIO.error("error handling GPIO Input", _e);
+        }
+    }
+
+    private void onHeartbeat(HeartbeatNotification _msg) {
+        logInboundJson(logHeartbeat, _msg.getMethod(), _msg.params);
+        if (connectionState != ConnectionState.CONNECTED) {
+            changeConnectionState(ConnectionState.CONNECTED, ConnectionStateEvent.Cause.RESYNC);
+        }
+    }
+
+    protected synchronized void changeConnectionState(ConnectionState _next, ConnectionStateEvent.Cause _cause) {
+
+        connectionState = _next;
+    }
+
+    public long getLastCommsMillis() {
+        return lastCommsMillis.get();
+    }
+
+    public void updateLastComms() {
+        lastCommsMillis.mark();
+    }
+
+    private boolean hasLostComms() {
+        return !lastCommsMillis.isWithin(LOST_COMMS_THRESHOLD);
+    }
+
+    void checkLostHeartbeatAndReset() {
+        if (hasLostComms()) {
+            if (connectionState != ConnectionState.DISCONNECTED) {
+                changeConnectionState(ConnectionState.DISCONNECTED, ConnectionStateEvent.Cause.LOST_HEARTBEAT);
+            }
+            lastCommsMillis.set(0);
+        }
+    }
+
+    private static final String FMT = "%-12s %-12s %-12s %-12s";
+    public static final String HDR = String
+        .format(FMT, "device", "state", "inputs", "outputs");
+
+    @Override
+    public String toString() {
+        return String.format(FMT,
+                             deviceInfo.device_id,
+                             connectionState,
+                             inputs,
+                             outputs);
+    }
+
+    private void logInboundJson(Logger _log, String _prefix, Object _msg) {
+        try {
+            _log.info("{} RECEIVED {} {}", deviceInfo.device_id, _prefix, MAPPER.writeValueAsString(_msg));
+        } catch (JsonProcessingException e) {
+            _log.error("{} ERROR: {}", deviceInfo.device_id, e);
+        }
+    }
+
+}

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "dashboard";
+
+    var gwSocket = new GatewayWebSocket();
+
+    gwSocket.topics = [
+        "sensor_manager_summary",
+        "inventory_summary",
+        "upstream_manager_summary",
+        "downstream_manager_summary",
+        "scheduler_summary"
+    ];
+
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case 'sensor_manager_summary':
+                onSensorSummary(jsonNot.params);
+                break;
+            case 'inventory_summary':
+                onInventorySummary(jsonNot.params);
+                break;
+            case 'upstream_manager_summary':
+                onUpDownSummaryContent('upstream', jsonNot.params);
+                break;
+            case 'downstream_manager_summary':
+                onUpDownSummaryContent('downstream', jsonNot.params);
+                break;
+            case 'scheduler_summary':
+                onSchedulerSummary(jsonNot.params);
+                break;
+        }
+    };
+
+
+    function onSensorSummary(sensor_manager_summary) {
+        var e;
+        e = document.getElementById("sensors_reading");
+        e.innerHTML = sensor_manager_summary.reading;
+        e = document.getElementById("sensors_connected");
+        e.innerHTML = sensor_manager_summary.connected;
+        e = document.getElementById("sensors_disconnected");
+        e.innerHTML = sensor_manager_summary.disconnected;
+    }
+
+    function onInventorySummary(inventory_summary) {
+        onTagReadSummary(inventory_summary.tag_read_summary);
+        onTagStateSummary(inventory_summary.tag_state_summary);
+    }
+
+    function onTagStateSummary(tag_state_summary) {
+        var e;
+        e = document.getElementById("tag_states_present");
+        e.innerHTML = tag_state_summary.PRESENT;
+        e = document.getElementById("tag_states_exiting");
+        e.innerHTML = tag_state_summary.EXITING;
+        e = document.getElementById("tag_states_departed_exit");
+        e.innerHTML = tag_state_summary.DEPARTED_POS;
+        e = document.getElementById("tag_states_departed_pos");
+        e.innerHTML = tag_state_summary.DEPARTED_EXIT;
+    }
+
+    function onTagReadSummary(tag_read_summary) {
+        var e;
+        e = document.getElementById("tag_reads_reads_per_second");
+        e.innerHTML = tag_read_summary.reads_per_second;
+        e = document.getElementById("tag_reads_within_last_01_min");
+        e.innerHTML = tag_read_summary.within_last_01_min;
+        e = document.getElementById("tag_reads_from_01_to_05_min");
+        e.innerHTML = tag_read_summary.from_01_to_05_min;
+        e = document.getElementById("tag_reads_from_05_to_30_min");
+        e.innerHTML = tag_read_summary.from_05_to_30_min;
+        e = document.getElementById("tag_reads_from_30_to_60_min");
+        e.innerHTML = tag_read_summary.from_30_to_60_min;
+        e = document.getElementById("tag_reads_from_60_min_to_24_hr");
+        e.innerHTML = tag_read_summary.from_60_min_to_24_hr;
+        e = document.getElementById("tag_reads_more_than_24_hr");
+        e.innerHTML = tag_read_summary.more_than_24_hr;
+    }
+
+    function onUpDownSummaryContent(nameId, params) {
+        var e;
+        e = document.getElementById(nameId + "_run_state");
+        e.innerHTML = params.run_state;
+        e = document.getElementById(nameId + "_broker_uri");
+        e.innerHTML = params.broker_uri;
+        e = document.getElementById(nameId + "_subscribes");
+        e.innerHTML = "";
+
+        var i;
+        for (i in params.subscribes) {
+            e.innerHTML += '<div class="w3-margin-left w3-small">' + params.subscribes[i] + '</div>';
+        }
+        e = document.getElementById(nameId + "_publishes");
+        e.innerHTML = "";
+        for (i in params.publishes) {
+            e.innerHTML += '<div class="w3-margin-left w3-small">' + params.publishes[i] + '</div>';
+        }
+    }
+
+    function onSchedulerSummary(scheduler_summary) {
+        for (var i in scheduler_summary.available_states) {
+            var curState = scheduler_summary.available_states[i];
+            var e = document.getElementById("scheduler_selected_" + curState);
+            if (curState === scheduler_summary.run_state) {
+                e.innerHTML = '<i class="fas fa-check-circle"></i>';
+            } else {
+                e.innerHTML = '';
+            }
+        }
+    }
+
+    function activateSchedule(newState) {
+        gwSocket.sendJsonRequest("scheduler_activate", {
+            run_state: newState
+        });
+    }
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+<!-- Header -->
+<script src="header.js"></script>
+
+
+<div class="w3-row-padding w3-margin-top">
+
+    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
+        <div class="w3-bar w3-xxlarge">
+            <div class="w3-bar-item"><i class="fa fa-rss"></i></div>
+            <div class="w3-bar-item w3-right">Sensors</div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Reading</div>
+            <div class="w3-bar-item w3-right" id="sensors_reading"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Connected</div>
+            <div class="w3-bar-item w3-right" id="sensors_connected"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Disconnected</div>
+            <div class="w3-bar-item w3-right" id="sensors_disconnected"></div>
+        </div>
+    </div>
+
+    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
+        <div class="w3-bar w3-xxlarge">
+            <div class="w3-bar-item"><i class="fa fa-tags"></i></div>
+            <div class="w3-bar-item w3-right">Tag States</div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Present</div>
+            <div class="w3-bar-item w3-right" id="tag_states_present"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Exiting</div>
+            <div class="w3-bar-item w3-right" id="tag_states_exiting"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Departed Exit</div>
+            <div class="w3-bar-item w3-right" id="tag_states_departed_exit"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Departed POS</div>
+            <div class="w3-bar-item w3-right" id="tag_states_departed_pos"></div>
+        </div>
+    </div>
+
+    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
+        <div class="w3-bar w3-xxlarge">
+            <div class="w3-bar-item"><i class="fa fa-tags"></i></div>
+            <div class="w3-bar-item w3-right">Tag Reads</div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Reads Per Second</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_reads_per_second"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">less than 01 min</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_within_last_01_min"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">from 01 min to 05 min</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_from_01_to_05_min"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">from 05 min to 30 min</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_from_05_to_30_min"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">from 30 min to 60 min</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_from_30_to_60_min"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">from 60 min to 24 hours</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_from_60_min_to_24_hr"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">more than 24 hours</div>
+            <div class="w3-bar-item w3-right" id="tag_reads_more_than_24_hr"></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="w3-row-padding w3-margin-top">
+
+    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
+        <div class="w3-bar w3-xxlarge">
+            <div class="w3-bar-item"><i class="fa fa-cloud-upload-alt"></i></div>
+            <div class="w3-bar-item w3-right">Upstream</div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Run State</div>
+            <div class="w3-bar-item w3-right" id="upstream_run_state"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Broker</div>
+            <div class="w3-bar-item w3-right" id="upstream_broker_uri"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Subscribes</div>
+            <div class="w3-bar-item w3-right" id="upstream_subscribes"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Publishes</div>
+            <div class="w3-bar-item w3-right" id="upstream_publishes"></div>
+        </div>
+    </div>
+
+    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
+        <div class="w3-bar w3-xxlarge">
+            <div class="w3-bar-item"><i class="fa fa-download"></i></div>
+            <div class="w3-bar-item w3-right">Downstream</div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Run State</div>
+            <div class="w3-bar-item w3-right" id="downstream_run_state"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Broker</div>
+            <div class="w3-bar-item w3-right" id="downstream_broker_uri"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Subscribes</div>
+            <div class="w3-bar-item w3-right" id="downstream_subscribes"></div>
+        </div>
+        <div class="w3-bar">
+            <div class="w3-bar-item">Publishes</div>
+            <div class="w3-bar-item w3-right" id="downstream_publishes"></div>
+        </div>
+    </div>
+
+    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
+        <div class="w3-bar w3-xxlarge">
+            <div class="w3-bar-item"><i class="far fa-calendar-alt"></i></div>
+            <div class="w3-bar-item w3-right">Scheduler</div>
+        </div>
+        <div class="w3-bar-block">
+            <div class="w3-bar-item w3-button" onclick="activateSchedule('INACTIVE');">
+                INACTIVE <span id="scheduler_selected_INACTIVE"></span>
+            </div>
+            <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_ON');">
+                ALL_ON <span id="scheduler_selected_ALL_ON"></span>
+            </div>
+            <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_SEQUENCED');">
+                ALL_SEQUENCED <span id="scheduler_selected_ALL_SEQUENCED"></span>
+            </div>
+            <div class="w3-bar-item w3-button" onclick="activateSchedule('FROM_CONFIG');">
+                FROM_CONFIG <span id="scheduler_selected_FROM_CONFIG"></span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+
+</html>

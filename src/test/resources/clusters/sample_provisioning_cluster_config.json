@@ -1,0 +1,85 @@
+{
+  "id": "SampleProvisioningClusterConfig",
+  "clusters": [
+    {
+      "id": "BackStock",
+      "facility_id": "BackStock",
+      "behavior_id": "ClusterDeepScan_PORTS_1",
+      "tokens": [
+        {
+          "username": "BS_DEFAULT_001",
+          "token": "BackStockDeepScan001UUWWYYBBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        },
+        {
+          "username": "BS_DEFAULT_002",
+          "token": "BackStockDeepScan002UUWWYYBBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        }
+      ]
+    }, {
+      "id": "SalesFloorMobility",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterMobility_PORTS_1",
+      "tokens": [
+        {
+          "username": "SF_DEFAULT_001",
+          "token": "SalesFloor01Default001WWYYBBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        },
+        {
+          "username": "SF_DEFAULT_002",
+          "token": "SalesFloor01Default002WWYYBBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        }
+      ]
+    }, {
+      "id": "SalesFloorExit",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterExit_PORTS_1",
+      "personality": "EXIT",
+      "aliases": ["ExitLeft", "ExitOverhead", "ExitRight", null],
+      "tokens": [
+        {
+          "username": "SF_EXIT_001",
+          "token": "SalesFloor01Exit001SUUWWYYBBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        }
+      ]
+    }, {
+      "id": "SalesFloorPOS",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterPOS_PORTS_1",
+      "personality": "POS",
+      "aliases": ["Register1", "Register2", "Register3", "Register4"],
+      "tokens": [
+        {
+          "username": "SF_POS_001",
+          "token": "SalesFloor01POS001TSUUWWYYBBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        }
+      ]
+    }, {
+      "id": "SalesFloorFittingRoom",
+      "facility_id": "SalesFloor",
+      "behavior_id": "ClusterFittingRoom_PORTS_1",
+      "personality": "FITTING_ROOM",
+      "aliases": ["FittingRoom1", "FittingRoom2", "FittingRoom3", "FittingRoom4"],
+      "tokens": [
+        {
+          "username": "SF_FITTING_ROOM_001",
+          "token": "SalesFloor01FittingRoom001BBDDFFE3DA5098692CE27945AA367189B52C58",
+          "generatedTimestamp": 0,
+          "expirationTimestamp": -1
+        }
+      ]
+    }
+  ]
+}
+

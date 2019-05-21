@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Configuration</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+
+    var currentPage = "scheduler";
+
+    var gwSocket = new GatewayWebSocket();
+
+    gwSocket.topics = ["scheduler_summary"];
+    
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case "scheduler_summary":
+                onSchedulerSummary(jsonNot.params);
+                break;
+        }
+    };
+
+
+    function onSchedulerSummary(params) {
+
+
+        var s = "";
+        var i, j, k;
+
+        for (i in params.available_states) {
+            var curState = params.available_states[i];
+            var e = document.getElementById("scheduler_selected_" + curState);
+            if (curState === params.run_state) {
+                e.innerHTML = '<i class="fas fa-check-circle"></i>';
+            } else {
+                e.innerHTML = '';
+            }
+        }
+
+        if (params.clusters == null || params.clusters.length === 0) {
+            document.getElementById("scheduler_summary.clusters").innerHTML = ""
+            return;
+        }
+
+        //alert("clusters: " +rsp.params.clusters.length);
+        s = '<table class="w3-table">';
+        s += '<tr class="w3-grey"><th>Cluster Id</th><th>Behavior</th><th>Sensors</th></tr>';
+        for (i in params.clusters) {
+            var cluster = params.clusters[i];
+
+            s += '<tr><td class="w3-border-bottom w3-border-dark-grey">';
+            s += cluster.id;
+            s += '</td><td class="w3-border-bottom w3-border-dark-grey">';
+            s += cluster.behavior_id;
+            s += '</td><td class="w3-border-bottom w3-border-dark-grey">';
+
+            for (j in cluster.sensor_groups) {
+                var t = "";
+                for (k in cluster.sensor_groups[j]) {
+                    if (t.length > 0) {
+                        t += ", ";
+                    }
+                    t += cluster.sensor_groups[j][k];
+                }
+                s += '<div>[' + t + ']</div>';
+            }
+
+            s += '</td></tr>';
+        }
+        s += '</table>';
+        document.getElementById("scheduler_summary.clusters").innerHTML = s;
+    }
+
+    function activateSchedule(newState) {
+        var e = document.getElementById("scheduler_selected_" + newState);
+        e.innerHTML = '<i class="fas fa-spinner fa-pulse">';
+        gwSocket.sendJsonRequest("scheduler_activate", {run_state: newState});
+    }
+
+    function init() {
+        gwSocket.init();
+    }
+</script>
+
+<body onload="init()">
+
+<!-- Header -->
+<script src="header.js"></script>
+
+<!-- Content -->
+<div class="w3-row">
+    <div class="w3-bar w3-blue">
+        <div class="w3-bar-item w3-button" onclick="activateSchedule('INACTIVE');">
+            INACTIVE <span id="scheduler_selected_INACTIVE"></span>
+        </div>
+        <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_ON');">
+            ALL_ON <span id="scheduler_selected_ALL_ON"></span>
+        </div>
+        <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_SEQUENCED');">
+            ALL_SEQUENCED <span id="scheduler_selected_ALL_SEQUENCED"></span>
+        </div>
+        <div class="w3-bar-item w3-button" onclick="activateSchedule('FROM_CONFIG');">
+            FROM_CONFIG <span id="scheduler_selected_FROM_CONFIG"></span>
+        </div>
+    </div>
+
+    <div id="scheduler_summary.clusters"></div>
+
+</div>
+
+</body>
+</html>
