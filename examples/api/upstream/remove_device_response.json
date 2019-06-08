@@ -1,0 +1,7 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "15",
+  "result" : {
+    "device_id" : "RSP-150000"
+  }
+}

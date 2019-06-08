@@ -1,8 +1,8 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package com.intel.rfid.api.data;
-
-import com.intel.rfid.api.data.ConnectionState;
-import com.intel.rfid.api.data.Personality;
-import com.intel.rfid.api.data.ReadState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
 public class SensorBasicInfo {
 
     public String device_id;
-    public ConnectionState connection_state;
+    public Connection.State connection_state;
     public ReadState read_state;
     public String behavior_id;
     public String facility_id;
@@ -19,7 +19,7 @@ public class SensorBasicInfo {
     public List<DeviceAlertDetails> alerts = new ArrayList<>();
 
     public SensorBasicInfo(String _device_id,
-                           ConnectionState _connectionState,
+                           Connection.State _connectionState,
                            ReadState _readState,
                            String _behaviorId,
                            String _facilityId,

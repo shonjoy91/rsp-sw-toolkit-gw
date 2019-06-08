@@ -15,15 +15,69 @@
     var currentPage = "sensors";
 
     var gwSocket = new GatewayWebSocket();
+
     gwSocket.topics = [
         "sensor_alerts",
-        "sensor_basic_info",
-        "sensor_connection_state",
-        "sensor_read_state",
-        "sensor_config"
+        "sensor_connection_state_notification",
+        "sensor_read_state_notification",
+        "sensor_config_notification"
     ];
 
-    gwSocket.inboundResponse = function (jsonRsp) {
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("sensor_get_device_ids");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "sensor_get_device_ids":
+                onGetAllSensorIds(jsonRsp.result);
+                break;
+            case "sensor_get_basic_info":
+                onSensorBasicInfo(jsonRsp.result);
+                break;
+            case "sensor_remove":
+                onSensorRemove(jsonReq, jsonRsp);
+                break;
+            default:
+                showCommandResult(jsonRsp);
+                break;
+        }
+    };
+
+    gwSocket.inboundNotification = function (jsonNot) {
+        switch (jsonNot.method) {
+            case "sensor_connection_state_notification":
+                onSensorConnectionState(jsonNot.params);
+                break;
+            case "sensor_read_state_notification":
+                onSensorReadState(jsonNot.params);
+                break;
+            case "sensor_config_notification":
+                onSensorConfigUpdate(jsonNot.params);
+                break;
+            case "device_alert":
+                onDeviceAlert(jsonNot.params);
+                break;
+        }
+    };
+
+    function selectSensorClosure(deviceId) {
+        return function () {
+            selectSensor(deviceId);
+        }
+    }
+
+    function showAlertsClosure(deviceId) {
+        return function () {
+            showAlerts(deviceId);
+        }
+    }
+
+    function showCommandResult(jsonRsp) {
         var e = document.getElementById("modal_content");
         e.classList.add("w3-container");
         var s = "response error";
@@ -33,52 +87,15 @@
             s = JSON.stringify(jsonRsp["error"], null, ' ');
         }
         e.innerHTML = '<pre>' + s + '</pre>';
-    };
-
-    gwSocket.inboundNotification = function (jsonNot) {
-        switch (jsonNot.method) {
-            case "sensor_basic_info":
-                onSensorBasicInfo(jsonNot.params);
-                break;
-            case "sensor_connection_state":
-                handleConnectionState(jsonNot.params.device_id, jsonNot.params.current);
-                break;
-            case "read_state_notification":
-                handleReadState(jsonNot.params.device_id, jsonNot.params.current);
-                break;
-            case "sensor_config":
-                handleConfig(jsonNot.params.device_id,
-                    jsonNot.params.facility_id,
-                    jsonNot.params.personality,
-                    jsonNot.params.behavior_id,
-                    jsonNot.params.aliases)
-                break;
-            case "device_alert":
-                onDeviceAlert(jsonNot.params);
-                break;
-        }
-    };
-
-    function selectSensorClosure(sensorId) {
-        return function () {
-            selectSensor(sensorId);
-        }
     }
 
-    function showAlertsClosure(sensorId) {
-        return function () {
-            showAlerts(sensorId);
-        }
-    }
+    function showAlerts(deviceId) {
 
-
-    function showAlerts(sensorId) {
-
-        if (typeof sensorAlerts[sensorId] === 'undefined') { return; }
-        var alerts = sensorAlerts[sensorId];
+        if (typeof sensorAlerts[deviceId] === 'undefined') { return; }
+        var alerts = sensorAlerts[deviceId];
         if (alerts.length <= 0) { return; }
 
-        document.getElementById("modal_sensor_id").innerHTML = sensorId;
+        document.getElementById("modal_device_id").innerHTML = deviceId;
         document.getElementById("modal_label").innerHTML = "Alerts";
         var content = document.getElementById("modal_content");
         while (content.firstChild) {
@@ -110,20 +127,6 @@
         return col;
     }
 
-    var commands = [
-        "get_bist_results",
-        "get_sw_version",
-        "get_state"
-    ];
-
-    var selectedSensorId = "";
-
-    function selectSensor(sensorId) {
-        selectedSensorId = sensorId;
-        var e = document.getElementById("sensor_commands_sensor_id");
-        e.innerHTML = selectedSensorId;
-    }
-
     function showResultsModal() {
         document.getElementById("modal_overlay").style.display = 'block';
     }
@@ -132,8 +135,8 @@
         document.getElementById("modal_overlay").style.display = 'none';
     }
 
-    function setupResults(sensorId, command) {
-        document.getElementById("modal_sensor_id").innerHTML = selectedSensorId;
+    function setupResults(deviceId, command) {
+        document.getElementById("modal_device_id").innerHTML = selectedSensorId;
         document.getElementById("modal_label").innerHTML = command;
         var e = document.getElementById("modal_content");
         e.innerHTML = '<br>&nbsp;<br>...results pending <i class="fas fa-spinner fa-pulse"></i><br>&nbsp;<br>&nbsp;'
@@ -151,19 +154,44 @@
         updateAlerts(details.device_id);
     }
 
-    function onSensorBasicInfo(sensors) {
-        for (var i = 0; i < sensors.length; i++) {
-            var sensor = sensors[i];
-            handleConnectionState(sensor.device_id, sensor.connection_state);
-            handleReadState(sensor.device_id, sensor.read_state);
-            handleConfig(sensor.device_id, sensor.facility_id, sensor.personality, sensor.behavior_id, sensor.aliases);
-            sensorAlerts[sensor.device_id] = sensor.alerts;
-            updateAlerts(sensor.device_id);
+    function onGetAllSensorIds(sensorIds) {
+        for (var i = 0; i < sensorIds.length; i++) {
+            establishSensorRow(sensorIds[i]);
+            // gwSocket.sendJsonRequest("sensor_get_basic_info", {device_id: sensorIds[i]});
+        }
+        // loop twice so there's no chance of needing to handle responses from the basic info 
+        // request while establishing the rows
+        for (i = 0; i < sensorIds.length; i++) {
+            gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
         }
     }
 
-    function handleConnectionState(sensorId, state) {
-        var e = establishSensorElement(sensorId, ".connection_state");
+    function onSensorBasicInfo(info) {
+        handleConnectionState(info.device_id, info.connection_state);
+        handleReadState(info.device_id, info.read_state, info.behavior_id);
+        handleConfig(info.device_id, info.facility_id, info.personality, info.aliases);
+        sensorAlerts[info.device_id] = info.alerts;
+        updateAlerts(info.device_id);
+    }
+
+    function onSensorConnectionState(params) {
+        handleConnectionState(params.device_id, params.connection_state);
+    }
+
+    function onSensorReadState(params) {
+        handleReadState(params.device_id, params.current_state, params.behavior_id);
+    }
+    
+    function onSensorRemove(jsonReq, jsonRsp) {
+        if (typeof jsonRsp.result !== 'undefined') {
+            document.location.reload();
+        } else {
+            showCommandResult(jsonRsp);
+        }
+    }
+
+    function handleConnectionState(deviceId, state) {
+        var e = establishSensorElement(deviceId, ".connection_state");
         if (state === "CONNECTED") {
             e.className = icons.connected;
         } else {
@@ -171,54 +199,81 @@
         }
     }
 
-    function handleReadState(sensorId, state) {
-        var e = establishSensorElement(sensorId, ".read_state");
+    function handleReadState(deviceId, state, behavior) {
+        var e = establishSensorElement(deviceId, ".read_state");
         if (state === "STARTED") {
             e.className = icons.reading;
         } else {
             e.className = "";
         }
+        establishSensorElement(deviceId, ".behavior").innerHTML = (behavior !== null ? behavior : "&nbsp;");
     }
 
-    function handleConfig(sensorId, facility, personality, behavior, aliases) {
-        establishSensorElement(sensorId, ".facility").innerHTML = facility;
-        establishSensorElement(sensorId, ".personality").innerHTML = (personality !== null ? personality : "&nbsp;");
-        establishSensorElement(sensorId, ".behavior").innerHTML = behavior;
-        establishSensorElement(sensorId, ".aliases").innerHTML = aliases;
+    function onSensorConfigUpdate(params) {
+        handleConfig(params.device_id,
+            params.facility_id,
+            params.personality,
+            params.aliases);
+    }
+
+    function handleConfig(deviceId, facilityId, personality, aliases) {
+        establishSensorElement(deviceId, ".facility").innerHTML = facilityId;
+        establishSensorElement(deviceId, ".personality").innerHTML = (personality !== null ? personality : "&nbsp;");
+        establishSensorElement(deviceId, ".aliases").innerHTML = aliases;
     }
 
 
-    function updateAlerts(sensorId) {
-        var e = establishSensorElement(sensorId, ".alerts");
-        if (typeof sensorAlerts[sensorId] === 'undefined') { return; }
-        e.innerHTML = sensorAlerts[sensorId].length;
+    function updateAlerts(deviceId) {
+        var e = establishSensorElement(deviceId, ".alerts");
+        if (typeof sensorAlerts[deviceId] === 'undefined') { return; }
+        e.innerHTML = sensorAlerts[deviceId].length;
+    }
+    
+    function removeSensorRow(deviceId) {
+        var e = document.getElementById(deviceId + ".row");
+        if(e === null) { return; }
+        // while (e.lastChild) {
+        //     console.log("removing " + e.lastChild.nodeType);
+        //     e.removeChild(e.lastChild);
+        // }
+        var p = e.parentElement;
+        p.removeChild(e);
     }
 
-    function establishSensorElement(sensorId, elementIdSuffix) {
-        var e = document.getElementById(sensorId + elementIdSuffix);
+    function establishSensorRow(deviceId) {
+        var e = document.getElementById(deviceId + ".row");
         if (e === null) {
-            createSensorRow(sensorId);
-            e = document.getElementById(sensorId + elementIdSuffix);
+            createSensorRow(deviceId);
+            e = document.getElementById(deviceId + ".row");
         }
         return e;
     }
 
-    function createSensorRow(sensorId) {
+    function establishSensorElement(deviceId, elementIdSuffix) {
+        var e = document.getElementById(deviceId + elementIdSuffix);
+        if (e === null) {
+            createSensorRow(deviceId);
+            e = document.getElementById(deviceId + elementIdSuffix);
+        }
+        return e;
+    }
+
+    function createSensorRow(deviceId) {
 
         var newRow;
         var col;
         var e;
 
         newRow = document.createElement("div");
-        newRow.id = sensorId + ".row";
+        newRow.id = deviceId + ".row";
         newRow.className = "w3-row w3-padding";
 
         col = document.createElement("div");
         col.className = "col_1";
 
         e = document.createElement("span");
-        e.innerHTML = sensorId;
-        e.onclick = selectSensorClosure(sensorId);
+        e.innerHTML = deviceId;
+        e.onclick = selectSensorClosure(deviceId);
         e.classList.add("w3-hover-white");
         e.style.cursor = "default";
         col.appendChild(e);
@@ -227,25 +282,25 @@
         col.appendChild(document.createTextNode('\u00A0\u00A0\u00A0'));
 
         e = document.createElement("i");
-        e.id = sensorId + ".connection_state";
+        e.id = deviceId + ".connection_state";
         col.appendChild(e);
 
         // add 2 spaces
         col.appendChild(document.createTextNode('\u00A0\u00A0\u00A0'));
 
         e = document.createElement("i");
-        e.id = sensorId + ".read_state";
+        e.id = deviceId + ".read_state";
         col.appendChild(e);
 
         newRow.appendChild(col);
 
-        newRow.appendChild(createStandardColumn("col_2", sensorId + ".behavior"));
-        newRow.appendChild(createStandardColumn("col_3", sensorId + ".facility"));
-        newRow.appendChild(createStandardColumn("col_4", sensorId + ".personality"));
-        newRow.appendChild(createStandardColumn("col_5", sensorId + ".aliases"));
+        newRow.appendChild(createStandardColumn("col_2", deviceId + ".behavior"));
+        newRow.appendChild(createStandardColumn("col_3", deviceId + ".facility"));
+        newRow.appendChild(createStandardColumn("col_4", deviceId + ".personality"));
+        newRow.appendChild(createStandardColumn("col_5", deviceId + ".aliases"));
 
-        col = createStandardColumn("col_6", sensorId + ".alerts");
-        col.onclick = showAlertsClosure(sensorId);
+        col = createStandardColumn("col_6", deviceId + ".alerts");
+        col.onclick = showAlertsClosure(deviceId);
         col.classList.add("w3-hover-white");
         col.classList.add("w3-center");
         col.style.cursor = "default";
@@ -256,7 +311,7 @@
         var child = null;
         for (var i = 0; i < table.childNodes.length; i++) {
             child = table.childNodes[i];
-            if (child.id > sensorId) {
+            if (child.id > deviceId) {
                 break;
             }
             child = null;
@@ -277,12 +332,35 @@
         return col;
     }
 
+    var commands = [
+        "get_bist_results",
+        "get_versions",
+        "get_state",
+        "reboot",
+        "remove",
+        "reset"
+    ];
+
+    var selectedSensorId = "";
+
+    function selectSensor(deviceId) {
+        selectedSensorId = deviceId;
+        var e = document.getElementById("sensor_commands_device_id");
+        e.innerHTML = selectedSensorId;
+    }
+
     function doSimpleGet(command) {
         setupResults(selectedSensorId, command);
         showResultsModal();
         gwSocket.sendJsonRequest("sensor_" + command, {
-            sensor_id: selectedSensorId
+            device_id: selectedSensorId
         });
+    }
+
+    function forceDisconnect() {
+        setupResults("", "Force All Disconnect");
+        showResultsModal();
+        gwSocket.sendJsonRequest("sensor_force_all_disconnect", null);
     }
 
     function init() {
@@ -292,19 +370,6 @@
 </script>
 
 <style>
-    .fixed_header {
-        overflow: visible;
-        width: 100%;
-        top: 0;
-        position: fixed;
-        z-index: 50;
-    }
-
-    .content {
-        margin-top: 170px;
-        z-index: 30;
-    }
-
     .col_1, .col_2, .col_3, .col_4, .col_5, .col_6 {
         float: left;
         position: relative;
@@ -336,39 +401,28 @@
     <script src="header.js"></script>
 
     <div id="sensor_commands" class="w3-bar w3-blue">
-            <div class="w3-bar-item">
-                <div id="sensor_commands_sensor_id" class="w3-padding-small w3-large">
-                    Select a sensor ...
-                </div>
+        <div class="w3-bar-item">
+            <div class="w3-large w3-padding-small w3-button" onclick="forceDisconnect();">
+                <i class="fa fa-unlink"> </i> Force All Disconnect
             </div>
-            <script type="text/javascript">
-                for (var i in commands) {
-                    document.write('<div class="w3-bar-item">');
-                    document.write('<button class="w3-button" onclick=\'doSimpleGet("');
-                    document.write(commands[i]);
-                    document.write('");\'>');
-                    document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
-                    document.write(commands[i]);
-                    document.write('</button></div>');
-                }
-
-            </script>
-    </div>
-
-    <div id="modal_overlay" class="w3-modal">
-        <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
-            <div class="w3-bar w3-blue">
-                <div class="w3-bar-item" id="modal_sensor_id"></div>
-                <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
-                <div class="w3-bar-item" id="modal_label"></div>
-                <div class="w3-bar-item">
-                    <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
-                        <i class="fa fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div id="modal_content"></div>
         </div>
+        <div class="w3-bar-item">
+            <div id="sensor_commands_device_id" class="w3-padding-small w3-large">
+                Select a sensor ...
+            </div>
+        </div>
+        <script type="text/javascript">
+            for (var i in commands) {
+                document.write('<div class="w3-bar-item">');
+                document.write('<button class="w3-button" onclick=\'doSimpleGet("');
+                document.write(commands[i]);
+                document.write('");\'>');
+                document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
+                document.write(commands[i]);
+                document.write('</button></div>');
+            }
+
+        </script>
     </div>
 
     <div id="table_header" class="w3-row w3-padding w3-grey">
@@ -381,7 +435,24 @@
     </div>
 </div>
 
-<div id="table_data" class="content">
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+        <div class="w3-bar w3-blue">
+            <div class="w3-bar-item" id="modal_device_id"></div>
+            <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
+            <div class="w3-bar-item" id="modal_label"></div>
+            <div class="w3-bar-item">
+                <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="modal_content"></div>
+    </div>
+</div>
+
+
+<div id="table_data" class="fixed_content">
 </div>
 
 </body>

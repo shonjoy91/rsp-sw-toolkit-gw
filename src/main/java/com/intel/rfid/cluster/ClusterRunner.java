@@ -4,7 +4,7 @@
  */
 package com.intel.rfid.cluster;
 
-import com.intel.rfid.api.data.Behavior;
+import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.helpers.ListLooper;
 import com.intel.rfid.sensor.SensorPlatform;

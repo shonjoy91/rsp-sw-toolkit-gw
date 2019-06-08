@@ -17,42 +17,59 @@
     var gwSocket = new GatewayWebSocket();
 
     gwSocket.topics = [
-        "sensor_manager_summary",
+        "sensor_state_summary",
         "inventory_summary",
-        "upstream_manager_summary",
-        "downstream_manager_summary",
-        "scheduler_summary"
+        "upstream_mqtt_status",
+        "downstream_mqtt_status",
+        "scheduler_run_state"
     ];
+
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("scheduler_get_run_state");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "scheduler_get_run_state":
+            case "scheduler_set_run_state":
+                onSchedulerSummary(jsonRsp.result);
+                break;
+        }
+    };
 
     gwSocket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
-            case 'sensor_manager_summary':
+            case 'sensor_state_summary':
                 onSensorSummary(jsonNot.params);
                 break;
             case 'inventory_summary':
                 onInventorySummary(jsonNot.params);
                 break;
-            case 'upstream_manager_summary':
+            case 'upstream_mqtt_status':
                 onUpDownSummaryContent('upstream', jsonNot.params);
                 break;
-            case 'downstream_manager_summary':
+            case 'downstream_mqtt_status':
                 onUpDownSummaryContent('downstream', jsonNot.params);
                 break;
-            case 'scheduler_summary':
+            case 'scheduler_run_state':
                 onSchedulerSummary(jsonNot.params);
                 break;
         }
     };
 
 
-    function onSensorSummary(sensor_manager_summary) {
+    function onSensorSummary(sensor_state_summary) {
         var e;
         e = document.getElementById("sensors_reading");
-        e.innerHTML = sensor_manager_summary.reading;
+        e.innerHTML = sensor_state_summary.reading;
         e = document.getElementById("sensors_connected");
-        e.innerHTML = sensor_manager_summary.connected;
+        e.innerHTML = sensor_state_summary.connected;
         e = document.getElementById("sensors_disconnected");
-        e.innerHTML = sensor_manager_summary.disconnected;
+        e.innerHTML = sensor_state_summary.disconnected;
     }
 
     function onInventorySummary(inventory_summary) {
@@ -92,8 +109,8 @@
 
     function onUpDownSummaryContent(nameId, params) {
         var e;
-        e = document.getElementById(nameId + "_run_state");
-        e.innerHTML = params.run_state;
+        e = document.getElementById(nameId + "_connection_state");
+        e.innerHTML = params.connection_state;
         e = document.getElementById(nameId + "_broker_uri");
         e.innerHTML = params.broker_uri;
         e = document.getElementById(nameId + "_subscribes");
@@ -111,6 +128,9 @@
     }
 
     function onSchedulerSummary(scheduler_summary) {
+
+        if(checkResponseError(scheduler_summary)) { return;}
+
         for (var i in scheduler_summary.available_states) {
             var curState = scheduler_summary.available_states[i];
             var e = document.getElementById("scheduler_selected_" + curState);
@@ -122,8 +142,10 @@
         }
     }
 
-    function activateSchedule(newState) {
-        gwSocket.sendJsonRequest("scheduler_activate", {
+    function setScheduleRunState(newState) {
+        var e = document.getElementById("scheduler_selected_" + newState);
+        e.innerHTML = '<i class="fas fa-spinner fa-pulse">';
+        gwSocket.sendJsonRequest("scheduler_set_run_state", {
             run_state: newState
         });
     }
@@ -229,8 +251,8 @@
             <div class="w3-bar-item w3-right">Upstream</div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Run State</div>
-            <div class="w3-bar-item w3-right" id="upstream_run_state"></div>
+            <div class="w3-bar-item">Connection State</div>
+            <div class="w3-bar-item w3-right" id="upstream_connection_state"></div>
         </div>
         <div class="w3-bar">
             <div class="w3-bar-item">Broker</div>
@@ -252,8 +274,8 @@
             <div class="w3-bar-item w3-right">Downstream</div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Run State</div>
-            <div class="w3-bar-item w3-right" id="downstream_run_state"></div>
+            <div class="w3-bar-item">Connection State</div>
+            <div class="w3-bar-item w3-right" id="downstream_connection_state"></div>
         </div>
         <div class="w3-bar">
             <div class="w3-bar-item">Broker</div>
@@ -275,16 +297,16 @@
             <div class="w3-bar-item w3-right">Scheduler</div>
         </div>
         <div class="w3-bar-block">
-            <div class="w3-bar-item w3-button" onclick="activateSchedule('INACTIVE');">
+            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('INACTIVE');">
                 INACTIVE <span id="scheduler_selected_INACTIVE"></span>
             </div>
-            <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_ON');">
+            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('ALL_ON');">
                 ALL_ON <span id="scheduler_selected_ALL_ON"></span>
             </div>
-            <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_SEQUENCED');">
+            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('ALL_SEQUENCED');">
                 ALL_SEQUENCED <span id="scheduler_selected_ALL_SEQUENCED"></span>
             </div>
-            <div class="w3-bar-item w3-button" onclick="activateSchedule('FROM_CONFIG');">
+            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('FROM_CONFIG');">
                 FROM_CONFIG <span id="scheduler_selected_FROM_CONFIG"></span>
             </div>
         </div>

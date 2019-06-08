@@ -4,12 +4,9 @@
  */
 package com.intel.rfid.downstream;
 
-
-import com.intel.rfid.api.downstream.SensorInventoryDataNotification;
+import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.jmdns.MockJmDNSService;
 import com.intel.rfid.sensor.SensorManager;
-import com.intel.rfid.sensor.SensorPlatform;
-import com.intel.rfid.gpio.GPIOManager;
 
 public class MockDownstreamManager extends DownstreamManager {
 
@@ -18,7 +15,7 @@ public class MockDownstreamManager extends DownstreamManager {
     super(_sensorManager, _gpioMgr);
     // swap out
     jmDNSService = new MockJmDNSService();
-    mqttDownstream = new MQTTDownstream(this);
+    mqttDownstream = new MqttDownstream(this);
 
   }
 
@@ -66,17 +63,16 @@ public class MockDownstreamManager extends DownstreamManager {
   //    }
   //}
 
+  //public void onData(InventoryDataNotification _data, SensorPlatform _rsp) {
+  //  synchronized (inventoryDataListeners) {
+  //    for (InventoryDataListener l : inventoryDataListeners) {
+  //      try {
+  //        l.onInventoryData(_data, _rsp);
+  //      } catch (Throwable t) {
+  //        log.error("error:", t);
+  //      }
+  //    }
+  //  }
+  //}
 
-  public void onData(SensorInventoryDataNotification _data, SensorPlatform _rsp) {
-    synchronized (inventoryDataListeners) {
-      for (InventoryDataListener l : inventoryDataListeners) {
-        try {
-          l.onInventoryData(_data, _rsp);
-        } catch (Throwable t) {
-          log.error("error:", t);
-        }
-      }
-    }
-
-  }
 }

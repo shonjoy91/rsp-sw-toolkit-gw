@@ -1,0 +1,31 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "2",
+  "method" : "behavior_put",
+  "params" : {
+    "id" : "Default",
+    "operation_mode" : "NonContinuous",
+    "link_profile" : 1,
+    "power_level" : 30.5,
+    "selected_state" : "Any",
+    "session_flag" : "S1",
+    "target_state" : "A",
+    "q_algorithm" : "Dynamic",
+    "fixed_q_value" : 10,
+    "start_q_value" : 7,
+    "min_q_value" : 3,
+    "max_q_value" : 15,
+    "retry_count" : 0,
+    "threshold_multiplier" : 2,
+    "dwell_time" : 10000,
+    "inv_cycles" : 0,
+    "toggle_target_flag" : true,
+    "repeat_until_no_tags" : false,
+    "perform_select" : false,
+    "perform_post_match" : false,
+    "filter_duplicates" : false,
+    "auto_repeat" : true,
+    "delay_time" : 0,
+    "toggle_mode" : "OnInvCycle"
+  }
+}

@@ -1,14 +1,19 @@
 package com.intel.rfid.helpers;
 
-import com.intel.rfid.api.data.EpcRead;
+import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
+import com.intel.rfid.api.sensor.TagRead;
 import com.intel.rfid.gateway.MockGateway;
 import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.sensor.MockSensorPlatform;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TestStore {
 
-    public enum Facility { BACK, FRONT, COLD, DRY, A, B, C}
+    public enum Facility {BackStock, SalesFloor, COLD, DRY, A, B, C}
 
     private int minRSSI = -95 * 10;
     private int maxRSSI = -55 * 10;
@@ -56,24 +61,24 @@ public class TestStore {
     public TestStore() {
         gateway = new MockGateway();
 
-        sensorFront01 = establish("sensorFront01", Facility.FRONT);
-        sensorFront02 = establish("sensorFront02", Facility.FRONT);
-        sensorFront03 = establish("sensorFront03", Facility.FRONT);
+        sensorFront01 = establish("RSP-150000", Facility.SalesFloor);
+        sensorFront02 = establish("RSP-150001", Facility.SalesFloor);
+        sensorFront03 = establish("RSP-150002", Facility.SalesFloor);
 
-        sensorFrontPOS = establish("sensorFrontPOS", Facility.FRONT, Personality.POS);
-        sensorFrontExit = establish("sensorExit01", Facility.FRONT, Personality.EXIT);
+        sensorFrontPOS = establish("RSP-150003", Facility.SalesFloor, Personality.POS);
+        sensorFrontExit = establish("RSP-150004", Facility.SalesFloor, Personality.EXIT);
 
-        sensorBack01 = establish("sensorBack01", Facility.BACK);
-        sensorBack02 = establish("sensorBack02", Facility.BACK);
-        sensorBack03 = establish("sensorBack03", Facility.BACK);
+        sensorBack01 = establish("RSP-150005", Facility.BackStock);
+        sensorBack02 = establish("RSP-150006", Facility.BackStock);
+        sensorBack03 = establish("RSP-150007", Facility.BackStock);
 
-        sensorCold01 = establish("sensorCold01", Facility.COLD);
-        sensorDry01 = establish("sensorDry01", Facility.DRY);
+        sensorCold01 = establish("RSP-150008", Facility.COLD);
+        sensorDry01 = establish("RSP-150009", Facility.DRY);
 
-        sensorA01 = establish("sensorA01", Facility.A);
-        sensorB01 = establish("sensorB01", Facility.B);
-        sensorCexit01 = establish("sensorCexit01", Facility.C, Personality.EXIT);
-        sensorCexit02 = establish("sensorCexit02", Facility.C, Personality.EXIT);
+        sensorA01 = establish("RSP-150010", Facility.A);
+        sensorB01 = establish("RSP-150011", Facility.B);
+        sensorCexit01 = establish("RSP-150012", Facility.C, Personality.EXIT);
+        sensorCexit02 = establish("RSP-150013", Facility.C, Personality.EXIT);
         
         resetTimestamps();
 
@@ -108,8 +113,8 @@ public class TestStore {
     }
 
     int tagSerialNum = 1;
-    public EpcRead.Data generateReadData(long _lastReadOn) {
-        EpcRead.Data tagRead = new EpcRead.Data();
+    public TagRead generateReadData(long _lastReadOn) {
+        TagRead tagRead = new TagRead();
         tagRead.epc = String.format("EPC%06d", tagSerialNum);
         tagRead.tid = String.format("TID%06d", tagSerialNum);
         tagSerialNum++;
@@ -119,4 +124,41 @@ public class TestStore {
         return tagRead;
     }
 
+    public ClusterConfig getRetailUseCaseClusterConfig() {
+        
+        ClusterConfig cfg = new ClusterConfig();
+        cfg.id = "RetailUseCaseClusterConfigExample";
+        Cluster cluster;
+        List<String> sensorList;
+
+        cluster = new Cluster();
+        cluster.id = Facility.BackStock.toString() + "Cluster";
+        cluster.facility_id = Facility.BackStock.toString();
+        cluster.behavior_id = "ClusterDeepScan_PORTS_1";
+        sensorList = new ArrayList<>();
+        sensorList.add(sensorBack01.getDeviceId());
+        cluster.sensor_groups.add(sensorList);
+        cfg.clusters.add(cluster);
+
+        cluster = new Cluster();
+        cluster.id = Facility.SalesFloor.toString() + "Cluster";
+        cluster.facility_id = Facility.SalesFloor.toString();
+        cluster.behavior_id = "ClusterMobility_PORTS_1";
+        sensorList = new ArrayList<>();
+        sensorList.add(sensorFront01.getDeviceId());
+        cluster.sensor_groups.add(sensorList);
+        cfg.clusters.add(cluster);
+
+        cluster = new Cluster();
+        cluster.id = Facility.SalesFloor.toString() + "ExitCluster";
+        cluster.facility_id = Facility.SalesFloor.toString();
+        cluster.behavior_id = "ClusterExit_PORTS_1";
+        cluster.personality = Personality.EXIT;
+        sensorList = new ArrayList<>();
+        sensorList.add(sensorFrontExit.getDeviceId());
+        cluster.sensor_groups.add(sensorList);
+        cfg.clusters.add(cluster);
+
+        return cfg;
+    }
 }

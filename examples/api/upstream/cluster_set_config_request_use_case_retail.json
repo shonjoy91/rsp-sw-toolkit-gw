@@ -1,0 +1,33 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "7",
+  "method" : "cluster_set_config",
+  "params" : {
+    "id" : "RetailUseCaseClusterConfigExample",
+    "clusters" : [ {
+      "id" : "BackStockCluster",
+      "personality" : null,
+      "facility_id" : "BackStock",
+      "aliases" : [ ],
+      "behavior_id" : "ClusterDeepScan_PORTS_1",
+      "sensor_groups" : [ [ "RSP-150005" ] ],
+      "tokens" : [ ]
+    }, {
+      "id" : "SalesFloorCluster",
+      "personality" : null,
+      "facility_id" : "SalesFloor",
+      "aliases" : [ ],
+      "behavior_id" : "ClusterMobility_PORTS_1",
+      "sensor_groups" : [ [ "RSP-150000" ] ],
+      "tokens" : [ ]
+    }, {
+      "id" : "SalesFloorExitCluster",
+      "personality" : "EXIT",
+      "facility_id" : "SalesFloor",
+      "aliases" : [ ],
+      "behavior_id" : "ClusterExit_PORTS_1",
+      "sensor_groups" : [ [ "RSP-150004" ] ],
+      "tokens" : [ ]
+    } ]
+  }
+}

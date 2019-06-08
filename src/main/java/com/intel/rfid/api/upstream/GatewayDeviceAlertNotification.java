@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.api.upstream;
 
-import com.intel.rfid.api.common.DeviceAlertNotification;
-import com.intel.rfid.api.common.JsonNotification;
+import com.intel.rfid.api.JsonNotification;
+import com.intel.rfid.api.sensor.DeviceAlertNotification;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class GatewayDeviceAlertNotification extends JsonNotification {
         }
         params.alert_number = _deviceAlert.params.alert_number;
         params.alert_description = _deviceAlert.params.alert_description;
-        params.severity = _deviceAlert.params.severity;
+        params.severity = _deviceAlert.params.severity.toString();
         if (_deviceAlert.params.optional != null) {
             params.optional.putAll(_deviceAlert.params.optional);
         }

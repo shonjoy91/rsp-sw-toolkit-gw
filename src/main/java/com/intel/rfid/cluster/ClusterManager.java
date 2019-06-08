@@ -1,8 +1,16 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package com.intel.rfid.cluster;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.data.Behavior;
-import com.intel.rfid.security.ProvisionToken;
+import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.ClusterConfig;
+import com.intel.rfid.api.data.ClusterTemplate;
+import com.intel.rfid.api.data.Personality;
+import com.intel.rfid.api.data.ScheduleRunState;
+import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ConfigException;
@@ -13,6 +21,7 @@ import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.schedule.ScheduleManager;
+import com.intel.rfid.security.ProvisionToken;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.slf4j.Logger;
@@ -65,7 +74,7 @@ public class ClusterManager {
         loadConfig(newConfig);
     }
     
-    public void loadConfig(ClusterConfig newConfig) throws IOException, ConfigException {
+    public void loadConfig(ClusterConfig newConfig) throws ConfigException {
         validate(newConfig);
 
         synchronized (clusterCfgLock) {
@@ -73,23 +82,44 @@ public class ClusterManager {
             persist();
             updateTokenMap();
         }
+        
+        align();
+    }
 
+    public ClusterConfig deleteConfig() {
+        ClusterConfig cc;
+        synchronized (clusterCfgLock) {
+            cc = clusterCfg;
+            clusterCfg = null;
+            persist();
+            updateTokenMap();
+        }
+        align();
+        return cc;
+    }
+    
+    private void align() {
         if (sensorMgr == null) {
             log.warn("missing reference to sensor manager");
             return;
         }
 
         boolean restartScheduler = false;
-        if (schedMgr != null && schedMgr.getRunState() == ScheduleManager.RunState.FROM_CONFIG) {
+        if (schedMgr != null && schedMgr.getRunState() == ScheduleRunState.FROM_CONFIG) {
             log.info("deactivating scheduler to trigger load new cluster configuration");
             restartScheduler = true;
-            schedMgr.deactivate();
+            schedMgr.setRunState(ScheduleRunState.INACTIVE);
         }
 
-        if (tokens.isEmpty()) {
+        if (!tokens.isEmpty()) {
+            // need to kick all sensors off so they will reconnect and establish their credentials
+            // but then the align might not work because the disconnect sequencing / messaging is asynchronous
+            // mostly need to kick off if using provisioning tokens (what if they have changed in new file??)
+            sensorMgr.disconnectAll();
+        } else if(clusterCfg != null) {            
             final Set<String> sensorIDsInConfig = new HashSet<>();
 
-            for(Cluster cluster : newConfig.clusters) {
+            for(Cluster cluster : clusterCfg.clusters) {
                 for(List<String> sensorGroup : cluster.sensor_groups) {
                     sensorIDsInConfig.addAll(sensorGroup);
                 }
@@ -99,18 +129,38 @@ public class ClusterManager {
                 SensorPlatform sensor = sensorMgr.establishRSP(id);
                 alignSensor(sensor);
             }
-        } else {
-            // need to kick all sensors off so they will reconnect and establish their credentials
-            // but then the align might not work because the disconnect sequencing / messaging is asynchronous
-            // mostly need to kick off if using provisioning tokens (what if they have changed in new file??)
-            sensorMgr.disconnectAll();
         }
 
         if (restartScheduler) {
-            schedMgr.activate(ScheduleManager.RunState.FROM_CONFIG);
+            schedMgr.setRunState(ScheduleRunState.FROM_CONFIG);
         }
     }
 
+    public ClusterConfig getConfig() {
+        ClusterConfig cc = null;
+        synchronized (clusterCfgLock) {
+            if(clusterCfg != null) {
+                try {
+                    cc = mapper.readValue(mapper.writeValueAsBytes(clusterCfg), ClusterConfig.class);
+                } catch(IOException _e) {
+                    log.warn("error: {}", _e.getMessage());
+                }
+            }
+        }
+        return cc;
+    }
+    
+    public ClusterTemplate getTemplate() {
+        ClusterTemplate clusterTemplate = new ClusterTemplate();
+        clusterTemplate.personalities = Arrays.asList(Personality.values());
+        for(Behavior b : BehaviorConfig.available().values()) {
+            clusterTemplate.behavior_ids.add(b.id);
+        }
+        if(sensorMgr != null) {
+            sensorMgr.getDeviceIds(clusterTemplate.sensor_device_ids);
+        }
+        return clusterTemplate;
+    }
 
     public void setSensorManager(SensorManager _sensorMgr) {
         sensorMgr = _sensorMgr;
@@ -280,7 +330,9 @@ public class ClusterManager {
     public void getSensorGroups(String _clusterId, List<List<SensorPlatform>> _sensorGroups) {
 
         if (CLUSTER_ID_ALL_SEQ.equals(_clusterId)) {
-            for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
+            List<SensorPlatform> sensors = new ArrayList<>();
+            sensorMgr.getSensors(sensors);
+            for (SensorPlatform sensor : sensors) {
                 ArrayList<SensorPlatform> sensorGroup = new ArrayList<>();
                 sensorGroup.add(sensor);
                 _sensorGroups.add(sensorGroup);
@@ -308,8 +360,9 @@ public class ClusterManager {
         if (sensorMgr == null) { return; }
         Behavior behavior = getBehavior(_behaviorId);
         if (behavior == null) { return; }
-
-        for (SensorPlatform sensor : sensorMgr.getRSPsCopy()) {
+        List<SensorPlatform> sensors = new ArrayList<>();
+        sensorMgr.getSensors(sensors);
+        for (SensorPlatform sensor : sensors) {
             _runners.add(new ClusterRunner(this, sensor, behavior));
         }
     }
@@ -341,6 +394,7 @@ public class ClusterManager {
     // assumption that appropriate synchronization occurs before calling
     private void updateTokenMap() {
         tokens.clear();
+        if(clusterCfg == null) { return; }
         for (Cluster c : clusterCfg.clusters) {
             for (ProvisionToken pt : c.tokens) {
                 tokens.put(pt.token, pt);
@@ -350,13 +404,20 @@ public class ClusterManager {
 
     private void persist() {
         synchronized (clusterCfgLock) {
-            if (clusterCfg == null) { return; }
+            if (clusterCfg == null) { 
+                try {
+                    Files.deleteIfExists(CACHE_PATH);
+                } catch (IOException _e) {
+                    log.error("failed deleting: {} : ", CACHE_PATH.toAbsolutePath(), _e);
+                }
+                return; 
+            }
 
             try (OutputStream os = Files.newOutputStream(CACHE_PATH)) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(os, clusterCfg);
                 log.info("wrote {}", CACHE_PATH);
             } catch (IOException e) {
-                log.error("failed persisting schedule manager {}", e.getMessage());
+                log.error("failed persisting {}", e.getMessage());
             }
         }
     }

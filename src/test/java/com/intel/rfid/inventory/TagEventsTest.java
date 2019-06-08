@@ -1,11 +1,14 @@
 package com.intel.rfid.inventory;
 
-import com.intel.rfid.api.data.*;
-import com.intel.rfid.api.upstream.GatewayInventoryEventNotification;
+import com.intel.rfid.api.data.InventoryEventItem;
+import com.intel.rfid.tag.Tag;
+import com.intel.rfid.tag.TagEvent;
+import com.intel.rfid.tag.TagState;
+import com.intel.rfid.api.sensor.TagRead;
 import com.intel.rfid.gateway.MockGateway;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.TestStore;
-import com.intel.rfid.upstream.UpstreamInventoryEvent;
+import com.intel.rfid.upstream.UpstreamInventoryEventInfo;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,12 +28,12 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
     @AfterClass
     public static void afterClass() { EnvHelper.afterTests(); }
 
-    private List<UpstreamInventoryEvent> upstreamEvents = new ArrayList<>();
+    private List<UpstreamInventoryEventInfo> upstreamEvents = new ArrayList<>();
 
 
 
 
-    public void onUpstreamEvent(UpstreamInventoryEvent _uie) {
+    public void onUpstreamEvent(UpstreamInventoryEventInfo _uie) {
         upstreamEvents.add(_uie);
     }
 
@@ -54,16 +57,16 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
     @Test
     public void testElevatorFacilityMovement() {
 
-        GatewayInventoryEventNotification.Item item;
-        UpstreamInventoryEvent uie;
+        InventoryEventItem item;
+        UpstreamInventoryEventInfo uie;
 
-        EpcRead.Data tagRead01 = store.generateReadData(store.time_m00);
-        EpcRead.Data tagRead02 = store.generateReadData(store.time_m00);
-        EpcRead.Data tagRead03 = store.generateReadData(store.time_m00);
-        EpcRead.Data tagRead04 = store.generateReadData(store.time_m00);
+        TagRead tagRead01 = store.generateReadData(store.time_m00);
+        TagRead tagRead02 = store.generateReadData(store.time_m00);
+        TagRead tagRead03 = store.generateReadData(store.time_m00);
+        TagRead tagRead04 = store.generateReadData(store.time_m00);
 
         // single read will go UNKOWN -> PRESENT even for an exit sensor
-        uie = new UpstreamInventoryEvent();
+        uie = new UpstreamInventoryEventInfo();
         invMgr.processReadData(uie, store.sensorCexit01, tagRead01);
         invMgr.processReadData(uie, store.sensorCexit01, tagRead02);
         invMgr.processReadData(uie, store.sensorCexit02, tagRead03);
@@ -83,20 +86,20 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
         assertThat(tag03.getState()).isEqualTo(TagState.PRESENT);
         assertThat(tag04.getState()).isEqualTo(TagState.PRESENT);
 
-        item = uie.params.data.get(0);
+        item = uie.data.get(0);
         assertThat(item.event_type).isEqualTo(TagEvent.arrival.toString());
         assertThat(item.location).isEqualTo(store.sensorCexit01.asLocation());
         assertThat(item.facility_id).isEqualTo(store.sensorCexit01.getFacilityId());
 
-        item = uie.params.data.get(1);
+        item = uie.data.get(1);
         assertThat(item.event_type).isEqualTo(TagEvent.arrival.toString());
-        item = uie.params.data.get(2);
+        item = uie.data.get(2);
         assertThat(item.event_type).isEqualTo(TagEvent.arrival.toString());
-        item = uie.params.data.get(3);
+        item = uie.data.get(3);
         assertThat(item.event_type).isEqualTo(TagEvent.arrival.toString());
 
         // one more read will go PRESENT -> EXITING 
-        uie = new UpstreamInventoryEvent();
+        uie = new UpstreamInventoryEventInfo();
         invMgr.processReadData(uie, store.sensorCexit01, tagRead01);
         invMgr.processReadData(uie, store.sensorCexit01, tagRead02);
         invMgr.processReadData(uie, store.sensorCexit02, tagRead03);
@@ -109,12 +112,12 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
 
         // move a tag between exiting sensors
         tagRead02.last_read_on = store.time_m01;
-        uie = new UpstreamInventoryEvent();
+        uie = new UpstreamInventoryEventInfo();
         for (int x = 0; x < 20; x++) {
             invMgr.processReadData(uie, store.sensorCexit02, tagRead02);
         }
 
-        item = uie.params.data.get(0);
+        item = uie.data.get(0);
         assertThat(item.event_type).isEqualTo(TagEvent.moved.toString());
         assertThat(item.location).isEqualTo(store.sensorCexit02.asLocation());
 
@@ -126,7 +129,7 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
         tagRead01.last_read_on = store.time_m03;
         tagRead02.last_read_on = store.time_m03;
         tagRead03.last_read_on = store.time_m03;
-        uie = new UpstreamInventoryEvent();
+        uie = new UpstreamInventoryEventInfo();
         for (int x = 0; x < 20; x++) {
             invMgr.processReadData(uie, store.sensorA01, tagRead01);
             invMgr.processReadData(uie, store.sensorA01, tagRead02);
@@ -144,22 +147,22 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
         assertThat(tag04.getLocation()).isEqualTo(store.sensorCexit02.asLocation());
         
         // departure / arrival pairs
-        item = uie.params.data.get(0);
+        item = uie.data.get(0);
         assertThat(item.event_type).isEqualTo(TagEvent.departed.toString());
         assertThat(item.location).isEqualTo(store.sensorCexit01.asLocation());
         assertThat(item.facility_id).isEqualTo(store.sensorCexit01.getFacilityId());
 
-        item = uie.params.data.get(1);
+        item = uie.data.get(1);
         assertThat(item.event_type).isEqualTo(TagEvent.arrival.toString());
         assertThat(item.location).isEqualTo(store.sensorA01.asLocation());
         assertThat(item.facility_id).isEqualTo(store.sensorA01.getFacilityId());
 
-        item = uie.params.data.get(4);
+        item = uie.data.get(4);
         assertThat(item.event_type).isEqualTo(TagEvent.departed.toString());
         assertThat(item.location).isEqualTo(store.sensorCexit02.asLocation());
         assertThat(item.facility_id).isEqualTo(store.sensorCexit02.getFacilityId());
 
-        item = uie.params.data.get(5);
+        item = uie.data.get(5);
         assertThat(item.event_type).isEqualTo(TagEvent.arrival.toString());
         assertThat(item.location).isEqualTo(store.sensorB01.asLocation());
         assertThat(item.facility_id).isEqualTo(store.sensorB01.getFacilityId());
@@ -170,8 +173,8 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
 
         assertThat(tag04.getState()).isEqualTo(TagState.DEPARTED_EXIT);
         assertThat(upstreamEvents).hasSize(1);
-        assertThat(upstreamEvents.get(0).params.data).hasSize(1);
-        item = upstreamEvents.get(0).params.data.get(0);
+        assertThat(upstreamEvents.get(0).data).hasSize(1);
+        item = upstreamEvents.get(0).data.get(0);
         assertThat(item.event_type).isEqualTo(TagEvent.departed.toString());
         assertThat(item.location).isEqualTo(store.sensorCexit02.asLocation());
 

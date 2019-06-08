@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "sensor_connection_state_notification",
+  "params" : {
+    "device_id" : "RSP-150000",
+    "connection_state" : "DISCONNECTED"
+  }
+}

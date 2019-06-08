@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.sensor;
 
-import com.intel.rfid.api.data.EpcRead;
-import com.intel.rfid.api.downstream.SensorInventoryDataNotification;
+import com.intel.rfid.api.sensor.InventoryDataNotification;
+import com.intel.rfid.api.sensor.TagRead;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,8 +94,8 @@ public class SensorStats {
 
     private SummaryStatistics curReadStats = new SummaryStatistics();
 
-    synchronized void onInventoryData(SensorInventoryDataNotification _invData) {
-        for (EpcRead.Data readData : _invData.params.data) {
+    synchronized void onInventoryData(InventoryDataNotification _invData) {
+        for (TagRead readData : _invData.params.data) {
             double d = rssiToMilliwatts(readData.rssi);
             curReadStats.addValue(d);
         }

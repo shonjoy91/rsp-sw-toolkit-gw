@@ -7,24 +7,20 @@ package com.intel.rfid.gpio;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.intel.rfid.api.data.GPIOState;
-import com.intel.rfid.api.data.GPIODeviceInfo;
-import com.intel.rfid.api.data.GPIODirection;
-import com.intel.rfid.api.data.GPIOInfo;
-import com.intel.rfid.api.common.HeartbeatNotification;
-import com.intel.rfid.api.downstream.GPIODeviceConnectRequest;
-import com.intel.rfid.api.downstream.GPIOInputNotification;
-import com.intel.rfid.api.common.JsonRPCError;
-import com.intel.rfid.api.common.JsonRequest;
-import com.intel.rfid.api.downstream.GPIOSetGPIORequest;
-import com.intel.rfid.sensor.ResponseHandler;
-import com.intel.rfid.api.data.ConnectionState;
-import com.intel.rfid.api.data.ConnectionStateEvent;
-import com.intel.rfid.helpers.Jackson;
+import com.intel.rfid.api.JsonRpcError;
+import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.data.Connection;
+import com.intel.rfid.api.gpio.GPIODeviceInfo;
+import com.intel.rfid.api.gpio.GPIOInfo;
+import com.intel.rfid.api.gpio.GPIO;
+import com.intel.rfid.api.gpio.GPIOConnectRequest;
+import com.intel.rfid.api.gpio.GPIOInputNotification;
+import com.intel.rfid.api.gpio.GPIOSetStateRequest;
+import com.intel.rfid.api.sensor.SensorHeartbeatNotification;
 import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.schedule.AtomicTimeMillis;
-
+import com.intel.rfid.sensor.ResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +41,7 @@ public class GPIODevice {
     protected final Logger logInputEvent = LoggerFactory.getLogger("gpio.input");
     protected final Logger logConnect = LoggerFactory.getLogger("rsp.connect");
 
-    protected ConnectionState connectionState = ConnectionState.DISCONNECTED;
+    protected Connection.State connectionState = Connection.State.DISCONNECTED;
     protected final AtomicTimeMillis lastCommsMillis = new AtomicTimeMillis();
 
     public static final long LOST_COMMS_THRESHOLD = 90000;
@@ -66,7 +62,7 @@ public class GPIODevice {
             inputs = 0;
             outputs = 0;
             for (GPIOInfo info : deviceInfo.gpio_info) {
-                if (info.direction == GPIODirection.INPUT) {
+                if (info.direction == GPIO.Direction.INPUT) {
                     inputs++;
                 } else {
                     outputs++;
@@ -81,33 +77,32 @@ public class GPIODevice {
         return deviceInfo.device_id;
     }
 
-    public ResponseHandler setGPIOState(int _index, GPIOState _state) {
+    public ResponseHandler setGPIOState(int _index, GPIO.State _state) {
         // if not connected, this is all that needs to be done
         if (!isConnected()) {
             return new ResponseHandler(getDeviceId(),
-                                       JsonRPCError.Type.NO_ERROR,
+                                       JsonRpcError.Type.NO_ERROR,
                                        "GPIODevice is not connected");
         }
         if (!(_index < deviceInfo.gpio_info.size())) {
             return new ResponseHandler(getDeviceId(),
-                                       JsonRPCError.Type.INVALID_PARAMETER,
+                                       JsonRpcError.Type.INVALID_PARAMETER,
                                        "Index is out of range");
         }
         GPIOInfo info = deviceInfo.gpio_info.get(_index);
         info.state = _state;
         logGPIO.info("{} {} {}", getDeviceId(), _state, info.name);
         deviceInfo.gpio_info.set(_index, info);
-        return execute(new GPIOSetGPIORequest(info));
+        return execute(new GPIOSetStateRequest(info));
     }
 
     private ResponseHandler execute(JsonRequest _req) {
-        if (connectionState != ConnectionState.CONNECTED) {
+        if (connectionState != Connection.State.CONNECTED) {
             String errMsg = "no connection to device";
             logGPIO.info("Cannot execute {}: {} - {}", getDeviceId(), _req.getMethod(), errMsg);
-            return new ResponseHandler(getDeviceId(), JsonRPCError.Type.WRONG_STATE, errMsg);
+            return new ResponseHandler(getDeviceId(), JsonRpcError.Type.WRONG_STATE, errMsg);
         }
 
-        _req.generateId();
         ResponseHandler rh;
 
         rh = new ResponseHandler(getDeviceId(), _req.getId());
@@ -127,7 +122,7 @@ public class GPIODevice {
                 responseHandlers.remove(_req.getId());
             }
             rh = new ResponseHandler(getDeviceId(), _req.getId(),
-                                     JsonRPCError.Type.INTERNAL_ERROR, e.getMessage());
+                                     JsonRpcError.Type.INTERNAL_ERROR, e.getMessage());
             rh.setRequest(_req);
             logGPIO.error("{} error sending command:", getDeviceId(), e);
         }
@@ -175,8 +170,8 @@ public class GPIODevice {
 
             switch (_method) {
 
-                case GPIODeviceConnectRequest.METHOD_NAME:
-                    GPIODeviceConnectRequest conReq = MAPPER.treeToValue(_rootNode, GPIODeviceConnectRequest.class);
+                case GPIOConnectRequest.METHOD_NAME:
+                    GPIOConnectRequest conReq = MAPPER.treeToValue(_rootNode, GPIOConnectRequest.class);
                     onConnect(conReq);
                     break;
 
@@ -185,8 +180,8 @@ public class GPIODevice {
                     onGPIOInputNotification(inputNotification);
                     break;
 
-                case HeartbeatNotification.METHOD_NAME:
-                HeartbeatNotification hb = MAPPER.treeToValue(_rootNode, HeartbeatNotification.class);
+                case SensorHeartbeatNotification.METHOD_NAME:
+                    SensorHeartbeatNotification hb = MAPPER.treeToValue(_rootNode, SensorHeartbeatNotification.class);
                     onHeartbeat(hb);
                     break;
 
@@ -203,10 +198,10 @@ public class GPIODevice {
 
     }
 
-    private void onConnect(GPIODeviceConnectRequest _msg) {
+    private void onConnect(GPIOConnectRequest _msg) {
         logInboundJson(logConnect, _msg.getMethod(), _msg.params);
-        if (connectionState != ConnectionState.CONNECTED) {
-            changeConnectionState(ConnectionState.CONNECTED, ConnectionStateEvent.Cause.READY);
+        if (connectionState != Connection.State.CONNECTED) {
+            changeConnectionState(Connection.State.CONNECTED, Connection.Cause.READY);
         }
         setGPIODeviceInfo(_msg.params);
         try {
@@ -217,10 +212,10 @@ public class GPIODevice {
     }
 
     public boolean isConnected() {
-        return connectionState == ConnectionState.CONNECTED;
+        return connectionState == Connection.State.CONNECTED;
     }
 
-    public ConnectionState getConnectionState() {
+    public Connection.State getConnectionState() {
         return connectionState;
     }
 
@@ -235,14 +230,14 @@ public class GPIODevice {
         }
     }
 
-    private void onHeartbeat(HeartbeatNotification _msg) {
+    private void onHeartbeat(SensorHeartbeatNotification _msg) {
         logInboundJson(logHeartbeat, _msg.getMethod(), _msg.params);
-        if (connectionState != ConnectionState.CONNECTED) {
-            changeConnectionState(ConnectionState.CONNECTED, ConnectionStateEvent.Cause.RESYNC);
+        if (connectionState != Connection.State.CONNECTED) {
+            changeConnectionState(Connection.State.CONNECTED, Connection.Cause.RESYNC);
         }
     }
 
-    protected synchronized void changeConnectionState(ConnectionState _next, ConnectionStateEvent.Cause _cause) {
+    protected synchronized void changeConnectionState(Connection.State _next, Connection.Cause _cause) {
 
         connectionState = _next;
     }
@@ -261,8 +256,8 @@ public class GPIODevice {
 
     void checkLostHeartbeatAndReset() {
         if (hasLostComms()) {
-            if (connectionState != ConnectionState.DISCONNECTED) {
-                changeConnectionState(ConnectionState.DISCONNECTED, ConnectionStateEvent.Cause.LOST_HEARTBEAT);
+            if (connectionState != Connection.State.DISCONNECTED) {
+                changeConnectionState(Connection.State.DISCONNECTED, Connection.Cause.LOST_HEARTBEAT);
             }
             lastCommsMillis.set(0);
         }

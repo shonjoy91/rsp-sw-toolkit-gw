@@ -1,0 +1,33 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "20",
+  "result" : {
+    "run_state" : "FROM_CONFIG",
+    "available_states" : [ "INACTIVE", "ALL_ON", "ALL_SEQUENCED", "FROM_CONFIG" ],
+    "clusters" : [ {
+      "id" : "BackStockCluster",
+      "personality" : null,
+      "facility_id" : null,
+      "aliases" : [ ],
+      "behavior_id" : "ClusterDeepScan_PORTS_1",
+      "sensor_groups" : [ ],
+      "tokens" : [ ]
+    }, {
+      "id" : "SalesFloorCluster",
+      "personality" : null,
+      "facility_id" : null,
+      "aliases" : [ ],
+      "behavior_id" : "ClusterMobility_PORTS_1",
+      "sensor_groups" : [ ],
+      "tokens" : [ ]
+    }, {
+      "id" : "SalesFloorExitCluster",
+      "personality" : null,
+      "facility_id" : null,
+      "aliases" : [ ],
+      "behavior_id" : "ClusterExit_PORTS_1",
+      "sensor_groups" : [ ],
+      "tokens" : [ ]
+    } ]
+  }
+}

@@ -5,17 +5,17 @@
 package com.intel.rfid.gateway;
 
 import com.intel.rfid.alerts.AlertManager;
-import com.intel.rfid.api.downstream.GatewayStatusUpdateNotification;
+import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.console.CLICommandBuilder;
 import com.intel.rfid.console.CLICommander;
 import com.intel.rfid.downstream.DownstreamManager;
+import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.inventory.InventoryManager;
 import com.intel.rfid.rest.EndPointManager;
 import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.sensor.SensorManager;
-import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.upstream.UpstreamManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +81,9 @@ public class Gateway implements CLICommandBuilder {
                                               downstreamMgr);
         }
         if (endPointMgr == null) {
-            endPointMgr = new EndPointManager(sensorMgr, 
+            endPointMgr = new EndPointManager(clusterMgr,
+                                              sensorMgr,
+                                              gpioMgr,
                                               inventoryMgr,
                                               upstreamMgr,
                                               downstreamMgr,

@@ -5,7 +5,7 @@
 package com.intel.rfid.behavior;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.data.Behavior;
+import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.Jackson;
 import org.slf4j.Logger;
@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
@@ -55,8 +57,30 @@ public class BehaviorConfig {
         return map;
     }
 
-    public static Behavior getBehavior(String _behaviorId) throws IOException {
+    public static void put(Behavior _behavior) throws IOException {
+        Path p = BASE_DIR_PATH.resolve(_behavior.id + ".json");
+        try (OutputStream os = Files.newOutputStream(p)) {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(os, _behavior);
+            log.info("wrote {}", p);
+        } catch (IOException e) {
+            log.error("failed persisting {}", e.getMessage());
+            throw e;
+        }
 
+
+    }
+
+    public static Behavior deleteBehavior(String _behaviorId) throws IOException {
+        Behavior behavior = getBehavior(_behaviorId);
+        Path p = BASE_DIR_PATH.resolve(_behaviorId + ".json");
+        if(Files.deleteIfExists(p)) {
+            return behavior;
+        } else {
+            throw new IOException("behavior " + _behaviorId + " not found on disk");
+        }
+    }
+
+    public static Behavior getBehavior(String _behaviorId) throws IOException {
         Map<String, Behavior> avail = available();
         for (Behavior b : avail.values()) {
             if (b.id.equals(_behaviorId)) {

@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "30",
+  "method" : "sensor_get_state",
+  "params" : {
+    "device_id" : null
+  }
+}

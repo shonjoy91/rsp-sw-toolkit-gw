@@ -5,12 +5,12 @@
 package com.intel.rfid.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.security.ProvisionToken;
-import com.intel.rfid.api.downstream.SensorCredentials;
+import com.intel.rfid.api.sensor.SensorCredentials;
 import com.intel.rfid.exception.ExpiredTokenException;
 import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
+import com.intel.rfid.security.ProvisionToken;
 import com.intel.rfid.sensor.SensorManager;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.servlet.DefaultServlet;

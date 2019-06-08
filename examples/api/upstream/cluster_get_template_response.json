@@ -1,0 +1,9 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "6",
+  "result" : {
+    "personalities" : [ "NONE", "EXIT", "POS", "FITTING_ROOM" ],
+    "behavior_ids" : [ "ClusterAllOn_PORTS_1", "ClusterAllSeq_PORTS_1", "ClusterDeepScan_PORTS_1", "ClusterExit_PORTS_1", "ClusterFittingRoom_PORTS_1", "ClusterMobility_PORTS_1", "ClusterPOS_PORTS_1", "Default", "ManualDeepScan", "ManualMobility", "Manual_PORTS_4", "Manual_PORTS_4_WITH_TID", "Manual_WITH_TID" ],
+    "sensor_device_ids" : [ ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "inventory_read_rate_per_second",
+  "params" : {
+    "read_rate_per_second" : 154
+  }
+}

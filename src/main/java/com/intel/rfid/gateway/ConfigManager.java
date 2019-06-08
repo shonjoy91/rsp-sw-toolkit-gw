@@ -4,9 +4,9 @@
  */
 package com.intel.rfid.gateway;
 
-import com.intel.rfid.api.downstream.SensorCredentials;
-import com.intel.rfid.api.data.RepoVersions;
-import com.intel.rfid.downstream.MQTTDownstream;
+import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
+import com.intel.rfid.api.sensor.SensorCredentials;
+import com.intel.rfid.downstream.MqttDownstream;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.helpers.ProcessHelper;
 import com.intel.rfid.helpers.StringHelper;
@@ -47,8 +47,8 @@ public class ConfigManager {
     public SensorCredentials getSensorCredentials() {
         // the password cannot be null, must be an empty string
         return new SensorCredentials(getMQTTDownstreamURI(),
-                                     getOptString("mqtt.downstream.topic.prefix", MQTTDownstream.TOPIC_PREFIX),
-                                     getOptString("mqtt.downstream.password", ""));
+                                     getOptString("mqtt.gpio.topic.prefix", MqttDownstream.TOPIC_PREFIX),
+                                     getOptString("mqtt.gpio.password", ""));
     }
 
     public String get(String property) {
@@ -231,7 +231,7 @@ public class ConfigManager {
                                  getOptInt("repo.rsp.port", getProvisionPortForProtocol(proto)));
 
         List<String> archs = new ArrayList<>();
-        RepoVersions versions = new RepoVersions();
+        SensorSoftwareRepoVersions versions = new SensorSoftwareRepoVersions();
         getRepoInfo(archs, versions);
         for (String arch : archs) {
             urls.add(repoHost + "/" + getSensorRepoBase() + "/" + arch);
@@ -244,7 +244,7 @@ public class ConfigManager {
         return urls;
     }
 
-    public void getRepoInfo(List<String> _architectures, RepoVersions _repoVersions) {
+    public void getRepoInfo(List<String> _architectures, SensorSoftwareRepoVersions _sensorSoftwareRepoVersions) {
 
         // the architectures are the top level directory names
         // in the software repo
@@ -263,13 +263,13 @@ public class ConfigManager {
                     String pkgVer = pkg.substring(pkgName.length() + 1, pkg.indexOf(suffix));
                     switch (pkgName) {
                         case "rfid-rsp":
-                            _repoVersions.app_version = pkgVer;
+                            _sensorSoftwareRepoVersions.app_version = pkgVer;
                             break;
                         case "platform-support":
-                            _repoVersions.platform_support_version = pkgVer;
+                            _sensorSoftwareRepoVersions.platform_support_version = pkgVer;
                             break;
                         case "pkg-manifest":
-                            _repoVersions.pkg_manifest_version = pkgVer;
+                            _sensorSoftwareRepoVersions.pkg_manifest_version = pkgVer;
                             break;
                     }
                 }
@@ -312,15 +312,15 @@ public class ConfigManager {
     }
 
     public String getMQTTDownstreamURI() {
-        return getURI(getOptString("mqtt.downstream.protocol", DEFAULT_MQTT_PROTOCOL),
-                      getHost("mqtt.downstream.host"),
-                      getOptInt("mqtt.downstream.port", DEFAULT_MQTT_PORT));
+        return getURI(getOptString("mqtt.gpio.protocol", DEFAULT_MQTT_PROTOCOL),
+                      getHost("mqtt.gpio.host"),
+                      getOptInt("mqtt.gpio.port", DEFAULT_MQTT_PORT));
     }
 
     public Credentials getMQTTDownstreamCredentials() {
         Credentials c = new Credentials();
-        c.userId = getOptString("mqtt.downstream.username", "RFID-GW-DOWNSTREAM");
-        c.password = get("mqtt.downstream.password");
+        c.userId = getOptString("mqtt.gpio.username", "RFID-GW-DOWNSTREAM");
+        c.password = get("mqtt.gpio.password");
         return c;
     }
 

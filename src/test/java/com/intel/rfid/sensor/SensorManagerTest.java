@@ -30,8 +30,7 @@ public class SensorManagerTest {
     public static void afterClass() throws IOException {
         //EnvHelper.afterTests();
     }
-
-
+    
     @Test
     public void testAliasing() {
 
@@ -88,11 +87,13 @@ public class SensorManagerTest {
         ClusterManager clusterMgr = new ClusterManager();
 
         SensorManager sensorMgr = new SensorManager(clusterMgr);
+        List<SensorPlatform> sensors = new ArrayList<>();
         SensorPlatform sensor;
         //Files.delete(SensorManager.CACHE_PATH);
         // try restoring first to check for any errors from nothing
         sensorMgr.restore();
-        assert (sensorMgr.getRSPsCopy().size() == 0);
+        sensorMgr.getSensors(sensors);
+        assertThat(sensors).isEmpty();
 
         sensor = sensorMgr.establishRSP(dev01);
         sensor.setProvisionToken(token01);
@@ -110,12 +111,17 @@ public class SensorManagerTest {
         assertThat(Files.exists(SensorManager.CACHE_PATH)).isTrue();
 
         sensorMgr = new SensorManager(clusterMgr);
-        assertThat(sensorMgr.getRSPsCopy()).isEmpty();
+        sensors.clear();
+        sensorMgr.getSensors(sensors);
+        assertThat(sensors).isEmpty();
 
         sensorMgr.restore();
-        assertThat(sensorMgr.getRSPsCopy()).hasSize(3);
+        sensors.clear();
+        sensorMgr.getSensors(sensors);
+        assertThat(sensors).hasSize(3);
 
-        List<SensorPlatform> sensors = new ArrayList<>(sensorMgr.findRSPs(dev01));
+        sensors.clear();
+        sensors.addAll(sensorMgr.findRSPs(dev01));
 
         assertThat(sensors).hasSize(1);
         sensor = sensors.get(0);

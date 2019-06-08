@@ -4,29 +4,21 @@
  */
 package com.intel.rfid.api.upstream;
 
-import com.intel.rfid.api.common.JsonNotification;
-import com.intel.rfid.inventory.TagReadSummary;
-import com.intel.rfid.inventory.TagStateSummary;
+import com.intel.rfid.api.JsonNotification;
+import com.intel.rfid.api.data.InventorySummary;
 
 public class InventorySummaryNotification extends JsonNotification {
 
     public static final String METHOD_NAME = "inventory_summary";
 
-    public Params params = new Params();
+    public InventorySummary params;
 
     public InventorySummaryNotification() {
         method = METHOD_NAME;
     }
 
-    public InventorySummaryNotification(TagStateSummary _tagStateSummary, TagReadSummary _tagReadSummary) {
+    public InventorySummaryNotification(InventorySummary _inventorySummary) {
         this();
-        params.tag_state_summary.copyFrom(_tagStateSummary);
-        params.tag_read_summary.copyFrom(_tagReadSummary);
+        params = _inventorySummary;
     }
-    
-    public class Params {
-        public TagStateSummary tag_state_summary = new TagStateSummary();
-        public TagReadSummary tag_read_summary = new TagReadSummary();
-    }
-
 }

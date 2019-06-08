@@ -71,7 +71,7 @@ public class RssiAdjuster {
 
     private void restoreMobilityProfile() {
         if (!Files.exists(MOBILITY_PROFILE_PATH)) {
-            log.info("no mobility sensitivity has been established, using the default");
+            log.info("no mobility profile has been established, using the default");
             mobilityProfile = new MobilityProfile();
             persistMobilityProfile();
             return;

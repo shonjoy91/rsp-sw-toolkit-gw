@@ -5,9 +5,12 @@
 package com.intel.rfid.sensor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.common.DeviceAlertNotification;
 import com.intel.rfid.api.data.DeviceAlertType;
-import com.intel.rfid.api.data.*;
+import com.intel.rfid.api.sensor.GeoRegion;
+import com.intel.rfid.api.data.Personality;
+import com.intel.rfid.api.sensor.AlertSeverity;
+import com.intel.rfid.api.sensor.Behavior;
+import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.behavior.BehaviorCompleter;
 import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.console.AnyStringCompleter;
@@ -63,13 +66,14 @@ public class SensorCommands implements CLICommander.Support {
     public static final String REBOOT = "reboot";
     public static final String SHUTDOWN = "shutdown";
     public static final String REMOVE = "remove";
-    public static final String GET_BIST = "get_bist_results";
-    public static final String GET_STATE = "get_state";
-    public static final String GET_SW_VERS = "get_sw_version";
+    public static final String GET_BIST = "get.bist.results";
+    public static final String GET_STATE = "get.state";
+    public static final String GET_SW_VERS = "get.versions";
     public static final String SET_LED = "set.led";
     public static final String GET_LAST_COMMS = "get.last.comms";
     public static final String SET_MOTION_EVENT = "set.motion";
     public static final String SET_FACILITY = "set.facility";
+    public static final String SET_MIN_RSSI = "set.min.rssi";
     public static final String SET_PERSONALITY = "set.personality";
     public static final String CLEAR_PERSONALITY = "clear.personality";
     public static final String SET_ALIAS = "set.alias";
@@ -134,7 +138,7 @@ public class SensorCommands implements CLICommander.Support {
         _comps.add(new ArgumentCompleter(
             new StringsCompleter(CMD_ID),
             new StringsCompleter(SET_LED),
-            new StringsCompleter(LEDState.getNames()),
+            new BetterEnumCompleter(LEDState.class),
             new SensorIdCompleter(sensorMgr),
             new NullCompleter()
         ));
@@ -143,13 +147,21 @@ public class SensorCommands implements CLICommander.Support {
             new StringsCompleter(CMD_ID),
             new StringsCompleter(SET_ALERT_THRESHOLD),
             new BetterEnumCompleter(DeviceAlertType.class),
-            new BetterEnumCompleter(DeviceAlertNotification.Severity.class),
+            new BetterEnumCompleter(AlertSeverity.class),
             new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
             new StringsCompleter(CMD_ID),
             new StringsCompleter(SET_FACILITY),
+            new AnyStringCompleter(),
+            new SensorIdCompleter(sensorMgr),
+            new NullCompleter()
+        ));
+
+        _comps.add(new ArgumentCompleter(
+            new StringsCompleter(CMD_ID),
+            new StringsCompleter(SET_MIN_RSSI),
             new AnyStringCompleter(),
             new SensorIdCompleter(sensorMgr),
             new NullCompleter()
@@ -273,6 +285,9 @@ public class SensorCommands implements CLICommander.Support {
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + SET_BEHAVIOR + " <behavior> <device_id>...");
         _out.indent(1, "Apply a predefined RFID behavior");
+        _out.blank();
+        _out.indent(0, "> " + CMD_ID + " " + SET_MIN_RSSI + " <dBm10X> <device_id>...");
+        _out.indent(1, "Apply a minimum acceptable RSSI level");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + SET_FACILITY + " <facility_id> <device_id>...");
         _out.indent(1, "Assign the Facility ID");
@@ -441,10 +456,10 @@ public class SensorCommands implements CLICommander.Support {
 
             case SET_ALERT_THRESHOLD:
                 final DeviceAlertType t1 = DeviceAlertType.valueOf(_argIter.next());
-                final DeviceAlertNotification.Severity severity = DeviceAlertNotification.Severity.valueOf(_argIter.next());
-                final Number threshold;
+                final AlertSeverity severity = AlertSeverity.valueOf(_argIter.next());
+                final Integer threshold;
                 try {
-                    threshold = NumberFormat.getInstance().parse(_argIter.next());
+                    threshold = NumberFormat.getInstance().parse(_argIter.next()).intValue();
                 } catch (ParseException pe) {
                     throw new SyntaxException(pe.getMessage());
                 }
@@ -486,6 +501,19 @@ public class SensorCommands implements CLICommander.Support {
                     }
                 };
                 break;
+
+            case SET_MIN_RSSI: {
+                try {
+                    final int minRssiDbm10x = Integer.parseInt(_argIter.next());
+                    for (SensorPlatform rsp : getRSPs(_argIter, _out)) {
+                        rsp.setMinRssiDbm10X(minRssiDbm10x);
+                        _out.line(SET_MIN_RSSI + " : OK");
+                    }
+                } catch (NumberFormatException nfe) {
+                    _out.line(SET_MIN_RSSI + " requires an Integer ideally in the range -1000 to -100");
+                }
+            }
+            break;
 
             case SET_FACILITY: {
                 final String facilityId = _argIter.next();
@@ -746,14 +774,14 @@ public class SensorCommands implements CLICommander.Support {
         HashSet<SensorPlatform> rsps = new HashSet<>();
 
         if (_argIter == null || !_argIter.hasNext()) {
-            rsps.addAll(sensorMgr.getRSPsCopy());
+            sensorMgr.getSensors(rsps);
             return rsps;
         }
 
         while (_argIter.hasNext()) {
             String id = _argIter.next();
             if (SensorManager.ALL_SENSORS.equals(id)) {
-                rsps.addAll(sensorMgr.getRSPsCopy());
+                sensorMgr.getSensors(rsps);
                 if (rsps.size() == 0) {
                     _out.error("No sensors available");
                 }
@@ -763,7 +791,7 @@ public class SensorCommands implements CLICommander.Support {
                     _out.error("No sensors available");
                 }
             } else {
-                SensorPlatform rsp = sensorMgr.getRSP(id);
+                SensorPlatform rsp = sensorMgr.getSensor(id);
                 if (rsp != null) {
                     rsps.add(rsp);
                 } else {
@@ -845,4 +873,13 @@ public class SensorCommands implements CLICommander.Support {
         }
     }
 
+    public enum AntennaPort {
+        PORT_0,
+        PORT_1,
+        PORT_2,
+        PORT_3,
+        PORTS_0_1,
+        PORTS_2_3,
+        ALL_PORTS
+    }
 }

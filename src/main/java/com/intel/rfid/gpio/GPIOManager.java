@@ -6,17 +6,16 @@ package com.intel.rfid.gpio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.intel.rfid.api.data.GPIOMapping;
-import com.intel.rfid.api.data.GPIOPinFunction;
-import com.intel.rfid.api.data.GPIOState;
-import com.intel.rfid.api.data.GPIOInfo;
-import com.intel.rfid.api.data.GPIOInputEvent;
-import com.intel.rfid.api.common.JsonRequest;
-import com.intel.rfid.api.downstream.GPIODeviceConnectResponse;
-import com.intel.rfid.api.downstream.GPIOInputNotification;
+import com.intel.rfid.api.gpio.GPIOMapping;
+import com.intel.rfid.api.gpio.GPIOInfo;
+import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.gpio.GPIO;
+import com.intel.rfid.api.gpio.GPIOConnectResponse;
+import com.intel.rfid.api.gpio.GPIOInputEvent;
+import com.intel.rfid.api.gpio.GPIOInputNotification;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
-import com.intel.rfid.api.data.ReadStateEvent;
+import com.intel.rfid.sensor.ReadStateEvent;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.Env;
@@ -116,29 +115,29 @@ public class GPIOManager implements SensorManager.ReadStateListener {
         }
     }
 
-    public void onReadStateChange(ReadStateEvent _rse) {
+    public void onReadStateEvent(ReadStateEvent _rse) {
 
         // Loop through the mappings to see if there is anything assigned
         // to this particular sensor for SENSOR_TRANSMITTING
         for (GPIOMapping mapping : gpioMappings) {
-            if ((mapping.sensor_id.equals(_rse.rsp.getDeviceId())) &&
-                (mapping.function == GPIOPinFunction.SENSOR_TRANSMITTING)) {
+            if ((mapping.sensor_device_id.equals(_rse.deviceId)) &&
+                (mapping.function == GPIO.PinFunction.SENSOR_TRANSMITTING)) {
 
-                GPIODevice device = gpioDevices.get(mapping.device_id);
+                GPIODevice device = gpioDevices.get(mapping.gpio_device_id);
                 if (device != null) {
                     switch (_rse.current) {
                         case STARTED:
-                            device.setGPIOState(mapping.gpio_info.index, GPIOState.ASSERTED);
+                            device.setGPIOState(mapping.gpio_info.index, GPIO.State.ASSERTED);
                             break;
                         case STOPPED:
-                            device.setGPIOState(mapping.gpio_info.index, GPIOState.DEASSERTED);
+                            device.setGPIOState(mapping.gpio_info.index, GPIO.State.DEASSERTED);
                             break;
                         default:
                             // Do nothing in this case
                             break;
                     }
                 } else {
-                    log.warn("No GPIO device found matching {}", mapping.device_id);
+                    log.warn("No GPIO device found matching {}", mapping.gpio_device_id);
                 }
             }
         }
@@ -177,10 +176,10 @@ public class GPIOManager implements SensorManager.ReadStateListener {
         throws IOException, GatewayException {
 
         if (downstreamMgr == null) {
-            throw new GatewayException("missing downstream manager reference");
+            throw new GatewayException("missing gpio manager reference");
         }
 
-        GPIODeviceConnectResponse rsp = new GPIODeviceConnectResponse(_responseId, System.currentTimeMillis());
+        GPIOConnectResponse rsp = new GPIOConnectResponse(_responseId, System.currentTimeMillis());
 
         downstreamMgr.sendGPIODevceConnectRsp(_deviceId, rsp);
     }
@@ -189,7 +188,7 @@ public class GPIOManager implements SensorManager.ReadStateListener {
         throws IOException, GatewayException {
 
         if (downstreamMgr == null) {
-            throw new GatewayException("missing downstream manager reference");
+            throw new GatewayException("missing gpio manager reference");
         }
         downstreamMgr.sendGPIOCommand(_deviceId, _req);
     }
@@ -201,10 +200,10 @@ public class GPIOManager implements SensorManager.ReadStateListener {
         // Loop through the mappings to see if there is anything assigned
         // to this particular device and pin
         for (GPIOMapping mapping : gpioMappings) {
-            if ((mapping.device_id.equals(_deviceId)) &&
+            if ((mapping.gpio_device_id.equals(_deviceId)) &&
                 (mapping.gpio_info.index == _gin.params.gpio_info.index)) {
 
-                SensorPlatform sensor = sensorMgr.getRSP(mapping.sensor_id);
+                SensorPlatform sensor = sensorMgr.getSensor(mapping.sensor_device_id);
                 if (sensor != null) {
                     switch (_gin.params.gpio_info.state) {
                         case ASSERTED:
@@ -220,19 +219,12 @@ public class GPIOManager implements SensorManager.ReadStateListener {
                     GPIOInputEvent event = new GPIOInputEvent(mapping, _gin.params.gpio_info.state);
                     notifyGPIOInputEvent(event);
                 } else {
-                    log.warn("No Sensor found matching {}", mapping.sensor_id);
+                    log.warn("No Sensor found matching {}", mapping.sensor_device_id);
                 }
             }
         }
     }
 
-    /**
-     * Removes the given RSP from the manager, setting its facility to Unknown and
-     * clearing its personalities. If the RSP was not managed by this manager, it
-     * will still have it's facility and personalities cleared.
-     *
-     * @param _rsp the RSP instance to remove from the manager.
-     */
     public void remove(GPIODevice _device) {
         synchronized (gpioDevices) {
             gpioDevices.remove(_device.getDeviceId());
@@ -253,8 +245,8 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     }
 
     public boolean addMapping(GPIOMapping _map) {
-        GPIODevice device = getGPIODevice(_map.device_id);
-        SensorPlatform sensor = sensorMgr.getRSP(_map.sensor_id);
+        GPIODevice device = getGPIODevice(_map.gpio_device_id);
+        SensorPlatform sensor = sensorMgr.getSensor(_map.sensor_device_id);
         if ((device != null) && (sensor != null)) {
             // Get the rest of the information to fill out the mapping
             GPIOInfo gpio_info = device.deviceInfo.gpio_info.get(_map.gpio_info.index);

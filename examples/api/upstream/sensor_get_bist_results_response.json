@@ -1,0 +1,30 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "22",
+  "result" : {
+    "rf_module_error" : false,
+    "rf_status_code" : 0,
+    "ambient_temp" : 0,
+    "rf_module_temp" : 0,
+    "time_alive" : 0,
+    "cpu_usage" : 0,
+    "mem_used_percent" : 0,
+    "mem_total_bytes" : 0,
+    "camera_installed" : false,
+    "temp_sensor_installed" : false,
+    "accelerometer_installed" : false,
+    "region" : "USA",
+    "rf_port_statuses" : [ {
+      "port" : 0,
+      "forward_power_dbm10" : 249,
+      "reverse_power_dbm10" : 54,
+      "connected" : true
+    }, {
+      "port" : 1,
+      "forward_power_dbm10" : 249,
+      "reverse_power_dbm10" : 197,
+      "connected" : false
+    } ],
+    "device_moved" : false
+  }
+}

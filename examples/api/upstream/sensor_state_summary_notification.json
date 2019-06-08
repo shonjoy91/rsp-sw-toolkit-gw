@@ -1,0 +1,9 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "sensor_state_summary",
+  "params" : {
+    "reading" : 0,
+    "connected" : 0,
+    "disconnected" : 3
+  }
+}

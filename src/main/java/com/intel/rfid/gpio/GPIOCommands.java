@@ -4,10 +4,9 @@
  */
 package com.intel.rfid.gpio;
 
-import com.intel.rfid.api.data.GPIOMapping;
-import com.intel.rfid.api.data.GPIOPinFunction;
-import com.intel.rfid.api.data.GPIOState;
-import com.intel.rfid.api.data.GPIOInfo;
+import com.intel.rfid.api.gpio.GPIOMapping;
+import com.intel.rfid.api.gpio.GPIOInfo;
+import com.intel.rfid.api.gpio.GPIO;
 import com.intel.rfid.console.AnyStringCompleter;
 import com.intel.rfid.console.ArgumentIterator;
 import com.intel.rfid.console.BetterEnumCompleter;
@@ -80,7 +79,7 @@ public class GPIOCommands implements Support {
             new SensorIdCompleter(sensorMgr),
             new GPIODeviceIdCompleter(gpioMgr),
             new AnyStringCompleter(),
-            new BetterEnumCompleter(GPIOPinFunction.class),
+            new BetterEnumCompleter(GPIO.PinFunction.class),
             new NullCompleter()
         ));
     
@@ -89,7 +88,7 @@ public class GPIOCommands implements Support {
             new StringsCompleter(SET_STATE),
             new GPIODeviceIdCompleter(gpioMgr),
             new AnyStringCompleter(),
-            new BetterEnumCompleter(GPIOState.class),
+            new BetterEnumCompleter(GPIO.State.class),
             new NullCompleter()
         ));
     }
@@ -110,7 +109,7 @@ public class GPIOCommands implements Support {
         _out.indent(0, "> " + CMD_ID + " " + SHOW_DEVICE_INFO + " <gpio_id>");
         _out.indent(1, "Displays the available GPIO info for the specified device");
         _out.blank();
-        _out.indent(0, "> " + CMD_ID + " " + MAP_GPIO + " <sensor_id> <gpio_id> <index> <function>");
+        _out.indent(0, "> " + CMD_ID + " " + MAP_GPIO + " <sensor_device_id> <gpio_id> <index> <function>");
         _out.indent(1, "Maps a particular GPIO pin to Sensor Function");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + SET_STATE + " <gpio_id> <index> <state>");
@@ -197,12 +196,12 @@ public class GPIOCommands implements Support {
 
         try {
             GPIOMapping mapping = new GPIOMapping();
-            mapping.sensor_id = String.valueOf(_argIter.next());
-            mapping.device_id = String.valueOf(_argIter.next());
+            mapping.sensor_device_id = String.valueOf(_argIter.next());
+            mapping.gpio_device_id = String.valueOf(_argIter.next());
             mapping.gpio_info.index = Integer.valueOf(_argIter.next());
-            mapping.function = GPIOPinFunction.valueOf(_argIter.next());
+            mapping.function = GPIO.PinFunction.valueOf(_argIter.next());
 
-            GPIODevice device = gpioMgr.getGPIODevice(mapping.device_id);
+            GPIODevice device = gpioMgr.getGPIODevice(mapping.gpio_device_id);
             if (device != null) {
                 // Range check the index
                 if (mapping.gpio_info.index < device.deviceInfo.gpio_info.size()) {
@@ -255,7 +254,7 @@ public class GPIOCommands implements Support {
 
         final String device_id = String.valueOf(_argIter.next());
         final int index = Integer.valueOf(_argIter.next());
-        final GPIOState state = GPIOState.valueOf(_argIter.next());
+        final GPIO.State state = GPIO.State.valueOf(_argIter.next());
         GPIODevice device = gpioMgr.gpioDevices.get(device_id);
         if (device != null) {
             device.setGPIOState(index, state);

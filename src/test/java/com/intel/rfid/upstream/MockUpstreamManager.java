@@ -19,6 +19,6 @@ public class MockUpstreamManager extends UpstreamManager {
         super(_clusterMgr, _sensorMgr, _gpioMgr,
               _scheduleMgr, _inventoryMgr, _downstreamMgr);
         // swap out for a mock instance
-        mqttUpstream = new MockMQTTUpstream(this);
+        mqttUpstream = new MockMqttUpstream(this);
     }
 }

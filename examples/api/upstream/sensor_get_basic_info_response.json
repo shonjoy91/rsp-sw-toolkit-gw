@@ -1,0 +1,14 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "21",
+  "result" : {
+    "device_id" : "RSP-150000",
+    "connection_state" : "DISCONNECTED",
+    "read_state" : "STOPPED",
+    "behavior_id" : "Default",
+    "facility_id" : "SalesFloor",
+    "personality" : null,
+    "aliases" : [ "RSP-150000-0", "RSP-150000-1", "RSP-150000-2", "RSP-150000-3" ],
+    "alerts" : [ ]
+  }
+}

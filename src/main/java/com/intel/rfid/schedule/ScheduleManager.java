@@ -5,15 +5,18 @@
 package com.intel.rfid.schedule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.data.Connection;
+import com.intel.rfid.alerts.ConnectionStateEvent;
+import com.intel.rfid.api.data.ScheduleRunState;
+import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.behavior.BehaviorConfig;
-import com.intel.rfid.cluster.Cluster;
+import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.cluster.ClusterRunner;
 import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.Publisher;
-import com.intel.rfid.api.data.*;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.slf4j.Logger;
@@ -32,20 +35,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.intel.rfid.schedule.ScheduleManager.RunState.ALL_ON;
-import static com.intel.rfid.schedule.ScheduleManager.RunState.ALL_SEQUENCED;
-import static com.intel.rfid.schedule.ScheduleManager.RunState.INACTIVE;
+import static com.intel.rfid.api.data.ScheduleRunState.ALL_ON;
+import static com.intel.rfid.api.data.ScheduleRunState.ALL_SEQUENCED;
+import static com.intel.rfid.api.data.ScheduleRunState.INACTIVE;
 
 public class ScheduleManager
     implements SensorManager.ConnectionStateListener {
 
-    public enum RunState {INACTIVE, ALL_ON, ALL_SEQUENCED, FROM_CONFIG}
-
-    public static final RunState DEFAULT_RUN_STATE = ALL_SEQUENCED;
+    public static final ScheduleRunState DEFAULT_RUN_STATE = ALL_SEQUENCED;
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
-    protected volatile RunState runState = INACTIVE;
+    protected volatile ScheduleRunState runState = INACTIVE;
 
     protected final Object publisherLock = new Object();
     protected ExecutorService runStatePubExec = ExecutorUtils.newSingleThreadedEventExecutor(log);
@@ -60,11 +61,11 @@ public class ScheduleManager
     protected final ClusterManager clusterMgr;
 
     public static class CacheState {
-        public RunState runState;
+        public ScheduleRunState runState;
     }
 
     public interface RunStateListener {
-        void onScheduleRunState(RunState _current);
+        void onScheduleRunState(ScheduleRunState _current, SchedulerSummary _summary);
     }
 
     public synchronized void addRunStateListener(RunStateListener _l) {
@@ -91,7 +92,7 @@ public class ScheduleManager
             runStatePublisher.replaceExecutor(runStatePubExec);
         }
 
-        RunState startupRunState = DEFAULT_RUN_STATE;
+        ScheduleRunState startupRunState = DEFAULT_RUN_STATE;
         try (InputStream fis = Files.newInputStream(CACHE_PATH)) {
 
             CacheState cacheState = mapper.readValue(fis, CacheState.class);
@@ -133,15 +134,11 @@ public class ScheduleManager
         return true;
     }
 
-    public synchronized void activate(RunState _runState) {
+    public synchronized void setRunState(ScheduleRunState _runState) {
         changeRunState(_runState);
     }
 
-    public synchronized void deactivate() {
-        changeRunState(INACTIVE);
-    }
-
-    public synchronized RunState getRunState() {
+    public synchronized ScheduleRunState getRunState() {
         return runState;
     }
 
@@ -149,7 +146,7 @@ public class ScheduleManager
     public synchronized void onConnectionStateChange(ConnectionStateEvent _cse) {
 
         // don't care
-        if (_cse.current != ConnectionState.CONNECTED) { return; }
+        if (_cse.current != Connection.State.CONNECTED) { return; }
 
         // don't care
         if (runState == INACTIVE) { return; }
@@ -211,7 +208,7 @@ public class ScheduleManager
         return summary;
     }
 
-    protected void changeRunState(RunState _next) {
+    protected void changeRunState(ScheduleRunState _next) {
         // calling this method with a mode that is currently running will trigger a "reset" of that mode
         boolean actuallyChanged = false;
 
@@ -264,7 +261,8 @@ public class ScheduleManager
 
         if (actuallyChanged) {
             // notify listeners only on a change from one state to another
-            runStatePublisher.notifyListeners(l -> l.onScheduleRunState(runState));
+            final SchedulerSummary summary = getSummary();
+            runStatePublisher.notifyListeners(l -> l.onScheduleRunState(runState, summary));
         }
     }
     

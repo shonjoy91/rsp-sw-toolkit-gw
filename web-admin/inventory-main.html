@@ -17,22 +17,26 @@
 
     var gwSocket = new GatewayWebSocket();
 
-    gwSocket.topics = ["inventory_list"];
+    function onSocketState(state) {
+        if (state === "open") {
+            requestInventoryTagInfo();
+            setInterval(requestInventoryTagInfo, 5000);
+        }
+    }
 
-    gwSocket.inboundNotification = function (jsonNot) {
-        switch (jsonNot.method) {
-            case "inventory_list":
-                onInventoryList(jsonNot.params);
-                break;
-            case "epc_filter_pattern":
-                alignEpcFilterPattern(jsonNot.params.epc_filter_pattern);
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "inventory_get_tag_info":
+                onTagInfo(jsonRsp.result);
                 break;
         }
     };
+    
+    function onTagInfo(list) {
 
-    function onInventoryList(list) {
-
-        var table = document.getElementById("inventory_table");
+        var table = document.getElementById("tags_table");
 
         for (var i = 0; i < list.length; i++) {
 
@@ -46,26 +50,27 @@
             document.getElementById(curTag.epc + ".tid").innerHTML = curTag.tid;
             document.getElementById(curTag.epc + ".state").innerHTML = curTag.state;
             document.getElementById(curTag.epc + ".location").innerHTML = curTag.location;
-            document.getElementById(curTag.epc + ".lastRead").innerHTML = epochToGMT(curTag.lastRead);
-            document.getElementById(curTag.epc + ".facility").innerHTML = curTag.facility;
+            document.getElementById(curTag.epc + ".last_read_on").innerHTML = epochToGMT(curTag.last_read_on);
+            document.getElementById(curTag.epc + ".facility_id").innerHTML = curTag.facility_id;
         }
     }
 
+    function requestInventoryTagInfo() {
+        var pattern = document.getElementById("epc_filter_pattern").value;
+        gwSocket.sendJsonRequest("inventory_get_tag_info", {filter_pattern: pattern});
+    }
+
     function sendEpcFilterPattern() {
-        var table = document.getElementById("inventory_table");
+        var table = document.getElementById("tags_table");
         var index = table.rows.length - 1;
         while (index > 0) {
             table.deleteRow(index);
             index--;
         }
-        var pattern = document.getElementById("epc_filter_pattern").value;
-        gwSocket.sendJsonRequest("set_epc_filter_pattern", {epc_filter_pattern: pattern});
+        setCookie("epc_filter_pattern", document.getElementById("epc_filter_pattern").value);
+        requestInventoryTagInfo();
     }
     
-    function alignEpcFilterPattern(pattern) {
-        document.getElementById("epc_filter_pattern").value = pattern;
-    }
-
     function initEpcFilterInput() {
         var e = document.getElementById("epc_filter_pattern");
         e.addEventListener("keyup", function (event) {
@@ -74,18 +79,19 @@
                 sendEpcFilterPattern();
             }
         });
+        e.value = getCookie("epc_filter_pattern");
     }
 
     function createRow(table, id) {
-        tRow = table.insertRow();
+        var tRow = table.insertRow();
         tRow.id = "row_" + id;
         var cells = "";
         cells += createCell(id + ".epc");
         cells += createCell(id + ".tid");
         cells += createCell(id + ".state");
         cells += createCell(id + ".location");
-        cells += createCell(id + ".lastRead");
-        cells += createCell(id + ".facility");
+        cells += createCell(id + ".last_read_on");
+        cells += createCell(id + ".facility_id");
         tRow.innerHTML = cells;
     }
 
@@ -109,11 +115,11 @@
 <div class="w3-row">
 
     <div class="w3-padding-small w3-blue">
-        <label class="w3-opacity" for="epc_filter_pattern"><b>Filter Pattern</b></label>
+        <label class="w3-opacity" for="epc_filter_pattern"><b>EPC Filter Pattern</b></label>
         <input type="text" id="epc_filter_pattern"/>
         <button class="w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i></button>
     </div>
-    <table id="inventory_table" class="w3-table">
+    <table id="tags_table" class="w3-table">
         <tr class="w3-grey">
             <th>EPC</th>
             <th>TID</th>
@@ -126,7 +132,7 @@
 
     <script src="table-support.js"></script>
     <script>
-        initTableSort("inventory_table");
+        initTableSort("tags_table");
     </script>
 
 </div>

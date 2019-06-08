@@ -17,43 +17,60 @@
 
     var gwSocket = new GatewayWebSocket();
 
-    gwSocket.topics = ["scheduler_summary"];
-    
+    gwSocket.topics = ["scheduler_run_state"];
+
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("scheduler_get_run_state");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "scheduler_get_run_state":
+            case "scheduler_set_run_state":
+                onSchedulerSummary(jsonRsp.result);
+                break;
+        }
+    };
+
     gwSocket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
-            case "scheduler_summary":
+            case "scheduler_run_state":
                 onSchedulerSummary(jsonNot.params);
                 break;
         }
     };
 
 
-    function onSchedulerSummary(params) {
+    function onSchedulerSummary(scheduler_summary) {
 
+        if(checkResponseError(scheduler_summary)) { return;}
 
-        var s = "";
-        var i, j, k;
+        var s, i, j, k;
 
-        for (i in params.available_states) {
-            var curState = params.available_states[i];
+        for (i in scheduler_summary.available_states) {
+            var curState = scheduler_summary.available_states[i];
             var e = document.getElementById("scheduler_selected_" + curState);
-            if (curState === params.run_state) {
+            if (curState === scheduler_summary.run_state) {
                 e.innerHTML = '<i class="fas fa-check-circle"></i>';
             } else {
                 e.innerHTML = '';
             }
         }
 
-        if (params.clusters == null || params.clusters.length === 0) {
-            document.getElementById("scheduler_summary.clusters").innerHTML = ""
+        if (scheduler_summary.clusters == null || scheduler_summary.clusters.length === 0) {
+            document.getElementById("scheduler_clusters").innerHTML = ""
             return;
         }
 
         //alert("clusters: " +rsp.params.clusters.length);
         s = '<table class="w3-table">';
         s += '<tr class="w3-grey"><th>Cluster Id</th><th>Behavior</th><th>Sensors</th></tr>';
-        for (i in params.clusters) {
-            var cluster = params.clusters[i];
+        for (i in scheduler_summary.clusters) {
+            var cluster = scheduler_summary.clusters[i];
 
             s += '<tr><td class="w3-border-bottom w3-border-dark-grey">';
             s += cluster.id;
@@ -75,13 +92,13 @@
             s += '</td></tr>';
         }
         s += '</table>';
-        document.getElementById("scheduler_summary.clusters").innerHTML = s;
+        document.getElementById("scheduler_clusters").innerHTML = s;
     }
 
-    function activateSchedule(newState) {
+    function setScheduleRunState(newState) {
         var e = document.getElementById("scheduler_selected_" + newState);
         e.innerHTML = '<i class="fas fa-spinner fa-pulse">';
-        gwSocket.sendJsonRequest("scheduler_activate", {run_state: newState});
+        gwSocket.sendJsonRequest("scheduler_set_run_state", {run_state: newState});
     }
 
     function init() {
@@ -97,21 +114,21 @@
 <!-- Content -->
 <div class="w3-row">
     <div class="w3-bar w3-blue">
-        <div class="w3-bar-item w3-button" onclick="activateSchedule('INACTIVE');">
+        <div class="w3-bar-item w3-button" onclick="setScheduleRunState('INACTIVE');">
             INACTIVE <span id="scheduler_selected_INACTIVE"></span>
         </div>
-        <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_ON');">
+        <div class="w3-bar-item w3-button" onclick="setScheduleRunState('ALL_ON');">
             ALL_ON <span id="scheduler_selected_ALL_ON"></span>
         </div>
-        <div class="w3-bar-item w3-button" onclick="activateSchedule('ALL_SEQUENCED');">
+        <div class="w3-bar-item w3-button" onclick="setScheduleRunState('ALL_SEQUENCED');">
             ALL_SEQUENCED <span id="scheduler_selected_ALL_SEQUENCED"></span>
         </div>
-        <div class="w3-bar-item w3-button" onclick="activateSchedule('FROM_CONFIG');">
+        <div class="w3-bar-item w3-button" onclick="setScheduleRunState('FROM_CONFIG');">
             FROM_CONFIG <span id="scheduler_selected_FROM_CONFIG"></span>
         </div>
     </div>
 
-    <div id="scheduler_summary.clusters"></div>
+    <div id="scheduler_clusters"></div>
 
 </div>
 

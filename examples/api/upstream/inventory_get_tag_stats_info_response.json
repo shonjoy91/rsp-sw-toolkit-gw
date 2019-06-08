@@ -1,0 +1,66 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "13",
+  "result" : {
+    "epc_map" : {
+      "EPC000001" : [ {
+        "source_alias" : "RSP-150000-0",
+        "is_location" : false,
+        "last_read" : 1559951012810,
+        "n" : 2,
+        "mean" : -95.0,
+        "std_dev" : "-Infinity",
+        "min" : -95.0,
+        "max" : -95.0
+      }, {
+        "source_alias" : "RSP-150005-0",
+        "is_location" : true,
+        "last_read" : 1559951010810,
+        "n" : 1,
+        "mean" : -95.0,
+        "std_dev" : "-Infinity",
+        "min" : -95.0,
+        "max" : -95.0
+      } ],
+      "EPC000003" : [ {
+        "source_alias" : "RSP-150000-0",
+        "is_location" : false,
+        "last_read" : 1559951012810,
+        "n" : 2,
+        "mean" : -95.0,
+        "std_dev" : "-Infinity",
+        "min" : -95.0,
+        "max" : -95.0
+      }, {
+        "source_alias" : "RSP-150005-0",
+        "is_location" : true,
+        "last_read" : 1559951010810,
+        "n" : 1,
+        "mean" : -95.0,
+        "std_dev" : "-Infinity",
+        "min" : -95.0,
+        "max" : -95.0
+      } ],
+      "EPC000002" : [ {
+        "source_alias" : "RSP-150000-0",
+        "is_location" : false,
+        "last_read" : 1559951012810,
+        "n" : 2,
+        "mean" : -95.0,
+        "std_dev" : "-Infinity",
+        "min" : -95.0,
+        "max" : -95.0
+      }, {
+        "source_alias" : "RSP-150005-0",
+        "is_location" : true,
+        "last_read" : 1559951010810,
+        "n" : 1,
+        "mean" : -95.0,
+        "std_dev" : "-Infinity",
+        "min" : -95.0,
+        "max" : -95.0
+      } ]
+    },
+    "source_aliases" : [ "RSP-150000-0", "RSP-150005-0" ]
+  }
+}

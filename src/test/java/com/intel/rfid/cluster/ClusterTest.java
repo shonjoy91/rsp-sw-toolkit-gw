@@ -4,6 +4,8 @@
  */
 package com.intel.rfid.cluster;
 
+import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.security.ProvisionToken;
 import com.intel.rfid.exception.ConfigException;
@@ -155,15 +157,17 @@ public class ClusterTest {
 
         String rspId150008 = "RSP-150008";
 
-        Collection<SensorPlatform> sensors = sensorMgr.getRSPsCopy();
+        Collection<SensorPlatform> sensors = new ArrayList<>();
+        sensorMgr.getSensors(sensors);
         assertThat(sensors).isEmpty();
 
         // Good token will establish a sensor and associate a provisioning token
         sensorMgr.registerSensor(rspId150008, clusterSFExit.tokens.get(0).token);
-        sensors = sensorMgr.getRSPsCopy();
+        sensors.clear();
+        sensorMgr.getSensors(sensors);
         assertThat(sensors).isNotEmpty();
 
-        SensorPlatform rspE00100 = sensorMgr.getRSP(rspId150008);
+        SensorPlatform rspE00100 = sensorMgr.getSensor(rspId150008);
         assertThat(rspE00100).isNotNull();
 
         assertThat(rspE00100.getFacilityId()).isEqualTo(clusterSFExit.facility_id);

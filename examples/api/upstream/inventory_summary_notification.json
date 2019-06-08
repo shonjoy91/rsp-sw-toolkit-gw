@@ -1,0 +1,21 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "inventory_summary",
+  "params" : {
+    "tag_read_summary" : {
+      "reads_per_second" : 0,
+      "within_last_01_min" : 3,
+      "from_01_to_05_min" : 0,
+      "from_05_to_30_min" : 0,
+      "from_30_to_60_min" : 0,
+      "from_60_min_to_24_hr" : 0,
+      "more_than_24_hr" : 0
+    },
+    "tag_state_summary" : {
+      "PRESENT" : 3,
+      "EXITING" : 0,
+      "DEPARTED_EXIT" : 0,
+      "DEPARTED_POS" : 0
+    }
+  }
+}

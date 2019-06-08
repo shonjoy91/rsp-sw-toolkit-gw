@@ -154,7 +154,7 @@ process_command () {
     # Extract the method
     METHOD=${CMD[2]}
 
-    if [ "$METHOD" = '"method":"gpio_set_gpio"' ]; then
+    if [ "$METHOD" = '"method":"gpio_set_state"' ]; then
         # Extract the index
         IFS=’:’ read -ra ARRAY <<< "${CMD[3]}"
         index=${ARRAY[2]}

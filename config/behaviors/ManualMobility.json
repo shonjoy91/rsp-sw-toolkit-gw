@@ -2,7 +2,7 @@
   "id": "ManualMobility",
   "operation_mode": "NonContinuous",
   "link_profile": 1,
-  "power_level": 30.5,
+  "power_level": 28.5,
   "selected_state": "Any",
   "session_flag": "S0",
   "target_state": "A",

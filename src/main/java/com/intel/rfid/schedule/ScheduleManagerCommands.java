@@ -4,8 +4,11 @@
  */
 package com.intel.rfid.schedule;
 
-import com.intel.rfid.cluster.Cluster;
+import com.intel.rfid.api.data.ScheduleRunState;
+import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.console.ArgumentIterator;
+import com.intel.rfid.console.BetterEnumCompleter;
+import com.intel.rfid.console.SyntaxException;
 import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
@@ -15,6 +18,7 @@ import jline.console.completer.StringsCompleter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static com.intel.rfid.console.CLICommander.INFO;
@@ -33,10 +37,7 @@ public class ScheduleManagerCommands implements Support {
 
     public static final String CMD_ID = "scheduler";
 
-    public static final String ACTIVATE_ALL_ON = "activate.all.on";
-    public static final String ACTIVATE_ALL_SEQ = "activate.all.sequenced";
-    public static final String ACTIVATE_FROM_CFG = "activate.from.config";
-    public static final String DEACTIVATE = "deactivate";
+    public static final String SET_RUN_STATE = "set.run.state";
 
     @Override
     public String getCommandId() {
@@ -47,18 +48,24 @@ public class ScheduleManagerCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(SHOW,
-                                         ACTIVATE_ALL_ON,
-                                         ACTIVATE_ALL_SEQ,
-                                         ACTIVATE_FROM_CFG,
-                                         DEACTIVATE),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(SHOW),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
+
+        _comps.add(
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(SET_RUN_STATE),
+                                new BetterEnumCompleter(ScheduleRunState.class)),
+                        new NullCompleter()
+                )
+        );
 
     }
 
@@ -71,16 +78,17 @@ public class ScheduleManagerCommands implements Support {
         _out.indent(0, "> " + CMD_ID + " " + SHOW);
         _out.indent(1, "Displays info about current state of the schedule manager");
         _out.blank();
-        _out.indent(0, "> " + CMD_ID + " " + ACTIVATE_ALL_ON);
+        _out.indent(0, "> " + CMD_ID + " " + SET_RUN_STATE + " " + Arrays.asList(ScheduleRunState.values()));
+        _out.indent(1, ScheduleRunState.ALL_ON.toString());
         _out.indent(1, "Transitions to all sensors reading tags at the same time");
         _out.blank();
-        _out.indent(0, "> " + CMD_ID + " " + ACTIVATE_ALL_SEQ);
+        _out.indent(1, ScheduleRunState.ALL_SEQUENCED.toString());
         _out.indent(1, "Transitions to each sensor reading tags one at a time");
         _out.blank();
-        _out.indent(0, "> " + CMD_ID + " " + ACTIVATE_FROM_CFG);
+        _out.indent(1, ScheduleRunState.FROM_CONFIG.toString());
         _out.indent(1, "Transitions to running per the existing cluster configuration");
         _out.blank();
-        _out.indent(0, "> " + CMD_ID + " " + DEACTIVATE);
+        _out.indent(1, ScheduleRunState.INACTIVE.toString());
         _out.indent(1, "Deactivates any scheduling activities and causes the sensors to stop reading");
         _out.blank();
     }
@@ -90,13 +98,8 @@ public class ScheduleManagerCommands implements Support {
 
         switch (_action) {
 
-            case ACTIVATE_ALL_ON:
-            case ACTIVATE_ALL_SEQ:
-            case ACTIVATE_FROM_CFG:
-                doActivate(_action, _out);
-                break;
-            case DEACTIVATE:
-                doDeactivate(_out);
+            case SET_RUN_STATE:
+                doActivate(_argIter, _out);
                 break;
             case SHOW:
                 doShow(_out);
@@ -106,30 +109,16 @@ public class ScheduleManagerCommands implements Support {
         }
     }
 
-    private void doActivate(String _action, PrettyPrinter _out) {
-
-        switch (_action) {
-            case ACTIVATE_FROM_CFG:
-                scheduleMgr.activate(ScheduleManager.RunState.FROM_CONFIG);
-                break;
-            case ACTIVATE_ALL_SEQ:
-                scheduleMgr.activate(ScheduleManager.RunState.ALL_SEQUENCED);
-                break;
-            case ACTIVATE_ALL_ON:
-                scheduleMgr.activate(ScheduleManager.RunState.ALL_ON);
-                break;
-            default:
-                _out.line("unhandled action " + _action);
-                return;
+    private void doActivate(ArgumentIterator _argIter, PrettyPrinter _out) {
+        try {
+            ScheduleRunState runState = ScheduleRunState.valueOf(_argIter.next());
+            scheduleMgr.setRunState(runState);
+            _out.line("completed");
+        } catch (SyntaxException _e) {
+            usage(_out);
         }
-        _out.line("completed");
     }
 
-    private void doDeactivate(PrettyPrinter _out) {
-        scheduleMgr.deactivate();
-        _out.line("completed");
-    }
-    
     private void doShow(PrettyPrinter _out) {
 
         SchedulerSummary summary = scheduleMgr.getSummary();

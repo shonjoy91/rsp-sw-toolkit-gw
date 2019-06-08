@@ -4,11 +4,11 @@
  */
 package com.intel.rfid.alerts;
 
-import com.intel.rfid.api.common.DeviceAlertNotification;
+import com.intel.rfid.api.data.Connection;
+import com.intel.rfid.api.sensor.AlertSeverity;
+import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
 import com.intel.rfid.gateway.GatewayStatus;
-import com.intel.rfid.api.data.ConnectionState;
-import com.intel.rfid.api.data.ConnectionStateEvent;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.upstream.UpstreamManager;
 import org.slf4j.Logger;
@@ -39,40 +39,40 @@ public class AlertManager
     @Override
     public void onConnectionStateChange(ConnectionStateEvent _cse) {
 
-        if (_cse.current == ConnectionState.CONNECTED &&
-            _cse.previous != ConnectionState.CONNECTED) {
+        if (_cse.current == Connection.State.CONNECTED &&
+            _cse.previous != Connection.State.CONNECTED) {
 
             upstreamMgr.send(new SensorStatusAlert(_cse.rsp,
                                                    GatewayStatus.RSP_CONNECTED,
-                                                   DeviceAlertNotification.Severity.info));
+                                                   AlertSeverity.info));
 
-        } else if (_cse.current == ConnectionState.DISCONNECTED &&
-                   _cse.previous != ConnectionState.DISCONNECTED) {
+        } else if (_cse.current == Connection.State.DISCONNECTED &&
+                   _cse.previous != Connection.State.DISCONNECTED) {
 
 
-            if (_cse.cause == ConnectionStateEvent.Cause.LOST_HEARTBEAT) {
+            if (_cse.cause == Connection.Cause.LOST_HEARTBEAT) {
 
                 upstreamMgr.send(new SensorStatusAlert(_cse.rsp,
                                                        GatewayStatus.RSP_LOST_HEARTBEAT,
-                                                       DeviceAlertNotification.Severity.warning));
+                                                       AlertSeverity.warning));
 
-            } else if (_cse.cause == ConnectionStateEvent.Cause.LOST_DOWNSTREAM_COMMS) {
+            } else if (_cse.cause == Connection.Cause.LOST_DOWNSTREAM_COMMS) {
 
                 upstreamMgr.send(new SensorStatusAlert(_cse.rsp,
                                                        GatewayStatus.RSP_LAST_WILL_AND_TESTAMENT,
-                                                       DeviceAlertNotification.Severity.warning));
+                                                       AlertSeverity.warning));
 
-            } else if (_cse.cause == ConnectionStateEvent.Cause.SHUTTING_DOWN) {
+            } else if (_cse.cause == Connection.Cause.SHUTTING_DOWN) {
 
                 upstreamMgr.send(new SensorStatusAlert(_cse.rsp,
                                                        GatewayStatus.RSP_SHUTTING_DOWN,
-                                                       DeviceAlertNotification.Severity.warning));
+                                                       AlertSeverity.warning));
 
-            } else if (_cse.cause == ConnectionStateEvent.Cause.FORCED_DISCONNECT) {
+            } else if (_cse.cause == Connection.Cause.FORCED_DISCONNECT) {
 
                 upstreamMgr.send(new SensorStatusAlert(_cse.rsp,
                                                        GatewayStatus.GATEWAY_TRIGGERED_RSP_DISCONNECT,
-                                                       DeviceAlertNotification.Severity.warning));
+                                                       AlertSeverity.warning));
 
             }
         }

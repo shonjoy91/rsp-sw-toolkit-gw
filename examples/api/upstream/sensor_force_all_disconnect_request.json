@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "26",
+  "method" : "sensor_force_all_disconnect",
+  "params" : {
+    "device_id" : null
+  }
+}

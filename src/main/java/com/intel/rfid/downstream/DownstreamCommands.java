@@ -31,7 +31,7 @@ public class DownstreamCommands implements Support {
         mgr = _mgr;
     }
 
-    public static final String CMD_ID = "downstream";
+    public static final String CMD_ID = "gpio";
 
     public static final String ENABLE_JMDNS = "enable.jmdns";
     public static final String DISABLE_JMDNS = "disable.jmdns";

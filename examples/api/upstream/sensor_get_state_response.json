@@ -1,0 +1,16 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "30",
+  "result" : {
+    "hostname" : "RSP-150000",
+    "hwaddress" : "98:4f:ee:15:04:17",
+    "app_version" : "19.2.5.14",
+    "module_version" : "3.9",
+    "num_physical_ports" : 2,
+    "motion_sensor" : true,
+    "camera" : false,
+    "wireless" : false,
+    "configuration_state" : "DISCONNECTED",
+    "operational_state" : "Idle"
+  }
+}

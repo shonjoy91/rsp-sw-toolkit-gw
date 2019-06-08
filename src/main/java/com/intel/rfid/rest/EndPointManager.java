@@ -4,10 +4,12 @@
  */
 package com.intel.rfid.rest;
 
+import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.gateway.Env;
+import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.inventory.InventoryManager;
 import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.security.SecurityContext;
@@ -30,19 +32,25 @@ public class EndPointManager {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
     protected Server server;
+    protected ClusterManager clusterMgr;
     protected SensorManager sensorMgr;
+    protected GPIOManager gpioMgr;
     protected InventoryManager inventoryMgr;
     protected UpstreamManager upstreamMgr;
     protected DownstreamManager downstreamMgr;
     protected ScheduleManager scheduleMgr;
 
-    public EndPointManager(SensorManager _sensorMgr,
+    public EndPointManager(ClusterManager _clusterMgr,
+                           SensorManager _sensorMgr,
+                           GPIOManager _gpioMgr,
                            InventoryManager _inventoryMgr,
                            UpstreamManager _upstreamMgr,
                            DownstreamManager _downstreamMgr,
                            ScheduleManager _scheduleMgr) {
 
+        clusterMgr = _clusterMgr;
         sensorMgr = _sensorMgr;
+        gpioMgr = _gpioMgr;
         inventoryMgr = _inventoryMgr;
         upstreamMgr = _upstreamMgr;
         downstreamMgr = _downstreamMgr;
@@ -139,7 +147,9 @@ public class EndPointManager {
                  SensorCredentialsEndPoint.class.getSimpleName(), 
                  ConfigManager.PROVISION_SENSOR_CREDENTIALS_PATH);
 
-        holder = new ServletHolder(new AdminWebSocketServlet(sensorMgr, 
+        holder = new ServletHolder(new AdminWebSocketServlet(clusterMgr, 
+                                                             sensorMgr,
+                                                             gpioMgr,
                                                              inventoryMgr,
                                                              upstreamMgr,
                                                              downstreamMgr,

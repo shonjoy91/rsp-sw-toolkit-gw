@@ -1,0 +1,10 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "downstream_mqtt_status",
+  "params" : {
+    "connection_state" : "DISCONNECTED",
+    "broker_uri" : "tcp://tim-U18-VB.local:1883",
+    "subscribes" : [ ],
+    "publishes" : [ "rfid/rsp/command", "rfid/rsp/gw_status" ]
+  }
+}

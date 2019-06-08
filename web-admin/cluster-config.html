@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Cluster Configuration</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "cluster_cfg";
+
+    var gwSocket = new GatewayWebSocket();
+    
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("cluster_get_template");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        // get the template first before requesting the configuration
+        switch (jsonReq.method) {
+            case "cluster_get_template":
+                onClusterTemplate(jsonRsp.result);
+                gwSocket.sendJsonRequest("cluster_get_config");
+                break;
+            case "cluster_get_config":
+            case "cluster_set_config":
+                onClusterConfigResponse(jsonRsp.result);
+                break;
+            case "cluster_delete_config":
+                clearClustersUI();
+                break;
+        }
+    };
+
+    function onClusterTemplate(template) {
+        selects.personality = template.personalities;
+        selects.behavior_id = template.behavior_ids;
+        selects.sensor_id = template.sensor_device_ids;
+    }
+
+    var clusterCfg = {};
+
+    function onClusterConfigResponse(cfg) {
+
+        clearClustersUI();
+        clusterCfg = cfg;
+        var clusters = cfg.clusters;
+
+        // set the header info
+        document.getElementById("cluster_cfg_id").innerHTML = cfg.id;
+
+        for (var i = 0; i < clusters.length; i++) {
+            createClusterContainer(clusters[i]);
+        }
+    }
+    
+    function clearClustersUI() {
+        document.getElementById("cluster_cfg_id").innerHTML = "&nbsp;&nbsp;";
+        var e = document.getElementById("clusters_container");
+        while (e.firstChild) {
+            e.removeChild(e.firstChild);
+        }
+    }
+
+    function createClusterContainer(cluster) {
+
+        var containerId = cluster.id + "_container";
+        var containerDiv = document.createElement('div');
+        containerDiv.classList.add("w3-border-bottom");
+        containerDiv.id = containerId;
+
+        var headerDiv = document.createElement("div");
+        headerDiv.id = cluster.id + "_header";
+        headerDiv.classList.add("w3-bar");
+        containerDiv.appendChild(headerDiv);
+
+
+        var e;
+        // e = newControlElement(headerDiv, "<i class='fas fa-minus-square'></i>", "Delete");
+        // e.onclick = deleteClusterClosure(cluster.id);
+
+        var idDiv = document.createElement("div");
+        idDiv.id = cluster.id + "_id";
+        idDiv.classList.add("w3-bar-item");
+        idDiv.onclick = toggleClusterClosure(cluster.id);
+        idDiv.classList.add("w3-hover-white");
+        idDiv.style.cursor = "default";
+        idDiv.innerHTML = cluster.id;
+        headerDiv.appendChild(idDiv);
+
+
+        var paramsDiv = document.createElement("div");
+        paramsDiv.id = cluster.id + "_params";
+        paramsDiv.classList.add("w3-row");
+        paramsDiv.classList.add("w3-margin-bottom");
+        paramsDiv.classList.add("w3-padding");
+        paramsDiv.classList.add("w3-hide");
+        containerDiv.appendChild(paramsDiv);
+
+
+        var paramsRow;
+        var paramsCol;
+        paramsRow = newParamsRow(paramsDiv); 
+        paramsCol = newParamsCol(paramsRow);
+        paramsCol.appendChild(newTextParam(cluster, "facility_id"));
+        paramsCol.appendChild(newSelectParam(cluster, "personality"));
+        paramsCol.appendChild(newSelectParam(cluster, "behavior_id"));
+
+        paramsCol = newParamsCol(paramsRow);
+        // newAliasParam(paramsCol, cluster);
+        for(var x = 0; x < 4; x++) {
+            var val = cluster.aliases.length > x ? cluster.aliases[x] : "DEFAULT";
+            paramsCol.appendChild(newAliasParam(cluster, "alias_port_" +x, val));
+        }
+
+        paramsRow = newParamsRow(paramsDiv);
+        paramsCol = newParamsCol(paramsRow);
+        newSensorGroupParam(paramsCol, cluster);
+
+        paramsCol = newParamsCol(paramsRow);
+        newProvisionTokenParam(paramsCol, cluster);
+
+        // insert the cluster in alphabetical order
+        var container = document.getElementById("clusters_container");
+        var divs = Array.prototype.slice.call(container.children);
+        var before = divs.find(function(element) {
+            return (containerId.localeCompare(element.id) < 0);
+        });
+        container.insertBefore(containerDiv, before);
+    }
+    
+    function newSensorGroupParam(parent, cluster) {
+
+        var groupDiv = document.createElement("div");
+        parent.appendChild(groupDiv);
+
+        groupDiv.classList.add("w3-dark-grey");
+        groupDiv.classList.add("w3-padding");
+
+        var hdrDiv = document.createElement("div");
+        hdrDiv.innerHTML = "Sensor Groups";
+        groupDiv.appendChild(hdrDiv);
+
+        for (var x = 0; x < cluster.sensor_groups.length; x++) {
+
+            var r;
+            r = document.createElement("div");
+            r.classList.add("w3-row");
+            r.classList.add("w3-border-top");
+            groupDiv.append(r);
+
+            var e;
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l12");
+            e.innerHTML = cluster.sensor_groups[x].toString();
+            r.append(e);
+        }
+    }
+
+    function newProvisionTokenParam(parent, cluster) {
+
+        var groupDiv = document.createElement("div");
+        parent.appendChild(groupDiv);
+
+        groupDiv.classList.add("w3-dark-grey");
+        groupDiv.classList.add("w3-padding");
+
+        var hdrDiv = document.createElement("div");
+        hdrDiv.innerHTML = "Provision Tokens";
+        groupDiv.appendChild(hdrDiv);
+
+        for (var x = 0; x < cluster.tokens.length; x++) {
+
+            var r;
+            var e;
+            var token = cluster.tokens[x];
+
+            r = document.createElement("div");
+            r.classList.add("w3-row");
+            r.classList.add("w3-border-top");
+            groupDiv.append(r);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l2");
+            e.innerHTML = "username";
+            r.append(e);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l10");
+            e.innerHTML = token.username;
+            r.append(e);
+
+            r = document.createElement("div");
+            r.classList.add("w3-row");
+            groupDiv.append(r);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l2");
+            e.innerHTML = "token";
+            r.append(e);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l10");
+            e.innerHTML = token.token;
+            r.append(e);
+
+            r = document.createElement("div");
+            r.classList.add("w3-row");
+            groupDiv.append(r);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l3");
+            e.innerHTML = "generatedTimestamp";
+            r.append(e);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l9");
+            e.innerHTML = token.generatedTimestamp;
+            r.append(e);
+
+            r = document.createElement("div");
+            r.classList.add("w3-row");
+            groupDiv.append(r);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l3");
+            e.innerHTML = "expirationTimestamp";
+            r.append(e);
+
+            e = document.createElement("div");
+            e.classList.add("w3-col");
+            e.classList.add("l9");
+            e.innerHTML = token.expirationTimestamp;
+            r.append(e);
+        }
+    }
+
+    function newAliasParam(cluster, label, value) {
+        var e = newParamWrapperElement(label);
+        var input = document.createElement("input");
+        input.id = cluster.id + "." + label;
+        input.type = "text";
+        input.value = value;
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        e.appendChild(input);
+        return e;
+    }
+
+    function newTextParam(cluster, elementId) {
+        var e = newParamWrapperElement(elementId);
+        var input = document.createElement("input");
+        input.id = cluster.id + "." + elementId;
+        input.type = "text";
+        input.value = cluster[elementId];
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        e.appendChild(input);
+        return e;
+    }
+
+    var selects = { };
+
+    function newSelectParam(behavior, elementId) {
+        var e = newParamWrapperElement(elementId);
+
+        var select = document.createElement("select");
+        select.id = behavior.id + "." + elementId;
+        select.classList.add("w3-input");
+        select.classList.add("w3-border");
+
+        for(var i = 0; i < selects[elementId].length;  i++) {
+            var option = document.createElement("option");
+            option.text = selects[elementId][i];
+            select.add(option);
+            if(option.text === behavior[elementId]) {
+                select.selectedIndex = i;
+            }
+        }
+
+        e.appendChild(select);
+        return e;
+    }
+
+    function newParamWrapperElement(label) {
+        var e = document.createElement("div");
+        // e.classList.add("w3-quarter");
+        e.classList.add("w3-padding");
+
+        var l = document.createElement("label");
+        l.innerHTML = label;
+        e.appendChild(l);
+
+        return e;
+    }
+
+    function newParamsRow(parent) {
+        var e;
+        e = document.createElement("div");
+        e.classList.add("w3-row-padding");
+        parent.appendChild(e);
+        return e;
+    }
+
+    function newParamsCol(parent) {
+        var e;
+        e = document.createElement("div");
+        // e.classList.add("w3-row-padding");
+        e.classList.add("w3-half");
+        parent.appendChild(e);
+        return e;
+    }
+
+    function addSensorGroupClosure(clusterId) {
+        return function() {
+            addSensorGroup(clusterId);
+        }
+    }
+
+    function addSensorGroup(clusterId) {
+        newSensorGroupUI(findClusterByName(clusterId));
+    }
+
+    function removeSensorGroupClosure(clusterId, groupIndex) {
+        return function() {
+            removeSensorGroup(clusterId, groupIndex);
+        }
+    }
+
+    function removeSensorGroup(clusterId, groupIndex) {
+
+    }
+
+
+    function toggleCluster(behaviorId) {
+        var e = document.getElementById(behaviorId + "_params");
+        if(e === null) { return; }
+        if (e.className.indexOf("w3-show") === -1) {
+            e.classList.add("w3-show");
+        } else {
+            e.className = e.className.replace(" w3-show", "");
+        }
+    }
+
+    function toggleClusterClosure(behaviorId) {
+        return function () {
+            toggleCluster(behaviorId);
+        }
+    }
+    
+    function deleteClusterClosure(clusterId) {
+        return function () {
+            deleteCluster(clusterId);
+        }
+    }
+
+    var deleteClusterCurId;
+    function deleteCluster(clusterId) {
+
+        deleteClusterCurId = clusterId;
+
+        var wrapper = prepareModal();
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", confirmDeleteCluster);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Delete cluster: ", clusterId);    
+    }
+
+    function confirmDeleteCluster() {
+        closeInputModal();
+        var delIndex = findClusterIndex(deleteClusterCurId);
+        if(delIndex >= 0) {
+            clusterCfg.clusters.splice(delIndex, 1);
+        }
+        gwSocket.sendJsonRequest("cluster_set_config", clusterCfg);
+    }
+    
+    function deleteClusterConfig() {
+        var wrapper = prepareModal();
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", confirmDeleteClusterConfig);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Delete cluster configuration: ", "");
+    }
+
+    function confirmDeleteClusterConfig() {
+        closeInputModal();
+        gwSocket.sendJsonRequest("cluster_delete_config", clusterCfg);
+    }
+
+    function findClusterIndex(clusterId) {
+        var index = -1;
+        for(var i =0; i < clusterCfg.clusters.length; i++) {
+            if(clusterCfg.clusters[i].id === clusterId) {
+                return i;
+            }
+        }
+        return index;
+    }
+    function findClusterByName(clusterId) {
+        for(var i =0; i < clusterCfg.clusters.length; i++) {
+            if(clusterCfg.clusters[i].id === clusterId) {
+                return clusterCfg.clusters[i];
+            }
+        }
+        return null;
+    }
+
+    function download() {
+        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clusterCfg, null, 2));
+        var anchor = document.createElement('a');
+        anchor.setAttribute("href", dataStr);
+        anchor.setAttribute("download", clusterCfg.id + ".json");
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    function initiateUpload() {
+        var wrapper = prepareModal();
+        var input = document.createElement("input");
+        
+        input.id = "uploadClusterInput";
+        input.type = "file";
+
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        input.classList.add("w3-margin-top");
+
+        wrapper.appendChild(input);
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", uploadFile);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Upload Behavior File", "");
+    }
+
+    function uploadFile(){
+        closeInputModal();
+        var fileToLoad = document.getElementById("uploadClusterInput").files[0];
+        if(fileToLoad == null) {
+            showError("No file selected");
+            return;
+        }
+            var fileReader = new FileReader();
+            fileReader.onload = function(fileLoadedEvent){
+                try {
+                var uploadedJSON = JSON.parse(fileLoadedEvent.target.result);
+                gwSocket.sendJsonRequest("cluster_set_config", uploadedJSON);
+                } catch (err) {
+                    showError(err.message);
+                }
+            };
+            fileReader.readAsText(fileToLoad, "UTF-8");
+    }
+    
+    function init() {
+        gwSocket.init();
+    }
+
+    function showInputModal(subject, prompt) {
+        document.getElementById("modal_subject").innerHTML = subject;
+        document.getElementById("modal_prompt").innerHTML = prompt;
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+
+    function closeInputModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+    function prepareModal() {
+        var mc = document.getElementById("modal_content");
+        while (mc.firstChild) {
+            mc.removeChild(mc.firstChild);
+        }
+
+        var wrapper = newParamWrapperElement("");
+        wrapper.classList.add("w3-container");
+        wrapper.classList.add("w3-padding");
+        mc.appendChild(wrapper);
+
+        return wrapper;
+    }
+    
+    function showError(msg) {
+        var wrapper = prepareModal();
+
+        var div = document.createElement("div");
+        div.innerHTML = msg;
+        div.classList.add("w3-large");
+        div.classList.add("w3-padding")
+        
+        wrapper.appendChild(div);
+
+        showInputModal("ERROR", "");
+    }
+
+</script>
+
+<style>
+    .fixed_header {
+        height: 120px;
+    }
+
+
+    .fixed_content {
+        margin-top: 120px;
+    }
+
+</style>
+<body onload="init()">
+
+<!-- Header -->
+<div class="fixed_header w3-black">
+    <script src="header.js"></script>
+    <div id="page_commands" class="w3-bar w3-blue w3-padding">
+        <div class="w3-bar-item w3-large" id="cluster_cfg_id"></div>
+<!--        <div class="w3-bar-item w3-button w3-large" onclick="addCluster()">-->
+<!--            <i class="fa fa-plus-square" title="Add Cluster"> </i>-->
+<!--        </div>-->
+        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
+            <i class="fa fa-upload" title="Upload From File"> </i>
+        </div>
+        <div class="w3-bar-item w3-button w3-large" onclick="download()">
+            <i class="fa fa-download" title="Download To File"> </i>
+        </div>
+        <div class="w3-bar-item w3-button w3-large" onclick="deleteClusterConfig()">
+            <i class="fa fa-trash" title="Delete Cluster Config"> </i>
+        </div>
+    </div>
+</div>
+
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+        <div class="w3-bar w3-blue w3-large">
+            <div class="w3-bar-item" id="modal_subject"></div>
+            <div class="w3-bar-item" id="modal_prompt"></div>
+            <div class="w3-bar-item">
+                <button class="w3-button w3-display-topright" onclick='closeInputModal();'>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="modal_content"></div>
+    </div>
+</div>
+
+<div id="clusters_container" class="fixed_content">
+</div>
+
+</body>
+
+</html>

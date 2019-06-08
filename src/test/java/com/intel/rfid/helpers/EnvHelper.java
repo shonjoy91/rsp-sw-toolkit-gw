@@ -92,7 +92,7 @@ public class EnvHelper {
         // of manipulation to get to the right place
         String runDir = "unit_test_run";
         Path usrDir = Paths.get(System.getProperty("user.dir"));
-        System.out.println("usrDir: " + usrDir.getFileName().toString());
+        System.out.println("usrDir: " + usrDir.toAbsolutePath().toString());
         if (Files.exists(usrDir.resolve("config"))) {
             configResourceDirPath = usrDir.resolve("config");
             testResourceDirPath = usrDir.resolve("src")

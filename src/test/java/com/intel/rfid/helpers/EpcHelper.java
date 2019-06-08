@@ -18,9 +18,8 @@
  */
 package com.intel.rfid.helpers;
 
-
-import com.intel.rfid.api.data.EpcRead;
-import com.intel.rfid.api.downstream.SensorInventoryDataNotification;
+import com.intel.rfid.api.sensor.InventoryDataNotification;
+import com.intel.rfid.api.sensor.TagRead;
 
 import java.util.concurrent.TimeUnit;
 
@@ -31,30 +30,30 @@ public class EpcHelper {
   public static final String EPC_HOUR_AFTER = "hour_after";
   public static final String EPC_DAY_AFTER = "day_after";
 
-  public static SensorInventoryDataNotification generateBeforeAfterTime(long _timeMillis) {
+  public static InventoryDataNotification generateBeforeAfterTime(long _timeMillis) {
 
     long hour = TimeUnit.HOURS.toMillis(1);
     long day = TimeUnit.DAYS.toMillis(1);
 
-    SensorInventoryDataNotification id = new SensorInventoryDataNotification();
-    EpcRead.Data data;
+    InventoryDataNotification id = new InventoryDataNotification();
+    TagRead data;
 
-    data = new EpcRead.Data();
+    data = new TagRead();
     data.epc = EPC_DAY_BEFORE;
     data.last_read_on = _timeMillis - day;
     id.params.data.add(data);
 
-    data = new EpcRead.Data();
+    data = new TagRead();
     data.epc = EPC_HOUR_BEFORE;
     data.last_read_on = _timeMillis - hour;
     id.params.data.add(data);
 
-    data = new EpcRead.Data();
+    data = new TagRead();
     data.epc = EPC_HOUR_AFTER;
     data.last_read_on = _timeMillis + hour;
     id.params.data.add(data);
 
-    data = new EpcRead.Data();
+    data = new TagRead();
     data.epc = EPC_DAY_AFTER;
     data.last_read_on = _timeMillis + day;
     id.params.data.add(data);
@@ -64,14 +63,14 @@ public class EpcHelper {
 
   public static final String EPC_10_SEC_SEQ = "sequential-10-seconds";
 
-  public static SensorInventoryDataNotification generate10SecondSequential(long _timeMillis) {
+  public static InventoryDataNotification generate10SecondSequential(long _timeMillis) {
 
     long interval = 10 * 1000;
-    SensorInventoryDataNotification id = new SensorInventoryDataNotification();
-    EpcRead.Data data;
+    InventoryDataNotification id = new InventoryDataNotification();
+    TagRead data;
 
     for (int i = 0; i < 5; i++) {
-      data = new EpcRead.Data();
+      data = new TagRead();
       data.epc = EPC_10_SEC_SEQ;
       data.last_read_on = _timeMillis - (i * interval);
       id.params.data.add(data);
@@ -80,12 +79,12 @@ public class EpcHelper {
     return id;
   }
 
-  public static SensorInventoryDataNotification generateEpcs(int _start, int _size) {
-    SensorInventoryDataNotification id = new SensorInventoryDataNotification();
-    EpcRead.Data data;
+  public static InventoryDataNotification generateEpcs(int _start, int _size) {
+    InventoryDataNotification id = new InventoryDataNotification();
+    TagRead data;
 
     for (int i = _start; i < _start + _size; i++) {
-      data = new EpcRead.Data();
+      data = new TagRead();
       data.epc = String.valueOf(i);
       data.last_read_on = 1;
       id.params.data.add(data);

@@ -35,6 +35,10 @@ public class MockGateway extends Gateway {
         init();
     }
 
+    public MockClusterManager getMockClusterManager() {
+        return (MockClusterManager) clusterMgr;
+    }
+
     public MockSensorManager getMockSensorManager() {
         return (MockSensorManager) sensorMgr;
     }

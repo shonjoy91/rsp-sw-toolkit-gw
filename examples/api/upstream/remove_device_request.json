@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "15",
+  "method" : "remove_device",
+  "params" : {
+    "device_id" : "RSP-150000"
+  }
+}

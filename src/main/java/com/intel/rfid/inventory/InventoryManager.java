@@ -5,12 +5,12 @@
 package com.intel.rfid.inventory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.data.Tag;
-import com.intel.rfid.api.data.EpcRead;
-import com.intel.rfid.api.data.TagEvent;
-import com.intel.rfid.api.data.TagState;
-import com.intel.rfid.api.data.TagStatsUpdate;
-import com.intel.rfid.api.downstream.SensorInventoryDataNotification;
+import com.intel.rfid.api.data.InventorySummary;
+import com.intel.rfid.api.data.ScheduleRunState;
+import com.intel.rfid.api.data.TagInfo;
+import com.intel.rfid.api.data.TagStatsInfo;
+import com.intel.rfid.api.sensor.InventoryDataNotification;
+import com.intel.rfid.api.sensor.TagRead;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.gateway.Env;
@@ -19,17 +19,36 @@ import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.StringHelper;
 import com.intel.rfid.helpers.SysStats;
 import com.intel.rfid.schedule.ScheduleManager;
+import com.intel.rfid.schedule.SchedulerSummary;
 import com.intel.rfid.sensor.SensorPlatform;
-import com.intel.rfid.upstream.UpstreamInventoryEvent;
+import com.intel.rfid.tag.Tag;
+import com.intel.rfid.tag.TagEvent;
+import com.intel.rfid.tag.TagState;
+import com.intel.rfid.upstream.UpstreamInventoryEventInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,16 +62,19 @@ import java.util.zip.ZipOutputStream;
 
 import static com.intel.rfid.api.data.Personality.EXIT;
 import static com.intel.rfid.api.data.Personality.POS;
-import static com.intel.rfid.api.data.TagState.*;
+import static com.intel.rfid.tag.TagState.DEPARTED_EXIT;
+import static com.intel.rfid.tag.TagState.DEPARTED_POS;
+import static com.intel.rfid.tag.TagState.EXITING;
+import static com.intel.rfid.tag.TagState.PRESENT;
 
 public class InventoryManager
         implements DownstreamManager.InventoryDataListener,
-        ScheduleManager.RunStateListener {
+                   ScheduleManager.RunStateListener {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
     public interface UpstreamEventListener {
-        void onUpstreamEvent(UpstreamInventoryEvent uie);
+        void onUpstreamEvent(UpstreamInventoryEventInfo uie);
     }
 
     private final HashSet<UpstreamEventListener> upstreamEventListeners = new HashSet<>();
@@ -69,8 +91,8 @@ public class InventoryManager
         }
     }
 
-    private void publish(UpstreamInventoryEvent uie) {
-        if (uie != null && !uie.params.data.isEmpty()) {
+    private void publish(UpstreamInventoryEventInfo uie) {
+        if (uie != null && !uie.data.isEmpty()) {
             synchronized (upstreamEventListeners) {
                 for (UpstreamEventListener l : upstreamEventListeners) {
                     try {
@@ -173,9 +195,9 @@ public class InventoryManager
 
     private void scheduleReadRateStatsTask() {
         scheduler.scheduleWithFixedDelay(this::doReadRateStatsTask,
-                READ_RATE_STATS_INTERVAL_SEC,
-                READ_RATE_STATS_INTERVAL_SEC,
-                TimeUnit.SECONDS);
+                                         READ_RATE_STATS_INTERVAL_SEC,
+                                         READ_RATE_STATS_INTERVAL_SEC,
+                                         TimeUnit.SECONDS);
     }
 
     private void doReadRateStatsTask() {
@@ -185,9 +207,9 @@ public class InventoryManager
                 SysStats.MemoryInfo memInfo = SysStats.getMemoryInfo();
                 SysStats.CPUInfo cpuInfo = SysStats.getCPUInfo();
                 log.info(String.format("rds/sec: %6d   h-used: %6s   h-tot: %6s   h-max: %6s   sys: %6s",
-                        curReadRate,
-                        memInfo.strHeapUsed, memInfo.strHeapTotal, memInfo.strHeapMax,
-                        cpuInfo.strSystemLoad));
+                                       curReadRate,
+                                       memInfo.strHeapUsed, memInfo.strHeapTotal, memInfo.strHeapMax,
+                                       cpuInfo.strSystemLoad));
             }
         } catch (Throwable _t) {
             log.error("error:", _t);
@@ -198,7 +220,7 @@ public class InventoryManager
         scheduler.scheduleWithFixedDelay(this::persist, 3, 3, TimeUnit.MINUTES);
     }
 
-    void unload() {
+    public void unload() {
         snapshot();
         synchronized (inventory) {
             inventory.clear();
@@ -213,23 +235,25 @@ public class InventoryManager
     }
 
     @Override
-    public synchronized void onInventoryData(SensorInventoryDataNotification _invData, SensorPlatform _rsp) {
-        UpstreamInventoryEvent uie = new UpstreamInventoryEvent();
-        EpcRead epcRead = _invData.params;
+    public synchronized void onInventoryData(InventoryDataNotification _invDataNotification, SensorPlatform _rsp) {
+        UpstreamInventoryEventInfo uie = new UpstreamInventoryEventInfo();
         synchronized (inventory) {
-            for (EpcRead.Data readData : epcRead.data) {
-                processReadData(uie, _rsp, readData);
+            for (TagRead tagRead : _invDataNotification.params.data) {
+                processReadData(uie, _rsp, tagRead);
             }
         }
         publish(uie);
-        cumulativeReads.addAndGet(epcRead.data.size());
+        cumulativeReads.addAndGet(_invDataNotification.params.data.size());
     }
 
-    protected void processReadData(UpstreamInventoryEvent uie,
+    protected void processReadData(UpstreamInventoryEventInfo uie,
                                    SensorPlatform _rsp,
-                                   EpcRead.Data data) {
+                                   TagRead _tagRead) {
 
-        String epc = data.epc;
+        if (_tagRead.rssi < _rsp.getMinRssiDbm10X()) {
+            return;
+        }
+        String epc = _tagRead.epc;
 
         // assume that invetory is locked outside of this method (looping)
         Tag tag = inventory.get(epc);
@@ -239,7 +263,7 @@ public class InventoryManager
         }
 
         PreviousTag prev = new PreviousTag(tag);
-        tag.update(_rsp, data, rssiAdjuster);
+        tag.update(_rsp, _tagRead, rssiAdjuster);
 
         // check for state transitions
         switch (prev.state) {
@@ -275,7 +299,7 @@ public class InventoryManager
                 } else {
 
                     if (!_rsp.hasPersonality(EXIT) &&
-                         _rsp.getDeviceId().equals(tag.getDeviceLocation())) {
+                            _rsp.getDeviceId().equals(tag.getDeviceLocation())) {
                         tag.setState(PRESENT);
                     }
 
@@ -306,7 +330,7 @@ public class InventoryManager
         }
     }
 
-    protected void doTagReturn(Tag _tag, PreviousTag _prev, UpstreamInventoryEvent _uie) {
+    protected void doTagReturn(Tag _tag, PreviousTag _prev, UpstreamInventoryEventInfo _uie) {
 
         if (_prev.facility != null && _prev.facility.equals(_tag.getFacility())) {
             _uie.add(_tag, TagEvent.returned);
@@ -317,13 +341,13 @@ public class InventoryManager
 
     }
 
-    protected void checkMovement(Tag _tag, PreviousTag _prev, UpstreamInventoryEvent _uie) {
+    protected void checkMovement(Tag _tag, PreviousTag _prev, UpstreamInventoryEventInfo _uie) {
 
         if (_prev.location != null && !_prev.location.equals(_tag.getLocation())) {
             if (_prev.facility != null && !_prev.facility.equals(_tag.getFacility())) {
                 // change facility
                 _uie.add(_tag.getEPC(), _tag.getTID(), _prev.location, _prev.facility, TagEvent.departed,
-                        _prev.lastRead);
+                         _prev.lastRead);
                 _uie.add(_tag, TagEvent.arrival);
             } else {
                 _uie.add(_tag, TagEvent.moved);
@@ -331,7 +355,7 @@ public class InventoryManager
         }
     }
 
-    protected boolean checkDepartPOS(Tag _tag, UpstreamInventoryEvent _uie) {
+    protected boolean checkDepartPOS(Tag _tag, UpstreamInventoryEventInfo _uie) {
 
         // if tag is ever read by a POS, it immediately generates a departed event
         long expiration = _tag.getLastRead() - getPOSDepartedThreshold();
@@ -345,7 +369,7 @@ public class InventoryManager
         return false;
     }
 
-    protected ScheduleManager.RunState scheduleRunState = ScheduleManager.RunState.INACTIVE;
+    protected ScheduleRunState scheduleRunState = ScheduleRunState.INACTIVE;
 
     protected void checkExiting(SensorPlatform _rsp, Tag _tag) {
         if (!_rsp.hasPersonality(EXIT)) { return; }
@@ -378,7 +402,7 @@ public class InventoryManager
     }
 
     @Override
-    public void onScheduleRunState(ScheduleManager.RunState _current) {
+    public void onScheduleRunState(ScheduleRunState _current, SchedulerSummary _summary) {
         log.info("onScheduleRunState: {}", _current);
         clearExiting();
         scheduleRunState = _current;
@@ -413,7 +437,7 @@ public class InventoryManager
         log.info("inventory ageout removed: {}", numRemoved);
     }
 
-    public void getSummary(TagStateSummary _states, TagReadSummary _reads) {
+    public void getSummary(InventorySummary _summary) {
 
         Map<TagState, AtomicInteger> invStateMap = new HashMap<>();
         invStateMap.put(PRESENT, new AtomicInteger(0));
@@ -431,19 +455,41 @@ public class InventoryManager
 
         aggregateInventoryStates(invStateMap, timeBucketMap);
 
-        _states.PRESENT = invStateMap.get(PRESENT).get();
-        _states.EXITING = invStateMap.get(EXITING).get();
-        _states.DEPARTED_EXIT = invStateMap.get(DEPARTED_EXIT).get();
-        _states.DEPARTED_POS = invStateMap.get(DEPARTED_POS).get();
+        _summary.tag_state_summary.PRESENT = invStateMap.get(PRESENT).get();
+        _summary.tag_state_summary.EXITING = invStateMap.get(EXITING).get();
+        _summary.tag_state_summary.DEPARTED_EXIT = invStateMap.get(DEPARTED_EXIT).get();
+        _summary.tag_state_summary.DEPARTED_POS = invStateMap.get(DEPARTED_POS).get();
 
-        _reads.reads_per_second = currentReadsPerSecond.get();
-        _reads.within_last_01_min = timeBucketMap.get(TimeBucket.within_last_01_min).get();
-        _reads.from_01_to_05_min = timeBucketMap.get(TimeBucket.from_01_to_05_min).get();
-        _reads.from_05_to_30_min = timeBucketMap.get(TimeBucket.from_05_to_30_min).get();
-        _reads.from_30_to_60_min = timeBucketMap.get(TimeBucket.from_30_to_60_min).get();
-        _reads.from_60_min_to_24_hr = timeBucketMap.get(TimeBucket.from_60_min_to_24_hr).get();
-        _reads.more_than_24_hr = timeBucketMap.get(TimeBucket.more_than_24_hr).get();
+        _summary.tag_read_summary.reads_per_second = currentReadsPerSecond.get();
+        _summary.tag_read_summary.within_last_01_min = timeBucketMap.get(TimeBucket.within_last_01_min).get();
+        _summary.tag_read_summary.from_01_to_05_min = timeBucketMap.get(TimeBucket.from_01_to_05_min).get();
+        _summary.tag_read_summary.from_05_to_30_min = timeBucketMap.get(TimeBucket.from_05_to_30_min).get();
+        _summary.tag_read_summary.from_30_to_60_min = timeBucketMap.get(TimeBucket.from_30_to_60_min).get();
+        _summary.tag_read_summary.from_60_min_to_24_hr = timeBucketMap.get(TimeBucket.from_60_min_to_24_hr).get();
+        _summary.tag_read_summary.more_than_24_hr = timeBucketMap.get(TimeBucket.more_than_24_hr).get();
 
+    }
+
+    public void getTagInfo(String _filterPattern, Collection<TagInfo> _infoCollection) {
+        Pattern p = StringHelper.regexWildcard(_filterPattern);
+        try {
+            synchronized (inventory) {
+                for (Tag tag : inventory.values()) {
+                    if (p == null || p.matcher(tag.getEPC()).matches()) {
+                        _infoCollection.add(new TagInfo(tag.getEPC(),
+                                                        tag.getTID(),
+                                                        tag.getState(),
+                                                        tag.getLocation(),
+                                                        tag.getLastRead(),
+                                                        tag.getFacility()));
+
+
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("error:", e);
+        }
     }
 
     public Collection<Tag> getTags(String _filterPattern) {
@@ -470,7 +516,7 @@ public class InventoryManager
 
     protected void doAggregateDepartedTask() {
 
-        UpstreamInventoryEvent uie = new UpstreamInventoryEvent();
+        UpstreamInventoryEventInfo uie = new UpstreamInventoryEventInfo();
         long now = System.currentTimeMillis();
         long expiration = now - getAggregateDepartedThreshold();
         synchronized (exitingTags) {
@@ -494,17 +540,17 @@ public class InventoryManager
 
     protected long getAggregateDepartedThreshold() {
         return ConfigManager.instance.getOptLong("inventory.aggregate.departed.threshold.millis",
-                TimeUnit.SECONDS.toMillis(30));
+                                                 TimeUnit.SECONDS.toMillis(30));
     }
 
     protected long getPOSDepartedThreshold() {
         return ConfigManager.instance.getOptLong("inventory.POS.departed.threshold.millis",
-                TimeUnit.HOURS.toMillis(1));
+                                                 TimeUnit.HOURS.toMillis(1));
     }
 
     protected long getPOSReturnThreshold() {
         return ConfigManager.instance.getOptLong("inventory.POS.return.threshold.millis",
-                TimeUnit.DAYS.toMillis(1));
+                                                 TimeUnit.DAYS.toMillis(1));
     }
 
     public static final Path CACHE_PATH = Env.resolveCache("current_inventory.json");
@@ -675,6 +721,12 @@ public class InventoryManager
             } catch (IOException e) {
                 log.error("failed persisting inventory {}", e.getMessage());
             }
+        } else {
+            try {
+                Files.deleteIfExists(CACHE_PATH);
+            } catch (IOException _e) {
+                log.warn("error {}", _e.getMessage());
+            }
         }
     }
 
@@ -776,8 +828,8 @@ public class InventoryManager
         }
     }
 
-    public TagStatsUpdate getStatsUpdate(String _filterPattern) {
-        TagStatsUpdate statsUpdate = new TagStatsUpdate();
+    public TagStatsInfo getStatsInfo(String _filterPattern) {
+        TagStatsInfo statsUpdate = new TagStatsInfo();
         Pattern p = StringHelper.regexWildcard(_filterPattern);
         synchronized (inventory) {
             for (Tag tag : inventory.values()) {

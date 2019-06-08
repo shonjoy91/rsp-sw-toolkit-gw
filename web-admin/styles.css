@@ -1,4 +1,4 @@
-body {
+html, body {
     font-size: 14px;
     color: #ffffff;
     background-color: #000000;
@@ -47,3 +47,22 @@ hr {
     vertical-align: middle;
 }
 
+.fixed_header {
+    overflow: visible;
+    width: 100%;
+    top: 0;
+    position: fixed;
+    z-index: 50;
+    height: 150px;
+}
+
+
+.fixed_content {
+    margin-top: 150px;
+    z-index: 30;
+    overflow: auto;
+}
+
+.w3-modal {
+    z-index: 90;
+}

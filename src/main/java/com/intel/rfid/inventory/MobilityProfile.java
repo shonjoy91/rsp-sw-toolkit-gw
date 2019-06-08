@@ -9,16 +9,27 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class MobilityProfile {
 
 
-    private String id = "retail_garment_default";
+    private String id = "asset_tracking_default";
 
+    /*
+      "id": "asset_tracking_default",
+      "a": 0.0,
+      "m": -.008,
+      "t": 6.0
+    
+      "id": "retail_garment_default",
+      "a": 60000.0,
+      "m": -.0005,
+      "t": 6.0
+     */
     // using general slope forumla y = m(x) + b
     // where m is slope in dBm per millisecond
-    private double M = -(5 / (double) (10 * 1000));
+    private double M = -.008;
 
     // dBm change threshold
     private double T = 6.0;
     // milliseconds of holdoff
-    private double A = 60 * 1000;
+    private double A = 0;
     // find b such that at 60 seconds, y = 3.0
     // b = y - (m*x)
     private double B = T - (M * A);

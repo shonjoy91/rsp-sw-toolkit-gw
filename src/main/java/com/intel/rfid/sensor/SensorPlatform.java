@@ -7,33 +7,41 @@ package com.intel.rfid.sensor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.data.*;
-import com.intel.rfid.api.common.DeviceAlertNotification;
-import com.intel.rfid.api.common.GetSoftwareVersionRequest;
-import com.intel.rfid.api.common.GetStateRequest;
-import com.intel.rfid.api.common.HeartbeatNotification;
-import com.intel.rfid.api.common.JsonRPCError;
-import com.intel.rfid.api.common.JsonRequest;
-import com.intel.rfid.api.common.RebootRequest;
-import com.intel.rfid.api.common.ResetRequest;
-import com.intel.rfid.api.common.ShutdownRequest;
-import com.intel.rfid.api.common.StatusUpdateNotification;
-import com.intel.rfid.api.downstream.SensorGetGeoRegionRequest;
-import com.intel.rfid.api.downstream.OemCfgUpdateNotification;
-import com.intel.rfid.api.downstream.SensorSetGeoRegionRequest;
-import com.intel.rfid.api.downstream.SensorSoftwareUpdateRequest;
-import com.intel.rfid.api.downstream.SensorAckAlertRequest;
-import com.intel.rfid.api.downstream.SensorApplyBehaviorRequest;
-import com.intel.rfid.api.downstream.SensorConnectRequest;
-import com.intel.rfid.api.downstream.SensorGetBISTResultsRequest;
-import com.intel.rfid.api.downstream.SensorInventoryCompleteNotification;
-import com.intel.rfid.api.downstream.SensorInventoryDataNotification;
-import com.intel.rfid.api.downstream.SensorInventoryEventNotification;
-import com.intel.rfid.api.downstream.SensorMotionEventNotification;
-import com.intel.rfid.api.downstream.SensorSetAlertThresholdRequest;
-import com.intel.rfid.api.downstream.SensorSetFacilityIdRequest;
-import com.intel.rfid.api.downstream.SensorSetLEDRequest;
-import com.intel.rfid.api.downstream.SensorSetMotionEventRequest;
+import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.JsonRpcError;
+import com.intel.rfid.api.data.Connection;
+import com.intel.rfid.api.data.DeviceAlertDetails;
+import com.intel.rfid.api.data.Personality;
+import com.intel.rfid.api.data.ReadState;
+import com.intel.rfid.api.data.SensorBasicInfo;
+import com.intel.rfid.api.data.SensorConfigInfo;
+import com.intel.rfid.api.sensor.AckAlertRequest;
+import com.intel.rfid.api.sensor.AlertSeverity;
+import com.intel.rfid.api.sensor.ApplyBehaviorRequest;
+import com.intel.rfid.api.sensor.Behavior;
+import com.intel.rfid.api.sensor.ConnectRequest;
+import com.intel.rfid.api.sensor.DeviceAlertNotification;
+import com.intel.rfid.api.sensor.GeoRegion;
+import com.intel.rfid.api.sensor.GetBISTResultsRequest;
+import com.intel.rfid.api.sensor.GetGeoRegionRequest;
+import com.intel.rfid.api.sensor.GetSoftwareVersionRequest;
+import com.intel.rfid.api.sensor.GetStateRequest;
+import com.intel.rfid.api.sensor.InventoryCompleteNotification;
+import com.intel.rfid.api.sensor.InventoryDataNotification;
+import com.intel.rfid.api.sensor.LEDState;
+import com.intel.rfid.api.sensor.MotionEventNotification;
+import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
+import com.intel.rfid.api.sensor.RebootRequest;
+import com.intel.rfid.api.sensor.ResetRequest;
+import com.intel.rfid.api.sensor.SensorHeartbeatNotification;
+import com.intel.rfid.api.sensor.SetAlertThresholdRequest;
+import com.intel.rfid.api.sensor.SetFacilityIdRequest;
+import com.intel.rfid.api.sensor.SetGeoRegionRequest;
+import com.intel.rfid.api.sensor.SetLEDRequest;
+import com.intel.rfid.api.sensor.SetMotionEventRequest;
+import com.intel.rfid.api.sensor.ShutdownRequest;
+import com.intel.rfid.api.sensor.SoftwareUpdateRequest;
+import com.intel.rfid.api.sensor.StatusUpdateNotification;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
@@ -55,10 +63,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.intel.rfid.api.downstream.SensorApplyBehaviorRequest.Action.START;
+import static com.intel.rfid.api.sensor.ApplyBehaviorRequest.Action.START;
 
 public class SensorPlatform
-    implements Comparable<SensorPlatform> {
+        implements Comparable<SensorPlatform> {
 
     public static final long LOST_COMMS_THRESHOLD = 90000;
     // Threshold used to determine whether the behavior is DEEP_SCAN
@@ -68,11 +76,12 @@ public class SensorPlatform
 
     public static final long START_RATE_LIMIT = TimeUnit.SECONDS.toMillis(2);
 
-    protected static final ObjectMapper MAPPER = Jackson.getMapper();
+    protected final ObjectMapper mapper = Jackson.getMapper();
 
     protected String facilityId = DEFAULT_FACILITY_ID;
     protected Personality personality;
     protected final String deviceId;
+    protected int minRssiDbm10X = Integer.MIN_VALUE;
 
     public static final int NUM_ALIASES = 4;
     protected final List<String> aliases = new ArrayList<>(NUM_ALIASES);
@@ -97,7 +106,7 @@ public class SensorPlatform
     private final ExecutorService readExecutor;
 
     protected Behavior currentBehavior = new Behavior();
-    protected ConnectionState connectionState = ConnectionState.DISCONNECTED;
+    protected Connection.State connectionState = Connection.State.DISCONNECTED;
     protected ReadState readState = ReadState.STOPPED;
     protected final AtomicTimeMillis lastCommsMillis = new AtomicTimeMillis();
     private final AtomicTimeMillis lastStartFailure = new AtomicTimeMillis();
@@ -109,7 +118,7 @@ public class SensorPlatform
         deviceId = _deviceId;
         sensorMgr = _sensorMgr;
         logRSP = LoggerFactory.getLogger(
-            String.format("%s.%s", getClass().getSimpleName(), deviceId));
+                String.format("%s.%s", getClass().getSimpleName(), deviceId));
         // only have a single thread because reading commands should never be in parallel
         readExecutor = Executors.newFixedThreadPool(1,
                                                     new ExecutorUtils.NamedThreadFactory(deviceId));
@@ -122,21 +131,21 @@ public class SensorPlatform
     /**
      * Valid transition: DISCONNECTED <==> CONNECTING <==> CONNECTED
      */
-    private static boolean isStateTransitionValid(ConnectionState _from, ConnectionState _to) {
+    private static boolean isStateTransitionValid(Connection.State _from, Connection.State _to) {
         boolean valid = false;
         switch (_from) {
             case DISCONNECTED:
-                if (_to == ConnectionState.CONNECTING) {
+                if (_to == Connection.State.CONNECTING) {
                     valid = true;
                 }
                 break;
             case CONNECTING:
-                if (_to != ConnectionState.CONNECTING) {
+                if (_to != Connection.State.CONNECTING) {
                     valid = true;
                 }
                 break;
             case CONNECTED:
-                if (_to == ConnectionState.DISCONNECTED) {
+                if (_to == Connection.State.DISCONNECTED) {
                     valid = true;
                 }
                 break;
@@ -146,6 +155,14 @@ public class SensorPlatform
 
     public String getDeviceId() {
         return deviceId;
+    }
+
+    public int getMinRssiDbm10X() {
+        return minRssiDbm10X;
+    }
+
+    public void setMinRssiDbm10X(int _minRssi) {
+        minRssiDbm10X = _minRssi;
     }
 
     public SensorStats getSensorStats() {
@@ -164,13 +181,13 @@ public class SensorPlatform
         // don't allow nulls EVER!
         if (_id == null) {
             return new ResponseHandler(deviceId,
-                                       JsonRPCError.Type.INVALID_PARAMETER,
+                                       JsonRpcError.Type.INVALID_PARAMETER,
                                        "facility id cannot be NULL");
         }
 
         if (facilityId.equals(_id)) {
             return new ResponseHandler(deviceId,
-                                       JsonRPCError.Type.WRONG_STATE,
+                                       JsonRpcError.Type.WRONG_STATE,
                                        "facility id already set to " + _id);
         }
 
@@ -178,16 +195,16 @@ public class SensorPlatform
         if (!isConnected()) {
             changeFacilityId(_id);
             return new ResponseHandler(deviceId,
-                                       JsonRPCError.Type.NO_ERROR,
+                                       JsonRpcError.Type.NO_ERROR,
                                        "NOTE!! facility id is now set, but RSP is not connected");
         }
 
         // stop the RSP first if needed before changing facility id
         if (_id.equals(UNKNOWN_FACILITY_ID) && readState == ReadState.STARTED) {
-            execute(new SensorApplyBehaviorRequest(SensorApplyBehaviorRequest.Action.STOP, currentBehavior));
+            execute(new ApplyBehaviorRequest(ApplyBehaviorRequest.Action.STOP, currentBehavior));
         }
 
-        return execute(new SensorSetFacilityIdRequest(_id));
+        return execute(new SetFacilityIdRequest(_id));
     }
 
     private void changeFacilityId(String _id) {
@@ -197,6 +214,7 @@ public class SensorPlatform
 
     public void clearPersonality() {
         personality = null;
+        sensorMgr.notifyConfigUpdate(this);
     }
 
     public void setPersonality(Personality _personality) {
@@ -227,7 +245,7 @@ public class SensorPlatform
     }
 
     // need a common setter to prevent double notifications
-    public void setAliasInternal(int _portIndex, String _alias) {
+    protected void setAliasInternal(int _portIndex, String _alias) {
         if (_portIndex < 0 || _portIndex >= NUM_ALIASES) {
             logRSP.debug("alias index out of bounds {}", _portIndex);
             return;
@@ -280,7 +298,7 @@ public class SensorPlatform
 
             try {
 
-                JsonNode rootNode = MAPPER.readTree(_msg);
+                JsonNode rootNode = mapper.readTree(_msg);
 
                 // check for method object and get out early if missing
                 JsonNode idNode = rootNode.get("id");
@@ -300,7 +318,7 @@ public class SensorPlatform
                     responseHandlers.remove(id);
                 } else {
                     logRSP.warn("{} unhandled json msg: {}",
-                                deviceId, MAPPER.writeValueAsString(rootNode));
+                                deviceId, mapper.writeValueAsString(rootNode));
                 }
 
             } catch (Exception e) {
@@ -315,43 +333,40 @@ public class SensorPlatform
 
             switch (_method) {
 
-                case SensorConnectRequest.METHOD_NAME:
-                    SensorConnectRequest conReq = MAPPER.treeToValue(_rootNode, SensorConnectRequest.class);
+                case ConnectRequest.METHOD_NAME:
+                    ConnectRequest conReq = mapper.treeToValue(_rootNode, ConnectRequest.class);
                     onConnect(conReq);
-                    break;  
+                    break;
 
                 case DeviceAlertNotification.METHOD_NAME:
-                    DeviceAlertNotification alert = MAPPER.treeToValue(_rootNode, DeviceAlertNotification.class);
+                    DeviceAlertNotification alert = mapper.treeToValue(_rootNode, DeviceAlertNotification.class);
                     onDeviceAlert(alert);
                     break;
 
-                case SensorMotionEventNotification.METHOD_NAME:
-                    SensorMotionEventNotification event = MAPPER.treeToValue(_rootNode, SensorMotionEventNotification.class);
+                case MotionEventNotification.METHOD_NAME:
+                    MotionEventNotification event = mapper.treeToValue(_rootNode, MotionEventNotification.class);
                     onMotionEvent(event);
                     break;
 
-                case HeartbeatNotification.METHOD_NAME:
-                    HeartbeatNotification hb = MAPPER.treeToValue(_rootNode, HeartbeatNotification.class);
+                case SensorHeartbeatNotification.METHOD_NAME:
+                    SensorHeartbeatNotification hb = mapper.treeToValue(_rootNode, SensorHeartbeatNotification.class);
                     onHeartbeat(hb);
                     break;
 
                 case StatusUpdateNotification.METHOD_NAME:
-                    StatusUpdateNotification update = MAPPER.treeToValue(_rootNode, StatusUpdateNotification.class);
+                    StatusUpdateNotification update = mapper.treeToValue(_rootNode, StatusUpdateNotification.class);
                     onStatusUpdate(update);
                     break;
 
-                case SensorInventoryCompleteNotification.METHOD_NAME:
-                    SensorInventoryCompleteNotification ic = MAPPER.treeToValue(_rootNode, SensorInventoryCompleteNotification.class);
+                case InventoryCompleteNotification.METHOD_NAME:
+                    InventoryCompleteNotification ic = mapper.treeToValue(_rootNode,
+                                                                          InventoryCompleteNotification.class);
                     onInventoryComplete(ic);
                     break;
 
-                case SensorInventoryEventNotification.METHOD_NAME:
-                    SensorInventoryEventNotification rie = MAPPER.treeToValue(_rootNode, SensorInventoryEventNotification.class);
-                    onInventoryEvent(rie);
-                    break;
-                    
                 case OemCfgUpdateNotification.METHOD_NAME:
-                    OemCfgUpdateNotification updateNotification =  MAPPER.treeToValue(_rootNode, OemCfgUpdateNotification.class);
+                    OemCfgUpdateNotification updateNotification = mapper.treeToValue(_rootNode,
+                                                                                     OemCfgUpdateNotification.class);
                     sensorMgr.notifyOemCfgUpdate(updateNotification);
                     break;
 
@@ -381,7 +396,7 @@ public class SensorPlatform
         acknowledgeAlert(_msg.params.alert_number, true);
     }
 
-    protected List<DeviceAlertDetails> getAlerts() {
+    public List<DeviceAlertDetails> getAlerts() {
         List<DeviceAlertDetails> l;
         synchronized (alerts) {
             l = new ArrayList<>(alerts);
@@ -389,14 +404,14 @@ public class SensorPlatform
         return l;
     }
 
-    private void onHeartbeat(HeartbeatNotification _msg) {
-        if (connectionState != ConnectionState.CONNECTED) {
-            changeConnectionState(ConnectionState.CONNECTED, ConnectionStateEvent.Cause.RESYNC);
+    private void onHeartbeat(SensorHeartbeatNotification _msg) {
+        if (connectionState != Connection.State.CONNECTED) {
+            changeConnectionState(Connection.State.CONNECTED, Connection.Cause.RESYNC);
         }
         logInboundJson(logHeartbeat, _msg.getMethod(), _msg.params);
     }
 
-    private void onInventoryComplete(SensorInventoryCompleteNotification _msg) {
+    private void onInventoryComplete(InventoryCompleteNotification _msg) {
         logInboundJson(logInventory, _msg.getMethod(), _msg.params);
         // don't change if PEND_START as this inventory complete might be
         // from a previous transaction start/finish cycle
@@ -413,15 +428,11 @@ public class SensorPlatform
         }
     }
 
-    public void onInventoryData(SensorInventoryDataNotification _invData) {
+    public void onInventoryData(InventoryDataNotification _invData) {
         sensorStats.onInventoryData(_invData);
     }
 
-    private void onInventoryEvent(SensorInventoryEventNotification _msg) {
-        logInboundJson(logInventory, _msg.getMethod(), _msg.params);
-    }
-
-    private void onMotionEvent(SensorMotionEventNotification _msg) {
+    private void onMotionEvent(MotionEventNotification _msg) {
         logInboundJson(logMotion, _msg.getMethod(), _msg.params);
     }
 
@@ -437,22 +448,22 @@ public class SensorPlatform
             // the lost message will come in after the sensor lost comms
             // timer has already caused us to go disconnected
             case shutting_down:
-                if (connectionState != ConnectionState.DISCONNECTED) {
-                    changeConnectionState(ConnectionState.DISCONNECTED, ConnectionStateEvent.Cause.SHUTTING_DOWN);
+                if (connectionState != Connection.State.DISCONNECTED) {
+                    changeConnectionState(Connection.State.DISCONNECTED, Connection.Cause.SHUTTING_DOWN);
                 }
                 break;
             case lost:
-                if (connectionState != ConnectionState.DISCONNECTED) {
-                    changeConnectionState(ConnectionState.DISCONNECTED,
-                                          ConnectionStateEvent.Cause.LOST_DOWNSTREAM_COMMS);
+                if (connectionState != Connection.State.DISCONNECTED) {
+                    changeConnectionState(Connection.State.DISCONNECTED,
+                                          Connection.Cause.LOST_DOWNSTREAM_COMMS);
                 }
                 break;
             case ready:
                 // this one is sent in two situations
                 // after a chip reset (in_reset)
                 // to confirm the connection request and response
-                if (connectionState == ConnectionState.CONNECTING) {
-                    changeConnectionState(ConnectionState.CONNECTED, ConnectionStateEvent.Cause.READY);
+                if (connectionState == Connection.State.CONNECTING) {
+                    changeConnectionState(Connection.State.CONNECTED, Connection.Cause.READY);
                 }
                 break;
             case in_reset:
@@ -465,33 +476,33 @@ public class SensorPlatform
         }
     }
 
-    private void onConnect(SensorConnectRequest _msg) {
+    private void onConnect(ConnectRequest _msg) {
         logInboundJson(logConnect, _msg.getMethod(), _msg.params);
         try {
             sensorMgr.sendConnectResponse(_msg.getId(), deviceId, facilityId);
-            changeConnectionState(ConnectionState.CONNECTING, null);
+            changeConnectionState(Connection.State.CONNECTING, null);
         } catch (IOException | GatewayException _e) {
             logRSP.error("error sending connect response", _e);
         }
     }
 
     public boolean isConnected() {
-        return connectionState == ConnectionState.CONNECTED;
+        return connectionState == Connection.State.CONNECTED;
     }
 
-    public ConnectionState getConnectionState() {
+    public Connection.State getConnectionState() {
         return connectionState;
     }
 
-    protected synchronized void changeConnectionState(ConnectionState _next, ConnectionStateEvent.Cause _cause) {
-        ConnectionState prevState = connectionState;
+    protected synchronized void changeConnectionState(Connection.State _next, Connection.Cause _cause) {
+        Connection.State prevState = connectionState;
 
         if (isStateTransitionValid(connectionState, _next)) {
             logRSP.info("{} changing connection from {} to {} caused by {}",
                         deviceId, connectionState, _next, _cause);
 
             // check and log missing facility
-            if (_next == ConnectionState.CONNECTED && UNKNOWN_FACILITY_ID.equals(facilityId)) {
+            if (_next == Connection.State.CONNECTED && UNKNOWN_FACILITY_ID.equals(facilityId)) {
                 logRSP.warn("Detected unconfigured facility for device: " + deviceId);
             }
         } else {
@@ -503,7 +514,7 @@ public class SensorPlatform
         connectionState = _next;
 
         // post transition actions
-        if (connectionState == ConnectionState.DISCONNECTED) {
+        if (connectionState == Connection.State.DISCONNECTED) {
             if (readState != ReadState.STOPPED) {
                 logRSP.info("Resetting read state to STOPPED on disconnect");
                 setReadState(ReadState.STOPPED);
@@ -528,8 +539,8 @@ public class SensorPlatform
 
     void checkLostHeartbeatAndReset() {
         if (hasLostComms()) {
-            if (connectionState != ConnectionState.DISCONNECTED) {
-                changeConnectionState(ConnectionState.DISCONNECTED, ConnectionStateEvent.Cause.LOST_HEARTBEAT);
+            if (connectionState != Connection.State.DISCONNECTED) {
+                changeConnectionState(Connection.State.DISCONNECTED, Connection.Cause.LOST_HEARTBEAT);
             }
             lastCommsMillis.set(0);
         }
@@ -537,13 +548,10 @@ public class SensorPlatform
 
     public void setBehavior(Behavior _behavior) {
         if (_behavior == null) { return; }
-
         currentBehavior = _behavior;
-
         if (isConnected() && readState == ReadState.STARTED) {
-            execute(new SensorApplyBehaviorRequest(SensorApplyBehaviorRequest.Action.STOP, currentBehavior));
+            execute(new ApplyBehaviorRequest(ApplyBehaviorRequest.Action.STOP, currentBehavior));
         }
-        sensorMgr.notifyConfigUpdate(this);
     }
 
     public String getBehaviorId() {
@@ -552,6 +560,22 @@ public class SensorPlatform
             id = currentBehavior.id;
         }
         return id;
+    }
+
+    public SensorConfigInfo getConfigInfo() {
+        return new SensorConfigInfo(deviceId, facilityId, personality, new ArrayList<>(aliases));
+    }
+
+    public SensorBasicInfo getBasicInfo() {
+        return new SensorBasicInfo(deviceId,
+                                   connectionState,
+                                   readState,
+                                   currentBehavior.id,
+                                   facilityId,
+                                   personality,
+                                   new ArrayList<>(aliases),
+                                   new ArrayList<>(alerts));
+
     }
 
     private final AtomicBoolean scanCompletedSuccessfully = new AtomicBoolean(false);
@@ -601,7 +625,7 @@ public class SensorPlatform
         if (_behavior == null) {
             logRSP.error("Cannot start reading with a NULL behavior");
             return new ResponseHandler(deviceId,
-                                       JsonRPCError.Type.INVALID_PARAMETER,
+                                       JsonRpcError.Type.INVALID_PARAMETER,
                                        "behavior cannot be NULL");
         }
         currentBehavior = _behavior;
@@ -639,7 +663,7 @@ public class SensorPlatform
         scanCompletedSuccessfully.set(false);
         ReadState previousState = readState;
         setReadState(ReadState.PEND_STOP);
-        ResponseHandler rh = requestReadStateChange(SensorApplyBehaviorRequest.Action.STOP);
+        ResponseHandler rh = requestReadStateChange(ApplyBehaviorRequest.Action.STOP);
         if (rh.isError()) {
             setReadState(previousState);
         }
@@ -661,7 +685,7 @@ public class SensorPlatform
     private void setReadState(ReadState _next) {
         ReadState prev = readState;
         readState = _next;
-        sensorMgr.notifyReadStateChange(this, prev, readState);
+        sensorMgr.notifyReadStateChange(this, prev, readState, currentBehavior);
         if (readState == ReadState.STARTED) {
             sensorStats.startedReading();
         } else if (readState == ReadState.STOPPED) {
@@ -669,15 +693,15 @@ public class SensorPlatform
         }
     }
 
-    private ResponseHandler requestReadStateChange(SensorApplyBehaviorRequest.Action _action) {
+    private ResponseHandler requestReadStateChange(ApplyBehaviorRequest.Action _action) {
         ResponseHandler rh;
         // connectivity is checked in execute method
         if (_action == START && !isFacilityValid()) {
             rh = new ResponseHandler(deviceId,
-                                     JsonRPCError.Type.WRONG_STATE,
+                                     JsonRpcError.Type.WRONG_STATE,
                                      "facility id is not configured");
         } else {
-            rh = execute(new SensorApplyBehaviorRequest(_action, currentBehavior));
+            rh = execute(new ApplyBehaviorRequest(_action, currentBehavior));
         }
 
         return rh;
@@ -692,9 +716,9 @@ public class SensorPlatform
         // if this behavior provides a duty cycle that is
         // often enough that tag reads should use the weighting decay algorithm
         inDeepScan = (!currentBehavior.toggle_target_flag)
-                     || (currentBehavior.repeat_until_no_tags)
-                     || (currentBehavior.getInv_cycles() == 0
-                         && currentBehavior.getDwell_time() > DEEP_SCAN_DWELL_TIME_THRESHOLD);
+                || (currentBehavior.repeat_until_no_tags)
+                || (currentBehavior.getInv_cycles() == 0
+                && currentBehavior.getDwell_time() > DEEP_SCAN_DWELL_TIME_THRESHOLD);
     }
 
     public ResponseHandler reset() {
@@ -710,11 +734,11 @@ public class SensorPlatform
     }
 
     public ResponseHandler softwareUpdate() {
-        return execute(new SensorSoftwareUpdateRequest());
+        return execute(new SoftwareUpdateRequest());
     }
 
     public ResponseHandler getBISTResults() {
-        return execute(new SensorGetBISTResultsRequest());
+        return execute(new GetBISTResultsRequest());
     }
 
     public ResponseHandler getState() {
@@ -726,51 +750,50 @@ public class SensorPlatform
     }
 
     public ResponseHandler setLED(LEDState _state) {
-        return execute(new SensorSetLEDRequest(_state));
+        return execute(new SetLEDRequest(_state));
     }
 
     public ResponseHandler setMotion(boolean _sendEvents, boolean _captureImages) {
-        return execute(new SensorSetMotionEventRequest(_sendEvents, _captureImages));
+        return execute(new SetMotionEventRequest(_sendEvents, _captureImages));
     }
 
     public ResponseHandler getGeoRegion() {
-        return execute(new SensorGetGeoRegionRequest());
+        return execute(new GetGeoRegionRequest());
     }
 
     public ResponseHandler setGeoRegion(GeoRegion _region) {
-        return execute(new SensorSetGeoRegionRequest(_region));
+        return execute(new SetGeoRegionRequest(_region));
     }
 
     public ResponseHandler setAlertThreshold(int _alertNumber,
-                                             DeviceAlertNotification.Severity _severity,
-                                             Number _threshold) {
-        return execute(new SensorSetAlertThresholdRequest(_alertNumber, _severity, _threshold));
+                                             AlertSeverity _severity,
+                                             Integer _threshold) {
+        return execute(new SetAlertThresholdRequest(_alertNumber, _severity, _threshold));
     }
 
     public ResponseHandler acknowledgeAlert(int _alertNumber, boolean _ack) {
-        return execute(new SensorAckAlertRequest(_alertNumber, _ack, false));
+        return execute(new AckAlertRequest(_alertNumber, _ack, false));
     }
 
     public ResponseHandler muteAlert(int _alertNumber, boolean _ack) {
-        return execute(new SensorAckAlertRequest(_alertNumber, false, _ack));
+        return execute(new AckAlertRequest(_alertNumber, false, _ack));
     }
 
     private ResponseHandler execute(JsonRequest _req) {
-        if (connectionState != ConnectionState.CONNECTED) {
+        if (connectionState != Connection.State.CONNECTED) {
             String errMsg = "no connection to RSP";
             logRSP.info("Cannot execute {}: {} - {}", deviceId, _req.getMethod(), errMsg);
-            return new ResponseHandler(deviceId, JsonRPCError.Type.WRONG_STATE, errMsg);
+            return new ResponseHandler(deviceId, JsonRpcError.Type.WRONG_STATE, errMsg);
         }
 
-        _req.generateId();
         ResponseHandler rh;
 
-        if (_req instanceof SensorApplyBehaviorRequest) {
+        if (_req instanceof ApplyBehaviorRequest) {
             rh = new StartStopHandler(deviceId, _req.getId(),
-                                      ((SensorApplyBehaviorRequest) _req).params.action);
-        } else if (_req instanceof SensorSetFacilityIdRequest) {
+                                      ((ApplyBehaviorRequest) _req).params.action);
+        } else if (_req instanceof SetFacilityIdRequest) {
             rh = new SetFacilityHandler(deviceId, _req.getId(),
-                                        ((SensorSetFacilityIdRequest) _req).params);
+                                        ((SetFacilityIdRequest) _req).params);
         } else {
             rh = new ResponseHandler(deviceId, _req.getId());
         }
@@ -790,7 +813,7 @@ public class SensorPlatform
                 responseHandlers.remove(_req.getId());
             }
             rh = new ResponseHandler(deviceId, _req.getId(),
-                                     JsonRPCError.Type.INTERNAL_ERROR, e.getMessage());
+                                     JsonRpcError.Type.INTERNAL_ERROR, e.getMessage());
             rh.setRequest(_req);
             logRSP.error("{} error sending command:", deviceId, e);
         }
@@ -817,7 +840,7 @@ public class SensorPlatform
 
     private static final String FMT = "%-10s %-12s %-10s %-25s %-18s %-12s %s";
     public static final String HDR = String
-        .format(FMT, "device", "connect", "reading", "behavior", "facility", "personality", "aliases");
+            .format(FMT, "device", "connect", "reading", "behavior", "facility", "personality", "aliases");
 
     @Override
     public String toString() {
@@ -833,7 +856,7 @@ public class SensorPlatform
 
     private void logInboundJson(Logger _log, String _prefix, Object _msg) {
         try {
-            _log.info("{} RECEIVED {} {}", deviceId, _prefix, MAPPER.writeValueAsString(_msg));
+            _log.info("{} RECEIVED {} {}", deviceId, _prefix, mapper.writeValueAsString(_msg));
         } catch (JsonProcessingException e) {
             _log.error("{} ERROR: {}", deviceId, e);
         }
@@ -845,9 +868,9 @@ public class SensorPlatform
     }
 
     private class StartStopHandler extends ResponseHandler {
-        SensorApplyBehaviorRequest.Action handlerAction;
+        ApplyBehaviorRequest.Action handlerAction;
 
-        StartStopHandler(String _deviceId, String _trxId, SensorApplyBehaviorRequest.Action _action) {
+        StartStopHandler(String _deviceId, String _trxId, ApplyBehaviorRequest.Action _action) {
             super(_deviceId, _trxId);
             handlerAction = _action;
         }

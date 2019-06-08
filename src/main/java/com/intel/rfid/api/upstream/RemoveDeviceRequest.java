@@ -4,26 +4,23 @@
  */
 package com.intel.rfid.api.upstream;
 
-import com.intel.rfid.api.common.JsonRequest;
-
-import java.util.List;
+import com.intel.rfid.api.JsonRequest;
 
 public class RemoveDeviceRequest extends JsonRequest {
 
     public static final String METHOD_NAME = "remove_device";
 
+    public static class Params {
+        public String device_id;
+    }
+
     public Params params = new Params();
 
     public RemoveDeviceRequest() { method = METHOD_NAME; }
-
-    public RemoveDeviceRequest(List<String> _devices) {
+    
+    public RemoveDeviceRequest(String _deviceId) {
         this();
-
-        params.devices = _devices;
-    }
-
-    public static class Params {
-        public List<String> devices;
+        params.device_id = _deviceId;
     }
 
 }

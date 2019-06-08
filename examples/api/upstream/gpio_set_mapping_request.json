@@ -1,0 +1,16 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "10",
+  "method" : "gpio_set_mapping",
+  "params" : {
+    "sensor_device_id" : null,
+    "gpio_device_id" : null,
+    "gpio_info" : {
+      "index" : 0,
+      "name" : null,
+      "state" : null,
+      "direction" : null
+    },
+    "function" : "NOT_ASSIGNED"
+  }
+}

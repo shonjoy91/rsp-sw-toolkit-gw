@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.intel.rfid.api.common.JsonRPCError;
-import com.intel.rfid.api.common.JsonRequest;
+import com.intel.rfid.api.JsonRpcError;
+import com.intel.rfid.api.JsonRequest;
 import com.intel.rfid.helpers.PrettyPrinter;
 
 import java.util.concurrent.CountDownLatch;
@@ -38,13 +38,13 @@ public class ResponseHandler {
     }
 
     // use these constructors to create an "instant" response handler
-    public ResponseHandler(String _deviceId, JsonRPCError.Type _errType, String _msg) {
+    public ResponseHandler(String _deviceId, JsonRpcError.Type _errType, String _msg) {
         this(_deviceId, REQ_ID_NONE, _errType, _msg);
     }
 
-    public ResponseHandler(String _deviceId, String _trxId, JsonRPCError.Type _errType, String _msg) {
+    public ResponseHandler(String _deviceId, String _trxId, JsonRpcError.Type _errType, String _msg) {
         this(_deviceId, _trxId);
-        if (JsonRPCError.Type.NO_ERROR.equals(_errType)) {
+        if (JsonRpcError.Type.NO_ERROR.equals(_errType)) {
             resultNode = JsonNodeFactory.instance.textNode(_msg);
         } else {
             ObjectNode error = JsonNodeFactory.instance.objectNode();

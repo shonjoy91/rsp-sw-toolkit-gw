@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Behaviors</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "behaviors";
+
+    var gwSocket = new GatewayWebSocket();
+    
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("behavior_get_all");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "behavior_get_all":
+            case "behavior_put":
+                handleBehaviorList(jsonRsp.result);
+                break;
+            case "behavior_delete":
+                onDelete(jsonRsp.result);
+                break;
+        }
+    };
+
+    var allTheBehaviors = {};
+
+    function handleBehaviorList(behaviorList) {
+
+        for (var i = 0; i < behaviorList.length; i++) {
+            var behavior = behaviorList[i];
+            allTheBehaviors[behavior.id] = behavior;
+            var containerId = behavior.id + "_container";
+            var containter = document.getElementById(containerId);
+            if (containter === null) {
+                containter = createBehaviorContainer(behavior, containerId);
+            } else {
+                align(behavior);
+            }
+        }
+    }
+    
+    function align(behavior) {
+        var key;
+        for (key in behavior) {
+
+            var input = document.getElementById(behavior.id + "." +key);
+            if(input === null) { continue; }
+            if(input.tagName === "SELECT") {
+                for(var x = 0; x < input.options.length; x++) {
+                    if(input.options[x].text === behavior[key]) {
+                        input.selectedIndex = x;
+                    }
+                }
+            } else {
+                input.value = behavior[key];
+            }
+        }        
+    }
+
+    function onDelete(behaviorList) {
+        var behaviorsContainer = document.getElementById("behaviors_container");
+        for (var i = 0; i < behaviorList.length; i++) {
+            var behavior = behaviorList[i];
+
+            delete allTheBehaviors[behavior.id];
+
+            var container = document.getElementById(behavior.id + "_container");
+            if (container !== null) {
+                behaviorsContainer.removeChild(container);
+            }
+        }
+    }
+
+    function createBehaviorContainer(behavior, containerId) {
+
+        var containerDiv = document.createElement('div');
+        containerDiv.classList.add("w3-container");
+        containerDiv.classList.add("w3-border-bottom");
+        containerDiv.id = containerId;
+
+        var headerDiv = document.createElement("div");
+        headerDiv.id = behavior.id + "_header";
+        headerDiv.classList.add("w3-bar");
+        containerDiv.appendChild(headerDiv);
+
+
+        var idDiv = document.createElement("div");
+        idDiv.id = behavior.id + "_id";
+        idDiv.classList.add("w3-bar-item");
+        idDiv.classList.add("w3-large");
+        idDiv.onclick = toggleBehaviorClosure(behavior.id);
+        idDiv.classList.add("w3-hover-white");
+        idDiv.style.cursor = "default";
+        idDiv.innerHTML = behavior.id;
+        headerDiv.appendChild(idDiv);
+
+
+        var paramsDiv = document.createElement("div");
+        paramsDiv.id = behavior.id + "_params";
+        paramsDiv.classList.add("w3-row");
+        paramsDiv.classList.add("w3-margin-bottom");
+        paramsDiv.classList.add("w3-hide");
+        containerDiv.appendChild(paramsDiv);
+
+
+        var controlsDiv = document.createElement("div");
+        controlsDiv.classList.add("w3-col");
+        controlsDiv.classList.add("w3-bar-block");
+        controlsDiv.style.width = "50px";
+        paramsDiv.appendChild(controlsDiv);
+
+        var e;
+        e = newControlElement(controlsDiv, "<i class='fas fa-copy'></i>", "Copy");
+        e.onclick = copyBehaviorClosure(behavior.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-save'></i>", "Save");
+        e.onclick = saveBehaviorClosure(behavior.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-download'></i>", "Download");
+        e.onclick = downloadBehaviorClosure(behavior.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-trash'></i>", "Delete");
+        e.onclick = deleteBehaviorClosure(behavior.id);
+
+        e = document.createElement("div");
+        e.classList.add("w3-rest");
+        paramsDiv.appendChild(e);
+
+        var paramsDivForm = document.createElement("div");
+        paramsDivForm.classList.add("w3-row-padding");
+        e.appendChild(paramsDivForm);
+
+
+        var paramsCol;
+        paramsCol = newParamsCol(paramsDivForm);
+        paramsCol.appendChild(newNumberParam(behavior, "power_level"));
+        paramsCol.appendChild(newNumberParam(behavior, "link_profile"));
+        paramsCol.appendChild(newSelectParam(behavior, "operation_mode"));
+        paramsCol.appendChild(newBooleanParam(behavior, "filter_duplicates"));
+        paramsCol.appendChild(newBooleanParam(behavior, "auto_repeat"));
+
+        paramsCol = newParamsCol(paramsDivForm);
+        paramsCol.appendChild(newSelectParam(behavior, "q_algorithm"));
+        paramsCol.appendChild(newNumberParam(behavior, "fixed_q_value"));
+        paramsCol.appendChild(newNumberParam(behavior, "start_q_value"));
+        paramsCol.appendChild(newNumberParam(behavior, "min_q_value"));
+        paramsCol.appendChild(newNumberParam(behavior, "max_q_value"));
+
+        paramsCol = newParamsCol(paramsDivForm);
+        paramsCol.appendChild(newNumberParam(behavior, "inv_cycles"));
+        paramsCol.appendChild(newNumberParam(behavior, "dwell_time"));
+        paramsCol.appendChild(newNumberParam(behavior, "retry_count"));
+        paramsCol.appendChild(newNumberParam(behavior, "threshold_multiplier"));
+
+        paramsCol = newParamsCol(paramsDivForm);
+        paramsCol.appendChild(newSelectParam(behavior, "session_flag"));
+        paramsCol.appendChild(newSelectParam(behavior, "selected_state"));
+        paramsCol.appendChild(newSelectParam(behavior, "target_state"));
+        paramsCol.appendChild(newBooleanParam(behavior, "toggle_target_flag"));
+        paramsCol.appendChild(newBooleanParam(behavior, "repeat_until_no_tags"));
+        paramsCol.appendChild(newBooleanParam(behavior, "perform_select"));
+        paramsCol.appendChild(newBooleanParam(behavior, "perform_post_match"));
+
+
+        // insert the behavior in alphabetical order
+        var behaviorsContainer = document.getElementById("behaviors_container");
+        var behaviorDivs = Array.prototype.slice.call(behaviorsContainer.children);
+        var before = behaviorDivs.find(function(element) {
+            return (containerId.localeCompare(element.id) < 0);
+        });
+
+
+        behaviorsContainer.insertBefore(containerDiv, before);
+    }
+    
+    var selects = {
+        operation_mode: ["NonContinuous", "Continuous"],
+        selected_state: ["Any", "Deasserted", "Asserted"],
+        session_flag: ["S0", "S1", "S2", "S3"],
+        target_state: ["A", "B"],
+        q_algorithm: ["Fixed", "Dynamic"]
+    };
+
+    function newSelectParam(behavior, elementId) {
+        var e = newParamWrapperElement(elementId);
+
+        var select = document.createElement("select");
+        select.id = behavior.id + "." + elementId;
+        select.classList.add("w3-input");
+        select.classList.add("w3-border");
+
+        for(var i = 0; i < selects[elementId].length;  i++) {
+            var option = document.createElement("option");
+            option.text = selects[elementId][i];
+            select.add(option);
+            if(option.text === behavior[elementId]) {
+                select.selectedIndex = i;
+            }
+        }
+
+        e.appendChild(select);
+        return e;
+    }
+
+    var numbers = {
+        link_profile: { min: 0, max: 3, step: 1 },
+        power_level: {min:0, max:31.5, step: .5},
+        fixed_q_value: {min:0, max:15, step: 1},
+        start_q_value: {min:0, max:15, step: 1},
+        min_q_value: {min:0, max:15, step: 1},
+        max_q_value: {min:0, max:15, step: 1},
+        retry_count: {min:0, max:255, step: 1},
+        threshold_multiplier: {min:0, max:255, step: 1},
+        dwell_time: {min:0, max:65535, step: 1},
+        inv_cycles: {min:0, max:65535, step: 1},
+    };
+
+    function newNumberParam(behavior, elementId) {
+        var e = newParamWrapperElement(elementId);
+
+        var input = document.createElement("input");
+        input.id = behavior.id + "." + elementId;
+        input.type = "number";
+        input.min = numbers[elementId].min;
+        input.max = numbers[elementId].max;
+        input.step = numbers[elementId].step;
+        input.value = behavior[elementId];
+
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+
+        e.appendChild(input);
+        return e;
+    }
+
+    function newBooleanParam(behavior, elementId) {
+
+        var e = newParamWrapperElement(elementId);
+
+        var select = document.createElement("select");
+        select.id = behavior.id + "." + elementId;
+        select.classList.add("w3-input");
+        select.classList.add("w3-border");
+
+        var option = document.createElement("option");
+        option.text = "true";
+        select.add(option);
+
+        option = document.createElement("option");
+        option.text = "false";
+        select.add(option);
+
+        select.selectedIndex = behavior[elementId] ? 0 : 1;
+
+        e.appendChild(select);
+        return e;
+    }
+
+    function newParamWrapperElement(label) {
+        var e = document.createElement("div");
+        // e.classList.add("w3-quarter");
+
+        var l = document.createElement("label");
+        l.innerHTML = label;
+        e.appendChild(l);
+
+        return e;
+    }
+
+    function newControlElement(parent, html, title) {
+        var e;
+        e = document.createElement("div");
+        e.classList.add("w3-button");
+        e.classList.add("w3-bar-item");
+        e.classList.add("w3-blue");
+        e.title = title;
+        e.innerHTML = html;
+        parent.appendChild(e);
+        return e;
+    }
+
+    function newParamsCol(parent) {
+        var e;
+        e = document.createElement("div");
+        // e.classList.add("w3-row-padding");
+        e.classList.add("w3-quarter");
+        parent.appendChild(e);
+        return e;
+    }
+    
+    function toggleBehavior(behaviorId) {
+        var e = document.getElementById(behaviorId + "_params");
+        if(e === null) { return; }
+        if (e.className.indexOf("w3-show") === -1) {
+            e.classList.add("w3-show");
+        } else {
+            e.className = e.className.replace(" w3-show", "");
+        }
+    }
+
+    function toggleBehaviorClosure(behaviorId) {
+        return function () {
+            toggleBehavior(behaviorId);
+        }
+    }
+
+    function deleteBehaviorClosure(behaviorId) {
+        return function () {
+            deleteBehavior(behaviorId);
+        }
+    }
+
+    var deleteBehaviorCurId;
+    function deleteBehavior(behaviorId) {
+        deleteBehaviorCurId = behaviorId;
+
+        var wrapper = prepareModel();
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", confirmDelete);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Delete behavior: ", behaviorId);    
+    }
+
+    function confirmDelete() {
+        closeInputModal();
+        toggleBehavior(deleteBehaviorCurId);
+        gwSocket.sendJsonRequest("behavior_delete", {behavior_id : deleteBehaviorCurId})
+    }
+
+    function copyBehaviorClosure(behaviorId) {
+        return function () {
+            copyBehavior(behaviorId);
+        }
+    }
+
+    var copyBehaviorCurId;
+    
+    var copyInstructions = "" +
+        "<h3>Special Behavior Id Considerations</h3>" +
+        "<p><h4>WITH_TID</h4> Any behavior that includes this token in the id "+
+        "will cause the sensor to read the TID memory bank of the RFID tags.</p>" +
+        "<p><h4>PORTS_#</h4> Any behavior that includes this token in the id indicates " +
+        "the minimum number of antenna ports required. For example, the H1000 has four " +
+        "antenna ports available. The installation requirements are for three ports to be " +
+        "connected. The system should send alerts if one of the cables is loosened or damaged and unusable.</p>" +
+        "<p>Create and use a behavior with PORTS_3 in the id. When the sensor sees this behavior, " +
+        "it will verify that there are at least 3 good antenna connections. If there are " +
+        "less ports available, the sensor sends an alert to the gateway.</p>";
+            
+
+    function copyBehavior(behaviorId) {
+        copyBehaviorCurId = behaviorId;
+
+        var wrapper = prepareModel();
+        
+        var msg = document.createElement("div");
+        msg.innerHTML = copyInstructions;
+        msg.classList.add("w3-padding");
+        wrapper.appendChild(msg);
+
+        var l = document.createElement("label");
+        l.innerHTML = "New Behavior Id";
+        wrapper.appendChild(l);
+
+        var input = document.createElement("input");
+        input.id = "copyBehaviorNewId";
+        input.type = "text";
+        input.value = behaviorId;
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        // input.classList.add("w3-margin-top");
+        wrapper.appendChild(input);
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", confirmCopy);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Copy Behavior", "Enter new behavior id");
+    }
+
+    function confirmCopy() {
+        closeInputModal();
+        var newId = document.getElementById("copyBehaviorNewId").value;
+        if(newId === copyBehaviorCurId) {
+            showError("Copy failed ... behavior id must be different");
+            return;
+        }
+        toggleBehavior(copyBehaviorCurId);
+        var newBehavior = JSON.parse(JSON.stringify(allTheBehaviors[copyBehaviorCurId]));
+        newBehavior.id = newId;
+        gwSocket.sendJsonRequest("behavior_put", newBehavior);
+    }
+
+    function saveBehaviorClosure(behaviorId) {
+        return function () {
+            saveBehavior(behaviorId);
+        }
+    }
+
+    function saveBehavior(behaviorId) {
+
+        var behavior = allTheBehaviors[behaviorId];
+        var key;
+        var changed = false;
+        for (key in behavior) {
+
+            var input = document.getElementById(behaviorId + "." +key);
+            if(input === null) { continue; }
+            var val;
+            if(input.tagName === "SELECT") {
+                val = input.options[input.selectedIndex].text;
+            } else {
+                val = input.value;
+            }
+           
+            switch (typeof(behavior[key])) {
+                case "string":
+                    if (behavior[key] !== val) {
+                        changed = true;
+                        behavior[key] = val;
+                    }
+                    break;
+                case "number":
+                    if (behavior[key] !== Number(val)) {
+                        changed = true;
+                        behavior[key] = Number(val);
+                    }
+                    break;
+                case "boolean":
+                    if((behavior[key] && val === "false") || (!behavior[key] && val === "true") ) {
+                        behavior[key] = (val === "true");
+                    }
+                    break;
+                default:
+                    console.error("bad type in Json");
+                    return;
+            }
+           
+        }
+        if(changed) {
+            gwSocket.sendJsonRequest("behavior_put", behavior);  
+        }
+    }
+
+    function downloadBehaviorClosure(behaviorId) {
+        return function () {
+            downloadBehavior(behaviorId);
+        }
+    }
+
+    function downloadBehavior(behaviorId) {
+        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allTheBehaviors[behaviorId], null, 2));
+        var anchor = document.createElement('a');
+        anchor.setAttribute("href", dataStr);
+        anchor.setAttribute("download", behaviorId + ".json");
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    function initiateUpload() {
+        var wrapper = prepareModel();
+        var input = document.createElement("input");
+        
+        input.id = "uploadBehaviorInput";
+        input.type = "file";
+
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        input.classList.add("w3-margin-top");
+
+        wrapper.appendChild(input);
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", uploadBehaviorFile);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Upload Behavior File", "");
+    }
+
+    function uploadBehaviorFile(){
+        closeInputModal();
+        var fileToLoad = document.getElementById("uploadBehaviorInput").files[0];
+        if(fileToLoad == null) {
+            showError("No file selected");
+            return;
+        }
+            var fileReader = new FileReader();
+            fileReader.onload = function(fileLoadedEvent){
+                try {
+                var uploadedBehavior = JSON.parse(fileLoadedEvent.target.result);
+                gwSocket.sendJsonRequest("behavior_put", uploadedBehavior);
+                } catch (err) {
+                    showError(err.message);
+                }
+            };
+            fileReader.readAsText(fileToLoad, "UTF-8");
+    }
+    
+    function init() {
+        gwSocket.init();
+    }
+
+    function showInputModal(subject, prompt) {
+        document.getElementById("modal_subject").innerHTML = subject;
+        document.getElementById("modal_prompt").innerHTML = prompt;
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+
+    function closeInputModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+    function prepareModel() {
+        var mc = document.getElementById("modal_content");
+        while (mc.firstChild) {
+            mc.removeChild(mc.firstChild);
+        }
+
+        var wrapper = newParamWrapperElement("");
+        wrapper.classList.add("w3-container");
+        wrapper.classList.add("w3-padding");
+        mc.appendChild(wrapper);
+
+        return wrapper;
+    }
+    
+    function showError(msg) {
+        var wrapper = prepareModel();
+
+        var div = document.createElement("div");
+        div.innerHTML = msg;
+        div.classList.add("w3-large");
+        div.classList.add("w3-padding")
+        
+        wrapper.appendChild(div);
+
+        showInputModal("ERROR", "");
+    }
+
+</script>
+
+<style>
+    .fixed_header {
+        height: 120px;
+    }
+
+
+    .fixed_content {
+        margin-top: 120px;
+    }
+
+</style>
+<body onload="init()">
+
+<!-- Header -->
+<div class="fixed_header w3-black">
+    <script src="header.js"></script>
+    <div id="page_commands" class="w3-bar w3-blue w3-padding">
+        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
+            <i class="fa fa-upload"> </i> Upload From File
+        </div>
+    </div>
+</div>
+
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+        <div class="w3-bar w3-blue w3-large">
+            <div class="w3-bar-item" id="modal_subject"></div>
+            <div class="w3-bar-item" id="modal_prompt"></div>
+            <div class="w3-bar-item">
+                <button class="w3-button w3-display-topright" onclick='closeInputModal();'>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="modal_content"></div>
+    </div>
+</div>
+
+<div id="behaviors_container" class="fixed_content">
+</div>
+
+</body>
+
+</html>

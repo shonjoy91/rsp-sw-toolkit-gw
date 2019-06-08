@@ -34,6 +34,7 @@ var icons = {
     tag_stats: "fa fa-tags",
     upstream: "fa fa-cloud-upload-alt",
     downstream: "fa fa-download",
+    clusters: "far fa-object-group",
     scheduler: "far fa-calendar-alt",
     configuration: "fa fa-cogs",
     connected: "fa fa-link",
@@ -42,3 +43,31 @@ var icons = {
     stopped: "fas fa-square",
     old_calendar: "fa fa-calendar",
 };
+
+function setCookie(name, value) {
+    document.cookie = name + "=" + value + ";path=/";
+}
+
+function getCookie(name) {
+    var search = name + "=";
+    var cookieTokens = document.cookie.split(';');
+    for(var i = 0; i < cookieTokens.length; i++) {
+        var token = cookieTokens[i];
+        while (token.charAt(0) === ' ') {
+            token = token.substring(1);
+        }
+        if (token.indexOf(search) === 0) {
+            return token.substring(search.length, token.length);
+        }
+    }
+    return "";
+}
+
+function checkResponseError(params) {
+    if (typeof params["error"] !== 'undefined') {
+        s = JSON.stringify(params["error"], null, ' ');
+        alert(s);
+        return true;
+    }    
+    return false;
+}

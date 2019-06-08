@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "24",
+  "method" : "sensor_get_geo_region",
+  "params" : {
+    "device_id" : null
+  }
+}

@@ -4,33 +4,22 @@
  */
 package com.intel.rfid.api.upstream;
 
-import com.intel.rfid.api.common.JsonNotification;
-import com.intel.rfid.api.data.ConnectionState;
-import com.intel.rfid.api.data.ConnectionStateEvent;
+import com.intel.rfid.api.JsonNotification;
+import com.intel.rfid.api.data.SensorConnectionStateInfo;
 
 public class SensorConnectionStateNotification extends JsonNotification {
 
-    public static final String METHOD_NAME = "sensor_connection_state";
+    public static final String METHOD_NAME = "sensor_connection_state_notification";
 
-    public Params params = new Params();
+    public SensorConnectionStateInfo params;
 
     public SensorConnectionStateNotification() {
         method = METHOD_NAME;
     }
     
-    public SensorConnectionStateNotification(ConnectionStateEvent _event) {
+    public SensorConnectionStateNotification(SensorConnectionStateInfo _info) {
         this();
-        params.device_id = _event.rsp.getDeviceId();
-        params.previous = _event.previous;
-        params.current = _event.current;
-        params.cause = _event.cause;
+        params = _info;
     }
-
-    public class Params{
-        public String device_id;
-        public ConnectionState previous;
-        public ConnectionState current;
-        public ConnectionStateEvent.Cause cause;
-    }
-
+    
 }

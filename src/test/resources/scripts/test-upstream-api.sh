@@ -10,10 +10,10 @@ RESPONSE_TOPIC="rfid/gw/response"
 ID="1"
 
 ID=$(($ID + 1))
-GET_DOWNSTREAM_SUMMARY='{"jsonrpc":"2.0","id":"'$ID'","method":"get_downstream_summary"}'
+GET_DOWNSTREAM_SUMMARY='{"jsonrpc":"2.0","id":"'$ID'","method":"downstream_get_mqtt_status"}'
 
 ID=$(($ID + 1))
-GET_UPSTREAM_SUMMARY='{"jsonrpc":"2.0","id":"'$ID'","method":"get_upstream_summary"}'
+GET_UPSTREAM_SUMMARY='{"jsonrpc":"2.0","id":"'$ID'","method":"upstream_get_mqtt_status"}'
 
 ID=$(($ID + 1))
 SENSOR_ID="RSP-150001"
@@ -21,16 +21,16 @@ DEVICE_ID="remote-gpio"
 STATE="ASSERTED"
 GPIO_INFO='{"index":2,"name":"gpio26","state":"'$STATE'","direction":"OUTPUT"}'
 FUNCTION="SENSOR_TRANSMITTING"
-MAPPING='{"sensor_id":"'$SENSOR_ID'","device_id":"'$DEVICE_ID'","gpio_info":'$GPIO_INFO',"function":"'$FUNCTION'"}'
+MAPPING='{"sensor_device_id":"'$SENSOR_ID'","gpio_device_id":"'$DEVICE_ID'","gpio_info":'$GPIO_INFO',"function":"'$FUNCTION'"}'
 SET_GPIO_MAPPING='{"jsonrpc":"2.0","id":"'$ID'","method":"set_gpio_mapping","params":'$MAPPING'}'
 
 ID=$(($ID + 1))
-CLEAR_GPIO_MAPPINGS='{"jsonrpc":"2.0","id":"'$ID'","method":"clear_gpio_mappings"}'
+CLEAR_GPIO_MAPPINGS='{"jsonrpc":"2.0","id":"'$ID'","method":"gpio_clear_mappings"}'
 
 ID=$(($ID + 1))
 REGX='"*BEEF*"'
 #REGX=null
-GET_TAGS='{"jsonrpc":"2.0","id":"'$ID'","method":"get_tags","params":'$REGX'}'
+GET_TAGS='{"jsonrpc":"2.0","id":"'$ID'","method":"inventory_get_tags","params":'$REGX'}'
 
 ID=$(($ID + 1))
 RUN_STATE="ALL_SEQUENCED"
@@ -48,7 +48,7 @@ SET_CLUSTER_CONFIG='{"jsonrpc":"2.0","id":"'$ID'","method":"set_cluster_config",
 
 ID=$(($ID + 1))
 LED_STATE="Test"
-SET_SENSOR_LED='{"jsonrpc":"2.0","id":"'$ID'","method":"set_sensor_led","params":{"led_state":"'$LED_STATE'"}}'
+SET_SENSOR_LED='{"jsonrpc":"2.0","id":"'$ID'","method":"sensor_set_led","params":{"led_state":"'$LED_STATE'"}}'
 
 ID=$(($ID + 1))
 GET_SENSOR_INFO='{"jsonrpc":"2.0","id":"'$ID'","method":"get_sensor_info"}'

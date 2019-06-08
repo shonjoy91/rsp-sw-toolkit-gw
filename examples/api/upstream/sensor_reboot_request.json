@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "27",
+  "method" : "sensor_reboot",
+  "params" : {
+    "device_id" : null
+  }
+}

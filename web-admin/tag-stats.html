@@ -16,46 +16,26 @@
 
     var gwSocket = new GatewayWebSocket();
 
-    gwSocket.topics = ["tag_statistics"];
 
-    var stats_update;
+    function onSocketState(state) {
+        if (state === "open") {
+            requestInventoryTagStatsInfo();
+            setInterval(requestInventoryTagStatsInfo, 5000);
+        }
+    }
 
-    gwSocket.inboundNotification = function (jsonNot) {
-        switch (jsonNot.method) {
-            case "tag_stats_update":
-                stats_update = jsonNot.params;
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "inventory_get_tag_stats_info":
+                stats_update = jsonRsp.result;
                 onTagStatsUpdate();
-                break;
-            case "epc_filter_pattern":
-                alignEpcFilterPattern(jsonNot.params.epc_filter_pattern);
                 break;
         }
     };
 
-    function sendEpcFilterPattern() {
-        var table = document.getElementById("tag_stats_table");
-        var index = table.rows.length - 1;
-        while (index > 0) {
-            table.deleteRow(index);
-            index--;
-        }
-        var pattern = document.getElementById("epc_filter_pattern").value;
-        gwSocket.sendJsonRequest("set_epc_filter_pattern", {epc_filter_pattern: pattern});
-    }
-
-    function alignEpcFilterPattern(pattern) {
-        document.getElementById("epc_filter_pattern").value = pattern;
-    }
-
-    function initEpcFilterInput() {
-        var e = document.getElementById("epc_filter_pattern");
-        e.addEventListener("keyup", function (event) {
-            if (event.keyCode === 13) {
-                event.preventDefault();
-                sendEpcFilterPattern();
-            }
-        });
-    }
+    var stats_update;
     
     // maps sensor id and epc to corresponding indexes;
     var colLookup = {};
@@ -73,8 +53,8 @@
         // establish sensor id columns for header row
         headerRow = table.rows[0];
         
-        for (i = 0; i < stats_update.sensor_ids.length; i++) {
-            id = stats_update.sensor_ids[i];
+        for (i = 0; i < stats_update.source_aliases.length; i++) {
+            id = stats_update.source_aliases[i];
             if (typeof colLookup[id] === 'undefined') {
                 var colIndex = headerRow.cells.length;
                 colLookup[id] = colIndex;
@@ -129,7 +109,7 @@
                 var stat = statsList[i];
                 for(var x = 0; x < row.cells.length; x++) {
                     
-                    if(table.rows[0].cells[x].id === stat.device_id) {
+                    if(table.rows[0].cells[x].id === stat.source_alias) {
                         cell = row.cells[x];
                         if (stat.is_location) {
                             cell.classList.add("w3-dark-grey");
@@ -216,10 +196,38 @@
     }
 
     function showLegendOnce() {
-        if (document.cookie.replace(/(?:(?:^|.*;\s*)showLegendOnceAutomatically\s*\=\s*([^;]*).*$)|^.*$/, "$1") !== "true") {
+        var val = getCookie("tag_stats_shown");
+        if(val !== "true") {
             showLegend();
-            document.cookie = "showLegendOnceAutomatically=true; expires=Fri, 31 Dec 9999 23:59:59 GMT";
+            setCookie("tag_stats_shown", "true");
         }
+    }
+
+    function requestInventoryTagStatsInfo() {
+        var pattern = document.getElementById("epc_filter_pattern").value;
+        gwSocket.sendJsonRequest("inventory_get_tag_stats_info", {filter_pattern: pattern});
+    }
+
+    function sendEpcFilterPattern() {
+        var table = document.getElementById("tag_stats_table");
+        var index = table.rows.length - 1;
+        while (index > 0) {
+            table.deleteRow(index);
+            index--;
+        }
+        setCookie("epc_filter_pattern", document.getElementById("epc_filter_pattern").value);
+        requestInventoryTagStatsInfo();
+    }
+
+    function initEpcFilterInput() {
+        var e = document.getElementById("epc_filter_pattern");
+        e.addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendEpcFilterPattern();
+            }
+        });
+        e.value = getCookie("epc_filter_pattern");
     }
 
     function init() {

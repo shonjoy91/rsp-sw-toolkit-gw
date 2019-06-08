@@ -16,14 +16,15 @@
 
     var gwSocket = new GatewayWebSocket();
 
-    gwSocket.topics = ["sensor_basic_info", "sensor_connection_state", "oem_cfg_update_status"];
+    gwSocket.topics = ["sensor_connection_state_notification", "oem_cfg_update_status"];
 
     function onSocketState(state) {
         if (state === "open") {
             clearAllData();
-            gwSocket.sendJsonRequest("scheduler_activate", {run_state: "INACTIVE"});
-            gwSocket.sendJsonRequest("repo_get_versions");
+            gwSocket.sendJsonRequest("scheduler_set_run_state", {run_state: "INACTIVE"});
+            gwSocket.sendJsonRequest("gateway_get_sensor_software_repo_versions");
             gwSocket.sendJsonRequest("oem_get_available_regions");
+            gwSocket.sendJsonRequest("sensor_get_device_ids");
         }
     }
 
@@ -35,24 +36,30 @@
             return;
         }
 
-        var sensorId;
+        var deviceId;
         switch (jsonReq.method) {
+            case "sensor_get_device_ids":
+                onGetAllSensorIds(jsonRsp.result);
+                break;
+            case "sensor_get_basic_info":
+                onSensorBasicInfo(jsonRsp.result);
+                break;
             case "oem_get_available_regions":
                 onOemAvailablRegions(jsonRsp.result);
                 break;
-            case "repo_get_versions":
+            case "gateway_get_sensor_software_repo_versions":
                 onRepoVersions(jsonRsp.result);
                 break;
             case "sensor_get_geo_region":
-                sensorId = mapPendingSensor(jsonRsp.id);
-                if (sensorId !== null) {
-                    onGeoRegionResponse(sensorId, jsonRsp.result);
+                deviceId = mapPendingSensor(jsonRsp.id);
+                if (deviceId !== null) {
+                    onGeoRegionResponse(deviceId, jsonRsp.result);
                 }
                 break;
-            case "sensor_get_sw_version":
-                sensorId = mapPendingSensor(jsonRsp.id);
-                if (sensorId !== null) {
-                    onSoftwareVersionResponse(sensorId, jsonRsp.result);
+            case "sensor_get_versions":
+                deviceId = mapPendingSensor(jsonRsp.id);
+                if (deviceId !== null) {
+                    onSoftwareVersionResponse(deviceId, jsonRsp.result);
                 }
                 break;
         }
@@ -60,10 +67,7 @@
 
     gwSocket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
-            case "sensor_basic_info":
-                onSensorBasicInfo(jsonNot.params);
-                break;
-            case "sensor_connection_state":
+            case "sensor_connection_state_notification":
                 onSensorConnectionState(jsonNot.params);
                 break;
             case "oem_cfg_update_status":
@@ -72,34 +76,41 @@
         }
     };
 
-
-    function onGeoRegionResponse(sensorId, result) {
-        var e = establishSensorElement(sensorId, ".region");
-        sensors[sensorId].region = result.region;
+    function onGetAllSensorIds(sensorIds) {
+        for (var i = 0; i < sensorIds.length; i++) {
+            gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
+        }
+        // loop twice so there's no chance of needing to handle responses from the basic info 
+        // request while establishing the rows
+        // for (i = 0; i < sensorIds.length; i++) {
+        //     gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
+        // }
+    }
+    
+    function onGeoRegionResponse(deviceId, result) {
+        var e = establishSensorElement(deviceId, ".region");
+        sensors[deviceId].region = result.region;
         e.innerHTML = result.region;
-        checkSensorConfigStatus(sensorId);
+        checkSensorConfigStatus(deviceId);
     }
 
-    function onSoftwareVersionResponse(sensorId, result) {
+    function onSoftwareVersionResponse(deviceId, result) {
         var e;
-        e = establishSensorElement(sensorId, ".app_version");
-        sensors[sensorId].app_version = result.app_version;
+        e = establishSensorElement(deviceId, ".app_version");
+        sensors[deviceId].app_version = result.app_version;
         e.innerHTML = result.app_version;
 
-        e = establishSensorElement(sensorId, ".platform_support_version");
-        sensors[sensorId].platform_support_version = result.platform_support_version;
+        e = establishSensorElement(deviceId, ".platform_support_version");
+        sensors[deviceId].platform_support_version = result.platform_support_version;
         e.innerHTML = result.platform_support_version;
         // TODO: request software update?
     }
 
     // this function is only used to initially populate the list of sensors
     // it is more accurate to only include connected sensors
-    function onSensorBasicInfo(sensors) {
-        for (var i = 0; i < sensors.length; i++) {
-            var sensor = sensors[i];
-            if (sensor.connection_state === "CONNECTED") {
-                handleConnectionState(sensor.device_id, sensor.connection_state);
-            }
+    function onSensorBasicInfo(info) {
+        if (info.connection_state === "CONNECTED") {
+            handleConnectionState(info.device_id, info.connection_state);
         }
     }
 
@@ -166,14 +177,14 @@
 
     }
 
-    function sendSensorRequest(sensorId, method) {
-        var reqId = gwSocket.sendJsonRequest(method, {sensor_id: sensorId});
-        gwSocket.pendingRequests[reqId].sensorId = sensorId;
+    function sendSensorRequest(deviceId, method) {
+        var reqId = gwSocket.sendJsonRequest(method, {device_id: deviceId});
+        gwSocket.pendingRequests[reqId].deviceId = deviceId;
     }
 
     function mapPendingSensor(id) {
-        if (typeof gwSocket.pendingRequests[id].sensorId !== 'undefined') {
-            return gwSocket.pendingRequests[id].sensorId;
+        if (typeof gwSocket.pendingRequests[id].deviceId !== 'undefined') {
+            return gwSocket.pendingRequests[id].deviceId;
         } else {
             return null;
         }
@@ -185,8 +196,8 @@
         e.innerHTML = region;
         closeRegionView();
 
-        Object.keys(sensors).forEach(function (sensorId) {
-            checkSensorConfigStatus(sensorId);
+        Object.keys(sensors).forEach(function (deviceId) {
+            checkSensorConfigStatus(deviceId);
         });
     }
 
@@ -210,12 +221,12 @@
         e.className = e.className.replace(" w3-show", "");
     }
 
-    function checkSensorConfigStatus(sensorId) {
+    function checkSensorConfigStatus(deviceId) {
 
         var e;
-        e = establishSensorElement(sensorId, ".status");
+        e = establishSensorElement(deviceId, ".status");
 
-        if (sensors[sensorId].connection_state !== "CONNECTED") {
+        if (sensors[deviceId].connection_state !== "CONNECTED") {
             e.innerHTML = "Waiting for sensor connection";
             return;
         }
@@ -225,10 +236,10 @@
             return;
         }
 
-        if (!availableAppVersion.startsWith(sensors[sensorId].app_version) ||
-            sensors[sensorId].platform_support_version !== availablePlatformSupportVersion) {
+        if (!availableAppVersion.startsWith(sensors[deviceId].app_version) ||
+            sensors[deviceId].platform_support_version !== availablePlatformSupportVersion) {
             e.innerHTML = "Requested sensor software update";
-            sendSensorRequest(sensorId, "sensor_software_update");
+            sendSensorRequest(deviceId, "sensor_update_software");
             return;
         }
 
@@ -237,39 +248,39 @@
             return;
         }
 
-        if (sensors[sensorId].region === selectedRegion) {
+        if (sensors[deviceId].region === selectedRegion) {
             e.innerHTML = "OK";
         } else {
             // send change region command
             e.innerHTML = "Changing region";
             var reqId = gwSocket.sendJsonRequest("sensor_set_geo_region", {
-                sensor_id: sensorId,
+                device_id: deviceId,
                 region: selectedRegion
             });
-            gwSocket.pendingRequests[reqId].sensorId = sensorId;
-            document.getElementById(sensorId + ".region").innerHTML = "&nbsp;";
+            gwSocket.pendingRequests[reqId].deviceId = deviceId;
+            document.getElementById(deviceId + ".region").innerHTML = "&nbsp;";
         }
 
     }
 
-    function handleConnectionState(sensorId, state) {
-        var e = establishSensorElement(sensorId, ".connection_state");
-        sensors[sensorId].connection_state = state;
+    function handleConnectionState(deviceId, state) {
+        var e = establishSensorElement(deviceId, ".connection_state");
+        sensors[deviceId].connection_state = state;
         if (state === "CONNECTED") {
             e.className = icons.connected;
-            sendSensorRequest(sensorId, "sensor_get_sw_version");
-            sendSensorRequest(sensorId, "sensor_get_geo_region");
+            sendSensorRequest(deviceId, "sensor_get_versions");
+            sendSensorRequest(deviceId, "sensor_get_geo_region");
         } else {
             e.className = icons.disconnected;
         }
-        checkSensorConfigStatus(sensorId);
+        checkSensorConfigStatus(deviceId);
     }
 
-    function establishSensorElement(sensorId, elementIdSuffix) {
-        var e = document.getElementById(sensorId + elementIdSuffix);
+    function establishSensorElement(deviceId, elementIdSuffix) {
+        var e = document.getElementById(deviceId + elementIdSuffix);
         if (e === null) {
-            createSensorRow(sensorId);
-            e = document.getElementById(sensorId + elementIdSuffix);
+            createSensorRow(deviceId);
+            e = document.getElementById(deviceId + elementIdSuffix);
         }
         return e;
     }
@@ -277,13 +288,13 @@
 
     var sensors = {};
 
-    function createSensorRow(sensorId) {
+    function createSensorRow(deviceId) {
 
         // need to differentiate unknown information from
         // javascript initialization and sensor sources
         // UNKNOWN is a valid return string if the sensor cannot
         // figure out or does not have the configuration information
-        sensors[sensorId] = {
+        sensors[deviceId] = {
             connection_state: "???",
             app_version: "???",
             platform_support_version: "???",
@@ -291,29 +302,29 @@
         };
 
         var newRow = document.createElement("div");
-        newRow.id = sensorId + ".row";
+        newRow.id = deviceId + ".row";
         newRow.className = "w3-row w3-padding";
 
         var col = document.createElement("div");
         col.className = "col_1";
-        col.appendChild(document.createTextNode(sensorId));
+        col.appendChild(document.createTextNode(deviceId));
         // add 2 spaces
         col.appendChild(document.createTextNode('\u00A0\u00A0'));
         var iCnx = document.createElement("i");
-        iCnx.id = sensorId + ".connection_state";
+        iCnx.id = deviceId + ".connection_state";
         col.appendChild(iCnx);
         newRow.appendChild(col);
 
-        newRow.appendChild(createStandardColumn("col_2", sensorId + ".app_version"));
-        newRow.appendChild(createStandardColumn("col_3", sensorId + ".platform_support_version"));
-        newRow.appendChild(createStandardColumn("col_4", sensorId + ".region"));
-        newRow.appendChild(createStandardColumn("col_5", sensorId + ".status"));
+        newRow.appendChild(createStandardColumn("col_2", deviceId + ".app_version"));
+        newRow.appendChild(createStandardColumn("col_3", deviceId + ".platform_support_version"));
+        newRow.appendChild(createStandardColumn("col_4", deviceId + ".region"));
+        newRow.appendChild(createStandardColumn("col_5", deviceId + ".status"));
 
         var table = document.getElementById("table_data");
         var child = null;
         for (var i = 0; i < table.childNodes.length; i++) {
             child = table.childNodes[i];
-            if (child.id > sensorId) {
+            if (child.id > deviceId) {
                 break;
             }
             child = null;
@@ -342,13 +353,6 @@
 </script>
 
 <style>
-    .fixed_header {
-        overflow: visible;
-        width: 100%;
-        top: 0;
-        position: fixed;
-    }
-
     .content {
         margin-top: 150px;
     }
@@ -397,7 +401,7 @@
 </div>
 
 <!-- Content -->
-<div id="table_data" class="content">
+<div id="table_data" class="fixed_content">
 
 </div>
 

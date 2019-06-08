@@ -23,9 +23,7 @@ public class SensorIdCompleter implements Completer {
         StringsCompleter sc = new StringsCompleter();
         TreeSet<String> ids = new TreeSet<>();
         ids.add(SensorManager.ALL_SENSORS);
-        for (SensorPlatform rsp : sensorMgr.getRSPsCopy()) {
-            ids.add(rsp.getDeviceId());
-        }
+        sensorMgr.getDeviceIds(ids);
         sc.getStrings().addAll(ids);
 
         return sc.complete(buffer, cursor, candidates);
