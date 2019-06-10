@@ -312,15 +312,15 @@ public class ConfigManager {
     }
 
     public String getMQTTDownstreamURI() {
-        return getURI(getOptString("mqtt.gpio.protocol", DEFAULT_MQTT_PROTOCOL),
-                      getHost("mqtt.gpio.host"),
-                      getOptInt("mqtt.gpio.port", DEFAULT_MQTT_PORT));
+        return getURI(getOptString("mqtt.downstream.protocol", DEFAULT_MQTT_PROTOCOL),
+                      getHost("mqtt.downstream.host"),
+                      getOptInt("mqtt.downstream.port", DEFAULT_MQTT_PORT));
     }
 
     public Credentials getMQTTDownstreamCredentials() {
         Credentials c = new Credentials();
-        c.userId = getOptString("mqtt.gpio.username", "RFID-GW-DOWNSTREAM");
-        c.password = get("mqtt.gpio.password");
+        c.userId = getOptString("mqtt.downstream.username", "RFID-GW-DOWNSTREAM");
+        c.password = get("mqtt.downstream.password");
         return c;
     }
 

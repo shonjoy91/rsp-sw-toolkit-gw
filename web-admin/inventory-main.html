@@ -31,23 +31,24 @@
             case "inventory_get_tag_info":
                 onTagInfo(jsonRsp.result);
                 break;
+            case "inventory_unload":
+                clearAllRows();
+                break;
         }
     };
     
     function onTagInfo(list) {
 
-        var table = document.getElementById("tags_table");
-
         for (var i = 0; i < list.length; i++) {
 
             var curTag = list[i];
-            var tRow = document.getElementById("row_" + curTag.epc);
+            var tRow = document.getElementById(curTag.epc + ".row");
             if (tRow === null) {
-                tRow = createRow(table, curTag.epc);
+                createTagRow(curTag.epc);
             }
 
             document.getElementById(curTag.epc + ".epc").innerHTML = curTag.epc;
-            document.getElementById(curTag.epc + ".tid").innerHTML = curTag.tid;
+            document.getElementById(curTag.epc + ".tid").innerHTML = curTag.tid != null ? curTag.tid : "&nbsp;";
             document.getElementById(curTag.epc + ".state").innerHTML = curTag.state;
             document.getElementById(curTag.epc + ".location").innerHTML = curTag.location;
             document.getElementById(curTag.epc + ".last_read_on").innerHTML = epochToGMT(curTag.last_read_on);
@@ -61,12 +62,7 @@
     }
 
     function sendEpcFilterPattern() {
-        var table = document.getElementById("tags_table");
-        var index = table.rows.length - 1;
-        while (index > 0) {
-            table.deleteRow(index);
-            index--;
-        }
+        clearAllRows();
         setCookie("epc_filter_pattern", document.getElementById("epc_filter_pattern").value);
         requestInventoryTagInfo();
     }
@@ -82,21 +78,56 @@
         e.value = getCookie("epc_filter_pattern");
     }
 
-    function createRow(table, id) {
-        var tRow = table.insertRow();
-        tRow.id = "row_" + id;
-        var cells = "";
-        cells += createCell(id + ".epc");
-        cells += createCell(id + ".tid");
-        cells += createCell(id + ".state");
-        cells += createCell(id + ".location");
-        cells += createCell(id + ".last_read_on");
-        cells += createCell(id + ".facility_id");
-        tRow.innerHTML = cells;
+
+    function createTagRow(epc) {
+
+        var newRow;
+
+        newRow = document.createElement("div");
+        newRow.id = epc + ".row";
+        newRow.className = "w3-row w3-padding";
+        
+        newRow.appendChild(createStandardColumn("col_1", epc + ".epc"));
+        newRow.appendChild(createStandardColumn("col_2", epc + ".tid"));
+        newRow.appendChild(createStandardColumn("col_3", epc + ".state"));
+        newRow.appendChild(createStandardColumn("col_4", epc + ".location"));
+        newRow.appendChild(createStandardColumn("col_5", epc + ".last_read_on"));
+        newRow.appendChild(createStandardColumn("col_6", epc + ".facility_id"));
+
+        var table = document.getElementById("table_data");
+        var child = null;
+        for (var i = 0; i < table.childNodes.length; i++) {
+            child = table.childNodes[i];
+            if (child.id > epc) {
+                break;
+            }
+            child = null;
+        }
+        if (child === undefined) {
+            table.appendChild(newRow);
+        } else {
+            table.insertBefore(newRow, child);
+        }
+    }
+    
+    function clearAllRows() {
+        var table = document.getElementById("table_data");
+        while(table.firstChild) {
+            table.removeChild(table.firstChild);
+        }
     }
 
-    function createCell(cellId) {
-        return "<td id=\"" + cellId + "\" class=\"w3-border-bottom w3-border-dark-grey\"></td>";
+    function createStandardColumn(className, id) {
+        var col = document.createElement("div");
+        col.className = className;
+        col.id = id;
+        col.innerHTML = "&nbsp;";
+        col.appendChild(document.createTextNode('\u00A0\u00A0'));
+        return col;
+    }
+    
+    function unload() {
+        gwSocket.sendJsonRequest("inventory_unload", null);
     }
 
     function init() {
@@ -106,36 +137,76 @@
 
 </script>
 
+<style>
+    .col_1, .col_2, .col_3, .col_4, .col_5, .col_6 {
+        float: left;
+        position: relative;
+    }
+
+    .col_1, .col_2 {
+        width: 25%;
+    }
+
+    .col_3, .col_4, .col_6 {
+        width: 10%;
+    }
+
+    .col_5 {
+        width: 20%;
+    }
+    
+</style>
+
+
 <body onload="init()">
 
-<!-- Header -->
-<script src="header.js"></script>
 
-<!-- Content -->
-<div class="w3-row">
+<div class="fixed_header w3-black">
+    <script src="header.js"></script>
 
-    <div class="w3-padding-small w3-blue">
-        <label class="w3-opacity" for="epc_filter_pattern"><b>EPC Filter Pattern</b></label>
-        <input type="text" id="epc_filter_pattern"/>
-        <button class="w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i></button>
+    <div class="w3-bar w3-blue">
+        <div class="w3-bar-item">
+            <div class="w3-large w3-padding-small w3-button" onclick="unload();">
+                <i class="fa fa-trash"> </i> Unload
+            </div>
+        </div>
+        <div class="w3-bar-item">
+            <label class="w3-opacity" for="epc_filter_pattern"><b>EPC Filter Pattern</b></label>
+            <input type="text" id="epc_filter_pattern"/>
+            <button class="w3-large w3-padding-small w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i> Apply</button>
+        </div>
     </div>
-    <table id="tags_table" class="w3-table">
-        <tr class="w3-grey">
-            <th>EPC</th>
-            <th>TID</th>
-            <th>State</th>
-            <th>Location</th>
-            <th>Last Read</th>
-            <th>Facility</th>
-        </tr>
-    </table>
 
-    <script src="table-support.js"></script>
-    <script>
-        initTableSort("tags_table");
-    </script>
-
+    <div id="table_header" class="w3-row w3-padding w3-grey">
+        <div class="col_1">EPC</div>
+        <div class="col_2">TID</div>
+        <div class="col_3">State</div>
+        <div class="col_4">Location</div>
+        <div class="col_5">Last Read</div>
+        <div class="col_6">Facility</div>
+    </div>
 </div>
+
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+        <div class="w3-bar w3-blue">
+            <div class="w3-bar-item" id="modal_device_id"></div>
+            <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
+            <div class="w3-bar-item" id="modal_label"></div>
+            <div class="w3-bar-item">
+                <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="modal_content"></div>
+    </div>
+</div>
+
+
+<div id="table_data" class="fixed_content">
+</div>
+
 
 </body>
 
