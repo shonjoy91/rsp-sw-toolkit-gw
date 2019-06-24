@@ -6,7 +6,8 @@ function zeroPad(num, len) {
 function epochToGMT(timestamp) {
     var d = new Date(timestamp);
     return d.getUTCFullYear() + "-" +
-        zeroPad(d.getUTCMonth(), 2) + "-" +
+        // NOTE: getUTCMonth returns 0 based value.
+        zeroPad((d.getUTCMonth() + 1), 2) + "-" +
         zeroPad(d.getUTCDate(), 2) + "&nbsp;&nbsp;" +
         zeroPad(d.getUTCHours(), 2) + "." +
         zeroPad(d.getUTCMinutes(), 2) + "." +

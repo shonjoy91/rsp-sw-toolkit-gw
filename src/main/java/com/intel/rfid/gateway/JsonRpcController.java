@@ -593,7 +593,7 @@ public class JsonRpcController
                 } else {
                     handler = new ResponseHandler(sensor.getDeviceId(),
                                                   JsonRpcError.Type.WRONG_STATE,
-                                                  "Unable to remove senosr");
+                                                  "Unable to remove sensor");
                 }
                 break;
             case SensorSetLedRequest.METHOD_NAME:
