@@ -73,18 +73,18 @@ public class DateTimeHelper {
     }
 
     private static final Pattern durationRegex = Pattern.compile(
-        "(\\+\\s*)?((?<hours>[0-9]+)\\s*(hours|hour|hrs|hr|h))?[\\s,;:]*((?<minutes>[0-9]+)\\s*(minutes|minute|mins|min|m))?[\\s,;:]*((?<seconds>[0-9]+)\\s*(seconds|second|secs|sec|s))?[\\s,;:]*((?<milliseconds>[0-9]+)\\s*(milliseconds|millisecond|millis|msecs|msec|ms))?");
+            "(\\+\\s*)?((?<hours>[0-9]+)\\s*(hours|hour|hrs|hr|h))?[\\s,;:]*((?<minutes>[0-9]+)\\s*(minutes|minute|mins|min|m))?[\\s,;:]*((?<seconds>[0-9]+)\\s*(seconds|second|secs|sec|s))?[\\s,;:]*((?<milliseconds>[0-9]+)\\s*(milliseconds|millisecond|millis|msecs|msec|ms))?");
     private static final String[] dateFormats = {
-        "h:mm:ss a",
-        "h:mm:ssa",
-        "h:mm a",
-        "h:mma",
-        "h a",
-        "ha",
-        "h:mm:ss",
-        "h:mm",
-        "hhmm",
-        "h"
+            "h:mm:ss a",
+            "h:mm:ssa",
+            "h:mm a",
+            "h:mma",
+            "h a",
+            "ha",
+            "h:mm:ss",
+            "h:mm",
+            "hhmm",
+            "h"
     };
 
     // SimpleDateFormat is not thread safe!!
@@ -124,8 +124,8 @@ public class DateTimeHelper {
         }
         // add support for simple 24 hour format
         if (_time.length() == 8 &&
-            _time.charAt(2) == ':' &&
-            _time.charAt(5) == ':') {
+                _time.charAt(2) == ':' &&
+                _time.charAt(5) == ':') {
 
             synchronized (sdf24) {
                 Date d = sdf24.parse(_time);

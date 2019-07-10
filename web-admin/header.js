@@ -6,7 +6,8 @@ var pages = {
     scheduler: {label: "Scheduler", ref: "scheduler.html", icon: icons.scheduler},
     disti_cfg: {label: "Distributor Config", ref: "sensors-disti.html", icon: icons.configuration},
     cluster_cfg: {label: "Cluster Config", ref: "cluster-config.html", icon: icons.clusters},
-    behaviors: {label: "Behaviors", ref: "behaviors.html", icon: icons.configuration }
+    behaviors: {label: "Behaviors", ref: "behaviors.html", icon: icons.configuration },
+    about: {label: "About", ref: "about.html", icon: icons.about }
 };
 
 // height of 100px for the size of the logo

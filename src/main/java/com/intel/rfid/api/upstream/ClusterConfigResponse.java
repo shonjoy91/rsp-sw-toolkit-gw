@@ -13,5 +13,5 @@ public class ClusterConfigResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _clusterConfig;
     }
-    
+
 }

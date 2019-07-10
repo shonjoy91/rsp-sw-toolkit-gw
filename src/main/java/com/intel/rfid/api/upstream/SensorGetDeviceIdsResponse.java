@@ -15,5 +15,5 @@ public class SensorGetDeviceIdsResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = new ArrayList<>(_deviceIds);
     }
-    
+
 }

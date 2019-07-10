@@ -15,6 +15,6 @@ public class InventoryEventInfo {
     @Override
     public String toString() {
         return "sent_on=" + sent_on +
-               ", data.size=" + data.size();
+                ", data.size=" + data.size();
     }
 }

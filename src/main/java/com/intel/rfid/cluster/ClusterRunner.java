@@ -86,7 +86,21 @@ public class ClusterRunner implements Runnable {
         return false;
     }
 
-    public void notifyNewSensor() {
+    // TODO: should remove empty list and kill empty runners
+    // BUT remove is such a corner case, not at this time.
+    public boolean remove(SensorPlatform _sensor) {
+        synchronized (sensorGroups) {
+            for (List<SensorPlatform> sensors : sensorGroups) {
+                if (sensors.contains(_sensor)) {
+                    sensors.remove(_sensor);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void notifySensorUpdate() {
         updateSensorsFlag.set(true);
     }
 
@@ -212,8 +226,8 @@ public class ClusterRunner implements Runnable {
         try {
 
             CompletableFuture
-                .allOf(_readerFutures.toArray(new CompletableFuture[_readerFutures.size()]))
-                .get(_waitTime, _timeUnit);
+                    .allOf(_readerFutures.toArray(new CompletableFuture[_readerFutures.size()]))
+                    .get(_waitTime, _timeUnit);
 
             // check results to see if a reader actually started
             log.debug("Cluster[{}]: ...done", clusterId);

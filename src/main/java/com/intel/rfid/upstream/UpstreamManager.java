@@ -5,14 +5,21 @@
 package com.intel.rfid.upstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.alerts.ConnectionStateEvent;
+import com.intel.rfid.alerts.SensorStatusAlert;
 import com.intel.rfid.api.JsonNotification;
 import com.intel.rfid.api.JsonResponse;
+import com.intel.rfid.api.data.Connection;
 import com.intel.rfid.api.data.MqttStatus;
+import com.intel.rfid.api.sensor.AlertSeverity;
+import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
+import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
+import com.intel.rfid.api.upstream.InventoryEventNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.downstream.DownstreamManager;
-import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.gateway.GatewayStatus;
 import com.intel.rfid.gateway.JsonRpcController;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
@@ -24,12 +31,20 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import static com.intel.rfid.api.sensor.AlertSeverity.info;
+import static com.intel.rfid.api.sensor.AlertSeverity.warning;
+import static com.intel.rfid.gateway.GatewayStatus.GATEWAY_TRIGGERED_RSP_DISCONNECT;
+import static com.intel.rfid.gateway.GatewayStatus.RSP_CONNECTED;
+import static com.intel.rfid.gateway.GatewayStatus.RSP_LAST_WILL_AND_TESTAMENT;
+import static com.intel.rfid.gateway.GatewayStatus.RSP_LOST_HEARTBEAT;
+import static com.intel.rfid.gateway.GatewayStatus.RSP_SHUTTING_DOWN;
 
 public class UpstreamManager
-    implements InventoryManager.UpstreamEventListener, 
-               MqttUpstream.Dispatch,
-               JsonRpcController.Callback {
+        implements InventoryManager.UpstreamEventListener,
+                   MqttUpstream.Dispatch,
+                   JsonRpcController.Callback,
+                   SensorManager.SensorDeviceAlertListener,
+                   SensorManager.ConnectionStateListener {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
     protected String deviceId;
@@ -62,8 +77,8 @@ public class UpstreamManager
         ConfigManager cm = ConfigManager.instance;
         deviceId = cm.getGatewayDeviceId();
         mqttUpstream = new MqttUpstream(this);
-        
-        rpcController = new JsonRpcController(this, 
+
+        rpcController = new JsonRpcController(this,
                                               clusterMgr,
                                               sensorMgr,
                                               gpioMgr,
@@ -76,6 +91,7 @@ public class UpstreamManager
     public boolean start() {
         rpcController.start();
         mqttUpstream.start();
+
         log.info(getClass().getSimpleName() + " started");
         return true;
     }
@@ -88,64 +104,86 @@ public class UpstreamManager
     }
 
     @Override
-    public void onUpstreamEvent(UpstreamInventoryEventInfo _uie) {
-        send(_uie);
-    }
-
-    @Override
     public void onMessage(String _topic, MqttMessage _msg) {
-    
         rpcController.inbound(_msg.getPayload());
     }
 
-    public void send(GatewayDeviceAlertNotification _alert) {
-        try {
-            _alert.params.gateway_id = deviceId;
-            mqttUpstream.publish(_alert);
-        } catch (Exception e) {
-            log.error("error", e);
-        }
+    @Override
+    public void onUpstreamEvent(UpstreamInventoryEventInfo _uie) {
+        _uie.gateway_id = deviceId;
+        mqttUpstream.publishEvent(new InventoryEventNotification(_uie));
     }
 
-    public void send(UpstreamInventoryEventInfo _uie) {
-        try {
-            _uie.gateway_id = deviceId;
-            mqttUpstream.publish(_uie);
-        } catch (Exception e) {
-            log.error("error: ", e);
-        }
+    public void send(GatewayDeviceAlertNotification _alert) {
+        mqttUpstream.publishAlert(_alert);
     }
-    
+
+    public void send(GatewayHeartbeatNotification _gwhb) {
+        mqttUpstream.publishEvent(_gwhb);
+    }
+
+    @Override
+    public void sendJsonResponse(JsonResponse _rsp) {
+        mqttUpstream.publishResponse(_rsp);
+    }
+
+    @Override
+    public void sendJsonNotification(JsonNotification _not) {
+        mqttUpstream.publishNotification(_not);
+    }
+
+    @Override
+    public void onConnectionStateChange(ConnectionStateEvent _cse) {
+
+        // map to the correct status and severity
+        GatewayStatus status = null;
+        AlertSeverity severity = null;
+
+        if (_cse.current == Connection.State.CONNECTED &&
+                _cse.previous != Connection.State.CONNECTED) {
+
+            severity = info;
+            status = RSP_CONNECTED;
+
+        } else if (_cse.current == Connection.State.DISCONNECTED &&
+                _cse.previous != Connection.State.DISCONNECTED) {
+
+            severity = warning;
+            switch (_cse.cause) {
+                case LOST_HEARTBEAT:
+                    status = RSP_LOST_HEARTBEAT;
+                    break;
+                case LOST_DOWNSTREAM_COMMS:
+                    status = RSP_LAST_WILL_AND_TESTAMENT;
+                    break;
+                case SHUTTING_DOWN:
+                    status = RSP_SHUTTING_DOWN;
+                    break;
+                case FORCED_DISCONNECT:
+                    status = GATEWAY_TRIGGERED_RSP_DISCONNECT;
+                    break;
+            }
+        }
+
+        if (status != null) {
+            send(new SensorStatusAlert(_cse.rsp, status, severity));
+        }
+
+    }
+
+    @Override
+    public void onSensorDeviceAlert(DeviceAlertNotification _alert) {
+        send(new GatewayDeviceAlertNotification(_alert));
+    }
+
     public MqttStatus getMqttStatus() {
         return mqttUpstream.getSummary();
     }
 
+    @Deprecated
     public void show(PrettyPrinter _out) {
         _out.chunk("MQTT Upstream: ");
         mqttUpstream.status(_out);
     }
 
-    @Override
-    public void sendJsonResponse(JsonResponse _rsp) {
-        try {
-            byte[] bytes = mapper.writeValueAsBytes(_rsp);
-            mqttUpstream.publishResponse(bytes);
-            log.info("sent msgid[{}] {}",
-                     _rsp.id, mapper.writeValueAsString(_rsp));
-        } catch(IOException | GatewayException _e) {
-            log.error("error {}", _e.getMessage());
-        }
-    }
-
-    @Override
-    public void sendJsonNotification(JsonNotification _notification) {
-        try {
-            byte[] bytes = mapper.writeValueAsBytes(_notification);
-            mqttUpstream.publishResponse(bytes);
-            log.info("sent msgid[{}] {}",
-                     _notification.getMethod(), mapper.writeValueAsString(_notification));
-        } catch(IOException | GatewayException _e) {
-            log.error("error {}", _e.getMessage());
-        }
-    }
 }

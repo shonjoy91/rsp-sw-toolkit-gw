@@ -6,10 +6,10 @@ package com.intel.rfid.sensor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.DeviceAlertType;
-import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.api.sensor.AlertSeverity;
 import com.intel.rfid.api.sensor.Behavior;
+import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.behavior.BehaviorCompleter;
 import com.intel.rfid.behavior.BehaviorConfig;
@@ -99,134 +99,134 @@ public class SensorCommands implements CLICommander.Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(START_READING, STOP_READING,
-                                 RESET, REBOOT, SHUTDOWN, REMOVE,
-                                 CLEAR_PERSONALITY,
-                                 GET_BIST,
-                                 GET_LAST_COMMS,
-                                 GET_STATE,
-                                 GET_SW_VERS,
-                                 TOKENS,
-                                 GET_GEO_REGION,
-                                 SOFTWARE_UPDATE),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(START_READING, STOP_READING,
+                                     RESET, REBOOT, SHUTDOWN, REMOVE,
+                                     CLEAR_PERSONALITY,
+                                     GET_BIST,
+                                     GET_LAST_COMMS,
+                                     GET_STATE,
+                                     GET_SW_VERS,
+                                     TOKENS,
+                                     GET_GEO_REGION,
+                                     SOFTWARE_UPDATE),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(FORCE_ALL_DISCONNECT),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(FORCE_ALL_DISCONNECT),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_BEHAVIOR),
-            new BehaviorCompleter(),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_BEHAVIOR),
+                new BehaviorCompleter(),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SHOW, STATS),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SHOW, STATS),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_LED),
-            new BetterEnumCompleter(LEDState.class),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_LED),
+                new BetterEnumCompleter(LEDState.class),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_ALERT_THRESHOLD),
-            new BetterEnumCompleter(DeviceAlertType.class),
-            new BetterEnumCompleter(AlertSeverity.class),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_ALERT_THRESHOLD),
+                new BetterEnumCompleter(DeviceAlertType.class),
+                new BetterEnumCompleter(AlertSeverity.class),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_FACILITY),
-            new AnyStringCompleter(),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_FACILITY),
+                new AnyStringCompleter(),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_MIN_RSSI),
-            new AnyStringCompleter(),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_MIN_RSSI),
+                new AnyStringCompleter(),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_PERSONALITY),
-            new BetterEnumCompleter(Personality.class),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_PERSONALITY),
+                new BetterEnumCompleter(Personality.class),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_ALIAS),
-            new AnyStringCompleter(),
-            new BetterEnumCompleter(AntennaPort.class),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_ALIAS),
+                new AnyStringCompleter(),
+                new BetterEnumCompleter(AntennaPort.class),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_ALIAS),
-            new StringsCompleter(SensorPlatform.ALIAS_KEY_DEFAULT, SensorPlatform.ALIAS_KEY_DEVICE_ID),
-            new BetterEnumCompleter(AntennaPort.class),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_ALIAS),
+                new StringsCompleter(SensorPlatform.ALIAS_KEY_DEFAULT, SensorPlatform.ALIAS_KEY_DEVICE_ID),
+                new BetterEnumCompleter(AntennaPort.class),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(GET_ALIASES),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(GET_ALIASES),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(ACK_ALERT, MUTE_ALERT),
-            new BetterEnumCompleter(DeviceAlertType.class),
-            new BooleanCompleter(),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(ACK_ALERT, MUTE_ALERT),
+                new BetterEnumCompleter(DeviceAlertType.class),
+                new BooleanCompleter(),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_MOTION_EVENT),
-            new StringsCompleter(SEND_EVENTS),
-            new BooleanCompleter(),
-            new StringsCompleter(CAPTURE_IMG),
-            new BooleanCompleter(),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_MOTION_EVENT),
+                new StringsCompleter(SEND_EVENTS),
+                new BooleanCompleter(),
+                new StringsCompleter(CAPTURE_IMG),
+                new BooleanCompleter(),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_GEO_REGION),
-            new BetterEnumCompleter(GeoRegion.class),
-            new SensorIdCompleter(sensorMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_GEO_REGION),
+                new BetterEnumCompleter(GeoRegion.class),
+                new SensorIdCompleter(sensorMgr),
+                new NullCompleter()
         ));
 
 
@@ -308,18 +308,18 @@ public class SensorCommands implements CLICommander.Support {
         _out.indent(1, "Apply a visual indicator behavior");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + SET_MOTION_EVENT + " " +
-                       SEND_EVENTS + BooleanCompleter.asOptions() +
-                       CAPTURE_IMG + BooleanCompleter.asOptions() +
-                       " <device_id>...");
+                SEND_EVENTS + BooleanCompleter.asOptions() +
+                CAPTURE_IMG + BooleanCompleter.asOptions() +
+                " <device_id>...");
         _out.indent(1, "Enable or disable the sending of Motion Events");
         _out.indent(1, "Enable or disable the capture of .jpg images");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + ACK_ALERT + " <alert_type>" + BooleanCompleter
-            .asOptions() + " <device_id>...");
+                .asOptions() + " <device_id>...");
         _out.indent(1, "Acknowledge a Device Alert");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + MUTE_ALERT + " <alert_type>" + BooleanCompleter
-            .asOptions() + " <device_id>...");
+                .asOptions() + " <device_id>...");
         _out.indent(1, "Disable a particular Device Alert");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + TOKENS + " <device_id>...");
@@ -333,12 +333,13 @@ public class SensorCommands implements CLICommander.Support {
         _out.indent(1, "Changes the OEM configuration for the rfid module frequency configuration");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + SOFTWARE_UPDATE + " <device_id>...");
-        _out.indent(1, "Triggers the software update script to run on the device that checks for software updates from the package repo");
+        _out.indent(1,
+                    "Triggers the software update script to run on the device that checks for software updates from the package repo");
     }
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
 
         long timeoutMillis = ResponseHandler.DEFAULT_WAIT_TIMEOUT_MILLIS;
         RSPCommandCallback rcc = null;
@@ -574,7 +575,7 @@ public class SensorCommands implements CLICommander.Support {
                 for (SensorPlatform sensor : getRSPs(_argIter, _out)) {
                     ResponseHandler rh = sensor.setGeoRegion(region);
                     try {
-                        _out.line("sending command to " +sensor.getDeviceId() + " and waiting up to 5 minutes");
+                        _out.line("sending command to " + sensor.getDeviceId() + " and waiting up to 5 minutes");
                         rh.waitForResponse(5, TimeUnit.MINUTES);
                     } catch (InterruptedException _e) {
                         _out.line(SET_GEO_REGION + " Interrupted waiting for response");
@@ -584,7 +585,7 @@ public class SensorCommands implements CLICommander.Support {
                 }
             }
             break;
-            
+
             case SOFTWARE_UPDATE: {
                 for (SensorPlatform sensor : getRSPs(_argIter, _out)) {
                     ResponseHandler rh = sensor.softwareUpdate();
@@ -598,7 +599,7 @@ public class SensorCommands implements CLICommander.Support {
                 }
             }
             break;
-            
+
             default:
                 usage(_out);
         }
@@ -742,16 +743,9 @@ public class SensorCommands implements CLICommander.Support {
     }
 
     public void doRemove(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
-
         for (SensorPlatform rsp : getRSPs(_argIter, _out)) {
-            if (rsp.isConnected()) {
-                _out.line("Refusing to remove " +
-                          rsp.getDeviceId() +
-                          ", must be DISCONNECTED");
-            } else {
-                sensorMgr.remove(rsp);
-                _out.line("Removed " + rsp.getDeviceId());
-            }
+            SensorManager.RemoveResult result = sensorMgr.remove(rsp);
+            _out.line("Removing " + rsp.getDeviceId() + ": " + result.message);
         }
     }
 
@@ -769,7 +763,7 @@ public class SensorCommands implements CLICommander.Support {
     }
 
     private Collection<SensorPlatform> getRSPs(ArgumentIterator _argIter, PrettyPrinter _out)
-        throws SyntaxException {
+            throws SyntaxException {
 
         HashSet<SensorPlatform> rsps = new HashSet<>();
 
@@ -815,7 +809,7 @@ public class SensorCommands implements CLICommander.Support {
 
     private void doRSPCommand(ArgumentIterator _argIter, RSPCommandCallback _callback, PrettyPrinter _out,
                               long _timeoutMillis)
-        throws SyntaxException {
+            throws SyntaxException {
 
         TreeMap<String, ResponseHandler> handlers = new TreeMap<>();
         for (SensorPlatform rsp : getRSPs(_argIter, _out)) {

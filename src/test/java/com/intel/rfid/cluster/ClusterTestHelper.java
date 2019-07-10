@@ -23,7 +23,7 @@ public class ClusterTestHelper {
         try {
             Path p = Paths.get(getTestResourceFile(_testConfig).getAbsolutePath());
             _clusterMgr.loadConfig(p);
-        } catch(IOException | GatewayException _e) {
+        } catch (IOException | GatewayException _e) {
             fail(_e.getMessage());
         }
     }

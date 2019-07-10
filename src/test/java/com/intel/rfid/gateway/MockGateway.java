@@ -1,12 +1,11 @@
 package com.intel.rfid.gateway;
 
-import com.intel.rfid.alerts.AlertManager;
 import com.intel.rfid.cluster.MockClusterManager;
 import com.intel.rfid.downstream.MockDownstreamManager;
+import com.intel.rfid.gpio.MockGPIOManager;
 import com.intel.rfid.inventory.MockInventoryManager;
 import com.intel.rfid.schedule.MockScheduleManager;
 import com.intel.rfid.sensor.MockSensorManager;
-import com.intel.rfid.gpio.MockGPIOManager;
 import com.intel.rfid.upstream.MockUpstreamManager;
 
 public class MockGateway extends Gateway {
@@ -62,9 +61,4 @@ public class MockGateway extends Gateway {
     public MockInventoryManager getMockInventoryManager() {
         return (MockInventoryManager) inventoryMgr;
     }
-
-    public AlertManager getAlertManager() {
-        return alertMgr;
-    }
-
 }

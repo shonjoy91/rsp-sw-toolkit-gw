@@ -19,7 +19,7 @@ public class SensorGetGeoRegionRequest extends JsonRequest {
     public SensorGetGeoRegionRequest() {
         method = METHOD_NAME;
     }
-    
+
     public SensorGetGeoRegionRequest(String _deviceId) {
         this();
         params.device_id = _deviceId;

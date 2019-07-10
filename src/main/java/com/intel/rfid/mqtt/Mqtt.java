@@ -67,7 +67,7 @@ public abstract class Mqtt implements MqttCallback {
     public Mqtt() {
         // generate a unique client id
         clientId = getClass().getSimpleName() +
-                   DateTimeHelper.toFilelNameLocal(new Date());
+                DateTimeHelper.toFilelNameLocal(new Date());
 
     }
 
@@ -145,13 +145,13 @@ public abstract class Mqtt implements MqttCallback {
         connectTimer = new Timer();
         // task to run every 10 seconds
         connectTimer.schedule(
-            new TimerTask() {
-                public void run() {
-                    connect();
-                }
-            },
-            1000,
-            1000 * 10);
+                new TimerTask() {
+                    public void run() {
+                        connect();
+                    }
+                },
+                1000,
+                1000 * 10);
     }
 
     protected void stopTimer() {
@@ -269,7 +269,7 @@ public abstract class Mqtt implements MqttCallback {
         if (!outboundQueue.offer(outbound)) {
             if (!loggedOnce) {
                 log.warn("outbound queue is full. " +
-                         "messages will be dropped until space is available");
+                                 "messages will be dropped until space is available");
                 loggedOnce = true;
             }
             throw new FailedException("mqtt outbound queue is full");

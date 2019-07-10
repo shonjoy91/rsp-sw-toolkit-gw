@@ -5,9 +5,6 @@
 package com.intel.rfid.inventory;
 
 import com.intel.rfid.api.data.InventoryEventItem;
-import com.intel.rfid.tag.Tag;
-import com.intel.rfid.tag.TagEvent;
-import com.intel.rfid.tag.TagState;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.TagRead;
 import com.intel.rfid.gateway.ConfigManager;
@@ -17,6 +14,9 @@ import com.intel.rfid.helpers.EpcHelper;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.helpers.StringHelper;
 import com.intel.rfid.helpers.TestStore;
+import com.intel.rfid.tag.Tag;
+import com.intel.rfid.tag.TagEvent;
+import com.intel.rfid.tag.TagState;
 import com.intel.rfid.upstream.UpstreamInventoryEventInfo;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.junit.AfterClass;
@@ -57,7 +57,6 @@ public class InventoryManagerTest implements InventoryManager.UpstreamEventListe
     TestStore store;
     MockGateway gateway;
     MockInventoryManager invMgr;
-
 
 
     public InventoryManagerTest() {
@@ -396,7 +395,7 @@ public class InventoryManagerTest implements InventoryManager.UpstreamEventListe
         uie = new UpstreamInventoryEventInfo();
         for (int x = 0; x < 20; x++) {
             invMgr.processReadData(uie, store.sensorFront02, tagRead01);
-            invMgr.processReadData(uie, store.sensorBack03,  tagRead02);
+            invMgr.processReadData(uie, store.sensorBack03, tagRead02);
             invMgr.processReadData(uie, store.sensorFrontExit, tagRead03);
             invMgr.processReadData(uie, store.sensorFrontPOS, tagRead04);
         }
@@ -543,12 +542,12 @@ public class InventoryManagerTest implements InventoryManager.UpstreamEventListe
         //    times[x] = now + basicX[x];
         //}
         double[] times = {
-            (double) now,
-            (double) now + 999,
-            (double) now + 1999,
-            (double) now + 1599,
-            (double) now + 3599,
-            (double) now + 3799};
+                (double) now,
+                (double) now + 999,
+                (double) now + 1999,
+                (double) now + 1599,
+                (double) now + 3599,
+                (double) now + 3799};
 
         SimpleRegression r1 = new SimpleRegression();
         SimpleRegression r2 = new SimpleRegression();
@@ -570,12 +569,12 @@ public class InventoryManagerTest implements InventoryManager.UpstreamEventListe
 
     private void printReg(SimpleRegression _r) {
         System.out.println(
-            String.format("%d, %f, %f, %f",
-                          _r.getN(),
-                          _r.getSlope(),
-                          _r.getSlopeStdErr(),
-                          _r.getSlopeConfidenceInterval())
-                          );
+                String.format("%d, %f, %f, %f",
+                              _r.getN(),
+                              _r.getSlope(),
+                              _r.getSlopeStdErr(),
+                              _r.getSlopeConfidenceInterval())
+        );
     }
 
     @Test

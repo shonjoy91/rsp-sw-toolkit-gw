@@ -17,7 +17,7 @@ public class SensorSetLedRequest extends JsonRequest {
     }
 
     public Params params = new Params();
-    
+
     public SensorSetLedRequest() {
         method = METHOD_NAME;
     }

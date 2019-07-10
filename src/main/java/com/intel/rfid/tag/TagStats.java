@@ -55,7 +55,7 @@ public class TagStats {
             readInterval.addValue(_lastRead - lastRead);
         }
         lastRead = _lastRead;
-        double d = rssiToMilliwatts(_rssi/10);
+        double d = rssiToMilliwatts(_rssi / 10);
         rssiMw.addValue(d);
     }
 

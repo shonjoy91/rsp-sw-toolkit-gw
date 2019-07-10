@@ -73,9 +73,9 @@ public class MobilityProfile {
     @Override
     public String toString() {
         return id + ": " +
-               ", M=" + M +
-               ", T=" + T +
-               ", A=" + A +
-               ", B=" + B;
+                ", M=" + M +
+                ", T=" + T +
+                ", A=" + A +
+                ", B=" + B;
     }
 }

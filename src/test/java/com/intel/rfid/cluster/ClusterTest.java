@@ -7,12 +7,12 @@ package com.intel.rfid.cluster;
 import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
-import com.intel.rfid.security.ProvisionToken;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.exception.ExpiredTokenException;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.helpers.EnvHelper;
+import com.intel.rfid.security.ProvisionToken;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.assertj.core.api.ThrowableAssert;
@@ -221,14 +221,14 @@ public class ClusterTest {
     @Test
     public void testValidate() {
         assertThatThrownBy(() -> ClusterManager.validate(null))
-            .isInstanceOf(ConfigException.class)
-            .withFailMessage(ClusterManager.VAL_ERR_NULL_CFG);
+                .isInstanceOf(ConfigException.class)
+                .withFailMessage(ClusterManager.VAL_ERR_NULL_CFG);
 
         final ClusterConfig cfg = new ClusterConfig();
         final ThrowableAssert.ThrowingCallable throwingCallable = () -> ClusterManager.validate(cfg);
         assertThatThrownBy(throwingCallable)
-            .isInstanceOf(ConfigException.class)
-            .withFailMessage(ClusterManager.VAL_ERR_MISSING_CLUSTERS);
+                .isInstanceOf(ConfigException.class)
+                .withFailMessage(ClusterManager.VAL_ERR_MISSING_CLUSTERS);
 
         Cluster cluster = new Cluster();
         cfg.clusters.add(cluster);

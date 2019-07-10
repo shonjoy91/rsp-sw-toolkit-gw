@@ -17,7 +17,7 @@ public class RemoveDeviceRequest extends JsonRequest {
     public Params params = new Params();
 
     public RemoveDeviceRequest() { method = METHOD_NAME; }
-    
+
     public RemoveDeviceRequest(String _deviceId) {
         this();
         params.device_id = _deviceId;

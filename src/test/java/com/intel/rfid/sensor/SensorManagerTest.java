@@ -4,8 +4,14 @@
  */
 package com.intel.rfid.sensor;
 
+import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.cluster.ClusterManager;
+import com.intel.rfid.cluster.MockClusterManager;
+import com.intel.rfid.downstream.MockDownstreamManager;
+import com.intel.rfid.exception.ConfigException;
+import com.intel.rfid.gpio.MockGPIOManager;
 import com.intel.rfid.helpers.EnvHelper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,7 +36,7 @@ public class SensorManagerTest {
     public static void afterClass() throws IOException {
         //EnvHelper.afterTests();
     }
-    
+
     @Test
     public void testAliasing() {
 
@@ -183,4 +189,65 @@ public class SensorManagerTest {
     //     assertTrue(sensor.getPersonality() == personality01);
     // }
 
+    @Test
+    public void testRemove() throws IOException, InterruptedException, ConfigException {
+        MockClusterManager clusterMgr = new MockClusterManager();
+        MockSensorManager sensorMgr = new MockSensorManager(clusterMgr);
+        clusterMgr.setSensorManager(sensorMgr);
+        MockGPIOManager gpioMgr = new MockGPIOManager(sensorMgr);
+        MockDownstreamManager downstreamMgr = new MockDownstreamManager(sensorMgr, gpioMgr);
+
+        MockSensorPlatform rsp01 = sensorMgr.establishRSP("RSP-TEST01");
+        assertThat(rsp01.isConnected()).isFalse();
+        assertThat(downstreamMgr.handlerExistsFor(rsp01)).isFalse();
+
+
+        downstreamMgr.connectSequence(rsp01);
+        assertThat(rsp01.isConnected()).isTrue();
+        assertThat(downstreamMgr.handlerExistsFor(rsp01)).isTrue();
+
+        SensorManager.RemoveResult removeResult = sensorMgr.remove(rsp01);
+        assertThat(removeResult.success).isFalse();
+        System.out.println(removeResult.message);
+
+        ClusterConfig clusterCfg = new ClusterConfig();
+        clusterCfg.id = "test_cluster_cfg";
+        Cluster cluster = new Cluster();
+        cluster.id = "test_cluster_one";
+        cluster.behavior_id = "ClusterAllSeq_PORTS_1";
+        cluster.facility_id = "test_facility";
+        List<String> sensorGroup1 = new ArrayList<>();
+        sensorGroup1.add(rsp01.getDeviceId());
+        cluster.sensor_groups.add(sensorGroup1);
+        clusterCfg.clusters.add(cluster);
+        clusterMgr.loadConfig(clusterCfg);
+
+        sensorMgr.disconnectAll();
+        assertThat(rsp01.isConnected()).isFalse();
+
+        removeResult = sensorMgr.remove(rsp01);
+        assertThat(removeResult.success).isFalse();
+        System.out.println(removeResult.message);
+
+        clusterMgr.deleteConfig();
+        removeResult = sensorMgr.remove(rsp01);
+        assertThat(removeResult.success).isTrue();
+        System.out.println(removeResult.message);
+        assertThat(sensorMgr.getSensor("RSP-TEST01")).isNull();
+
+
+        // THIS IS WHAT WAS CAUSING A BUG
+        // removing a sensor that was disconnected, and then it would
+        // reconnect, but not show up in the sensor manager because
+        // the downstream manager wasn't getting rid of the previous message
+        // handler object for the same device id.
+        assertThat(downstreamMgr.handlerExistsFor(rsp01)).isFalse();
+
+        downstreamMgr.connectSequence(rsp01);
+        assertThat(downstreamMgr.handlerExistsFor(rsp01)).isTrue();
+
+        SensorPlatform nextRSP = sensorMgr.getSensor("RSP-TEST01");
+        assertThat(nextRSP.isConnected()).isTrue();
+
+    }
 }

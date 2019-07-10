@@ -15,5 +15,5 @@ public class BehaviorResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _behaviors;
     }
-    
+
 }

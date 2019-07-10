@@ -221,7 +221,7 @@ public class ConfigManager {
     public String getSensorRepoBase() {
         return Env.getHomePath().relativize(Env.getSensorSoftwareRepoPath()).toString();
     }
-    
+
     public List<String> getSensorSoftwareRepos() {
         List<String> urls = new ArrayList<>();
         String proto = getOptString("repo.rsp.protocol", "http");
@@ -256,8 +256,8 @@ public class ConfigManager {
                 String suffix = "_" + archName + ".ipk";
 
                 File[] pkgs = dir.listFiles((File pathname) -> pathname.getName().endsWith(suffix));
-                if(pkgs == null) { continue; }
-                for(File f : pkgs) {
+                if (pkgs == null) { continue; }
+                for (File f : pkgs) {
                     String pkg = f.getName();
                     String pkgName = pkg.substring(0, pkg.indexOf("_"));
                     String pkgVer = pkg.substring(pkgName.length() + 1, pkg.indexOf(suffix));
@@ -276,7 +276,7 @@ public class ConfigManager {
             }
         }
     }
-    
+
     public static class Credentials {
         public String userId;
         public String password;
@@ -361,7 +361,7 @@ public class ConfigManager {
         return getURI(proto,
                       getLocalHost(),
                       getProvisionPortForProtocol(proto)) +
-               PROVISION_ROOT_CA_PATH;
+                PROVISION_ROOT_CA_PATH;
     }
 
     public String getProvisionUrlSensorCredentials() {
@@ -369,7 +369,7 @@ public class ConfigManager {
         return getURI(proto,
                       getLocalHost(),
                       getProvisionPortForProtocol(proto)) +
-               PROVISION_SENSOR_CREDENTIALS_PATH;
+                PROVISION_SENSOR_CREDENTIALS_PATH;
     }
 
     public boolean getProvisionSensorTokenRequired() {

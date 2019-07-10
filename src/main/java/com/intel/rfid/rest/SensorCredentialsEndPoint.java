@@ -46,7 +46,7 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
     }
 
     private void processRequest(HttpServletRequest _req, HttpServletResponse _rsp)
-        throws IOException {
+            throws IOException {
 
         ConfigManager cm = ConfigManager.instance;
 
@@ -73,7 +73,7 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
             _rsp.getWriter().println(mapper.writeValueAsString(credentials));
 
         } catch (InvalidTokenException | ExpiredTokenException _e) {
-            log.info("sensor {} attempting to connect with invalid token {} {}", 
+            log.info("sensor {} attempting to connect with invalid token {} {}",
                      pToken.username, pToken.token, _e.getMessage());
             setErr(_rsp, HttpStatus.UNAUTHORIZED_401, "Invalid token.");
         }
@@ -95,8 +95,8 @@ public class SensorCredentialsEndPoint extends DefaultServlet {
 
         String contentType = _req.getContentType();
         if (contentType == null ||
-            contentType.length() == 0 ||
-            !contentType.toLowerCase().contains(JSON_CONTENT_TYPE)) {
+                contentType.length() == 0 ||
+                !contentType.toLowerCase().contains(JSON_CONTENT_TYPE)) {
 
             setErr(_rsp,
                    HttpStatus.NOT_ACCEPTABLE_406,

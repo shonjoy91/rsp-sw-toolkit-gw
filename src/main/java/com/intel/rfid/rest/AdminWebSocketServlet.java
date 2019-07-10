@@ -37,7 +37,7 @@ public class AdminWebSocketServlet
     protected DownstreamManager downstreamMgr;
     protected ScheduleManager scheduleMgr;
 
-    public AdminWebSocketServlet(ClusterManager _clusterMgr, 
+    public AdminWebSocketServlet(ClusterManager _clusterMgr,
                                  SensorManager _sensorMgr,
                                  GPIOManager _gpioMgr,
                                  InventoryManager _inventoryMgr,

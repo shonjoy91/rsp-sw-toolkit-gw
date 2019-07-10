@@ -43,7 +43,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -220,11 +222,21 @@ public class SensorManager {
             _collection.addAll(deviceIdToRSP.values());
         }
     }
-    
+
     public void getDeviceIds(Collection<String> _collection) {
         synchronized (deviceIdToRSP) {
             _collection.addAll(deviceIdToRSP.keySet());
         }
+    }
+
+    public void getFacilities(Collection<String> _collection) {
+        Set<String> uniqueFacilities = new TreeSet<>();
+        synchronized (deviceIdToRSP) {
+            for (SensorPlatform sensor : deviceIdToRSP.values()) {
+                uniqueFacilities.add(sensor.getFacilityId());
+            }
+        }
+        _collection.addAll(uniqueFacilities);
     }
 
     public Collection<SensorPlatform> findRSPs(String _pattern) {
@@ -234,11 +246,11 @@ public class SensorManager {
         Collection<SensorPlatform> matchingRSPs;
         synchronized (deviceIdToRSP) {
             matchingRSPs = deviceIdToRSP
-                .entrySet()
-                .stream()
-                .filter(idRSP -> idRSP.getKey().matches(regex))
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+                    .entrySet()
+                    .stream()
+                    .filter(idRSP -> idRSP.getKey().matches(regex))
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toList());
         }
 
         return matchingRSPs;
@@ -275,7 +287,7 @@ public class SensorManager {
     }
 
     public void sendConnectResponse(String _responseId, String _deviceId, String _facilityId)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
         if (downstreamMgr == null) {
             throw new GatewayException("missing sensor manager reference");
@@ -283,17 +295,17 @@ public class SensorManager {
         ConfigManager cm = ConfigManager.instance;
 
         ConnectResponse rsp = new ConnectResponse(_responseId,
-                                                        _facilityId,
-                                                        System.currentTimeMillis(),
-                                                        cm.getLocalHost("ntp.server.host"),
-                                                        cm.getSensorSoftwareRepos(),
-                                                        SecurityContext.instance().getKeyMgr().getSshEncodedPublicKey());
+                                                  _facilityId,
+                                                  System.currentTimeMillis(),
+                                                  cm.getLocalHost("ntp.server.host"),
+                                                  cm.getSensorSoftwareRepos(),
+                                                  SecurityContext.instance().getKeyMgr().getSshEncodedPublicKey());
 
         downstreamMgr.sendConnectRsp(_deviceId, rsp);
     }
 
     public void sendSensorCommand(String _deviceId, JsonRequest _req)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
         if (downstreamMgr == null) {
             throw new GatewayException("missing sensor manager reference");
@@ -322,28 +334,42 @@ public class SensorManager {
         }
     }
 
-    public boolean remove(SensorPlatform _rsp) {
-        if(_rsp.isConnected()) {
-            log.warn("refusing to remove connected sensor");
-            return false;
+    public class RemoveResult {
+        public final boolean success;
+        public final String message;
+
+        public RemoveResult(boolean _success, String _message) {
+            success = _success;
+            message = _message;
+        }
+    }
+
+    public RemoveResult remove(SensorPlatform _rsp) {
+        if (_rsp.connectionState != Connection.State.DISCONNECTED) {
+            return new RemoveResult(false,
+                                    "refusing to remove sensor " + _rsp.getDeviceId() + " until it is disconnected");
         }
 
-        if(clusterMgr != null) {
+        if (clusterMgr != null) {
             Cluster cluster = clusterMgr.findClusterByDeviceId(_rsp.getDeviceId());
-            if(clusterMgr.findClusterByDeviceId(_rsp.getDeviceId()) != null) {
-                log.warn("refusing to remove sensor used in cluster {}", cluster.id);
-                return false;
+            if (clusterMgr.findClusterByDeviceId(_rsp.getDeviceId()) != null) {
+                return new RemoveResult(false,
+                                        "refusing to remove sensor " + _rsp.getDeviceId() + " used in cluster " + cluster.id);
             }
         }
-        
+
         synchronized (deviceIdToRSP) {
             _rsp.setFacilityId(SensorPlatform.UNKNOWN_FACILITY_ID);
-            if(downstreamMgr != null) {
+            if (downstreamMgr != null) {
                 downstreamMgr.sensorRemoved(_rsp.getDeviceId());
             }
             deviceIdToRSP.remove(_rsp.getDeviceId());
+            notifyConnectionStateChange(_rsp,
+                                        _rsp.connectionState,
+                                        Connection.State.DISCONNECTED,
+                                        Connection.Cause.REMOVED);
         }
-        return true;
+        return new RemoveResult(true, "OK");
     }
 
     public void addConnectionStateListener(ConnectionStateListener _listener) {
@@ -361,7 +387,7 @@ public class SensorManager {
 
         // todo: on connected, align with cluster
         connectionStatePublisher.notifyListeners(listener -> listener.onConnectionStateChange(
-            new ConnectionStateEvent(_rsp, _prevState, _current, _cause)));
+                new ConnectionStateEvent(_rsp, _prevState, _current, _cause)));
     }
 
     public void addReadStateListener(ReadStateListener _listener) {
@@ -380,7 +406,7 @@ public class SensorManager {
         final String behaviorId = (_behavior != null) ? _behavior.id : null;
         // todo: on connected, align with cluster
         readStatePublisher.notifyListeners(listener -> listener.onReadStateEvent(
-            new ReadStateEvent(_sensor.getDeviceId(), _previous, _current, behaviorId)));
+                new ReadStateEvent(_sensor.getDeviceId(), _previous, _current, behaviorId)));
     }
 
     public void addDeviceAlertListener(SensorDeviceAlertListener _listeners) {
@@ -484,8 +510,8 @@ public class SensorManager {
         try {
             if (Files.exists(STATS_PATH)) {
                 Path to = STATS_PATH.resolveSibling(STATS_FILE_PREFIX +
-                                                    "_" + DateTimeHelper.toFilelNameLocal(new Date()) +
-                                                    STATS_FILE_EXTENSION);
+                                                            "_" + DateTimeHelper.toFilelNameLocal(new Date()) +
+                                                            STATS_FILE_EXTENSION);
                 Files.move(STATS_PATH, to);
             }
         } catch (IOException _e) {

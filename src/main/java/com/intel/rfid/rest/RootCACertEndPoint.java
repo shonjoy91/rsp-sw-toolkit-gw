@@ -5,8 +5,8 @@
 package com.intel.rfid.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.security.Certificate;
 import com.intel.rfid.helpers.Jackson;
+import com.intel.rfid.security.Certificate;
 import com.intel.rfid.security.KeyManager;
 import com.intel.rfid.security.SecurityContext;
 import org.eclipse.jetty.http.HttpStatus;

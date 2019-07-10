@@ -4,7 +4,8 @@
  */
 package com.intel.rfid.gateway;
 
-import com.intel.rfid.alerts.AlertManager;
+import com.intel.rfid.api.data.InventorySummary;
+import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
 import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.console.CLICommandBuilder;
@@ -20,8 +21,8 @@ import com.intel.rfid.upstream.UpstreamManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Gateway implements CLICommandBuilder {
@@ -46,8 +47,6 @@ public class Gateway implements CLICommandBuilder {
     protected DownstreamManager downstreamMgr;
     protected UpstreamManager upstreamMgr;
     protected EndPointManager endPointMgr;
-
-    protected AlertManager alertMgr;
 
     protected Gateway() { }
 
@@ -89,9 +88,6 @@ public class Gateway implements CLICommandBuilder {
                                               downstreamMgr,
                                               scheduleMgr);
         }
-        if (alertMgr == null) {
-            alertMgr = new AlertManager(upstreamMgr);
-        }
 
         // additional object relationships
         clusterMgr.setSensorManager(sensorMgr);
@@ -104,10 +100,10 @@ public class Gateway implements CLICommandBuilder {
         sensorMgr.addConnectionStateListener(scheduleMgr);
 
         // to check for unconfigured facilities for new RSPs coming online
-        sensorMgr.addConnectionStateListener(alertMgr);
+        sensorMgr.addConnectionStateListener(upstreamMgr);
 
         // to forward these alerts upwards
-        sensorMgr.addDeviceAlertListener(alertMgr);
+        sensorMgr.addDeviceAlertListener(upstreamMgr);
 
         // to connect tag reads from down to up stream
         downstreamMgr.addInventoryDataListener(inventoryMgr);
@@ -123,7 +119,6 @@ public class Gateway implements CLICommandBuilder {
         log.info("Gateway {} starting", Version.asString());
 
         clusterMgr.start();
-        alertMgr.start();
         sensorMgr.start();
         gpioMgr.start();
         inventoryMgr.start();
@@ -132,15 +127,31 @@ public class Gateway implements CLICommandBuilder {
         scheduleMgr.start();
         endPointMgr.start();
 
-        if (oneAtaTimeExec.isShutdown() || oneAtaTimeExec.isTerminated()) {
-            oneAtaTimeExec = Executors.newSingleThreadExecutor();
+        if (scheduler == null || scheduler.isShutdown()) {
+            scheduler = Executors.newScheduledThreadPool(1);
         }
+        scheduler.scheduleAtFixedRate(this::heartbeatTask, 30, 30, TimeUnit.SECONDS);
+
         log.info("Gateway started");
     }
 
     public void stop() {
         // Stop in opposite order of starting
         log.info("Gateway stopping");
+
+        try {
+            scheduler.shutdown();
+            if (!scheduler.awaitTermination(2000, TimeUnit.MILLISECONDS)) {
+                scheduler.shutdownNow();
+                if (!scheduler.awaitTermination(2000, TimeUnit.MILLISECONDS)) {
+                    log.error("timeout waiting for scheduler to finish");
+                }
+            }
+        } catch (InterruptedException e) {
+            log.warn("interrupted waiting for scheduler to shut down");
+            Thread.currentThread().interrupt();
+        }
+
         downstreamMgr.sendGWStatus(GatewayStatusUpdateNotification.SHUTTING_DOWN);
 
         endPointMgr.stop();
@@ -150,28 +161,15 @@ public class Gateway implements CLICommandBuilder {
         inventoryMgr.stop();
         gpioMgr.stop();
         sensorMgr.stop();
-        alertMgr.stop();
         clusterMgr.stop();
 
         scheduleMgr.removeRunStateListener(inventoryMgr);
         inventoryMgr.removeUpstreamEventListener(upstreamMgr);
         downstreamMgr.removeInventoryDataListener(inventoryMgr);
-        sensorMgr.removeConnectionStateListener(alertMgr);
-        sensorMgr.removeDeviceAlertListener(alertMgr);
+        sensorMgr.removeConnectionStateListener(upstreamMgr);
+        sensorMgr.removeDeviceAlertListener(upstreamMgr);
         sensorMgr.removeConnectionStateListener(scheduleMgr);
 
-        try {
-            oneAtaTimeExec.shutdown();
-            if (!oneAtaTimeExec.awaitTermination(2000, TimeUnit.MILLISECONDS)) {
-                oneAtaTimeExec.shutdownNow();
-                if (!oneAtaTimeExec.awaitTermination(2000, TimeUnit.MILLISECONDS)) {
-                    log.error("timeout waiting for executor to finish");
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("interrupted waiting for executor to shut down");
-        }
         log.info("Gateway stopped");
     }
 
@@ -188,6 +186,15 @@ public class Gateway implements CLICommandBuilder {
         return commander;
     }
 
-    protected static ExecutorService oneAtaTimeExec = Executors.newSingleThreadExecutor();
+    protected ScheduledExecutorService scheduler;
+
+
+    private void heartbeatTask() {
+        GatewayHeartbeatNotification hb = new GatewayHeartbeatNotification();
+        ConfigManager cfgMgr = ConfigManager.instance;
+        hb.params.sent_on = System.currentTimeMillis();
+        hb.params.device_id = cfgMgr.getGatewayDeviceId();
+        upstreamMgr.send(hb);
+    }
 
 }

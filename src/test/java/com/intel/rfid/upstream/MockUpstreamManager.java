@@ -2,10 +2,10 @@ package com.intel.rfid.upstream;
 
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.downstream.DownstreamManager;
+import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.inventory.InventoryManager;
 import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.sensor.SensorManager;
-import com.intel.rfid.gpio.GPIOManager;
 
 public class MockUpstreamManager extends UpstreamManager {
 

@@ -174,11 +174,11 @@ public class Tag implements Comparable<Tag> {
     public String toString() {
         long now = System.currentTimeMillis();
         return epc + ", " +
-               tid + ", " +
-               state.abbrev() + ", " +
-               location + ", " +
-               DateTimeHelper.timeAsHMS_MS(now - lastRead) + ", " +
-               facility;
+                tid + ", " +
+                state.abbrev() + ", " +
+                location + ", " +
+                DateTimeHelper.timeAsHMS_MS(now - lastRead) + ", " +
+                facility;
     }
 
     public void getStatsUpdate(TagStatsInfo _statsUpdate) {
@@ -188,11 +188,11 @@ public class Tag implements Comparable<Tag> {
     }
 
     public static final String STATS_SUMMARY_CSV_HDR =
-        "epc, tid, state, elapsed, " +
-        "location-ind, sensor, " +
-        "count, " +
-        "mean-dBm, stddev-dBm, min-dBm, max-dBm, " +
-        "mean-readInt, stddev-readInt";
+            "epc, tid, state, elapsed, " +
+                    "location-ind, sensor, " +
+                    "count, " +
+                    "mean-dBm, stddev-dBm, min-dBm, max-dBm, " +
+                    "mean-readInt, stddev-readInt";
 
     public void statsSummary(PrintWriter _pw, long _timeRef) {
         for (String srcAlias : deviceStatsMap.keySet()) {
@@ -201,26 +201,26 @@ public class Tag implements Comparable<Tag> {
 
 
             _pw.println(String.format(
-                "%s, %s, %s, %s, %s, %s, %2d, %6.1f, %9.1f, %6.1f, %6.1f, %8.0f, %8.0f",
-                epc,
-                tid,
-                state.abbrev(),
-                DateTimeHelper.timeAsHMS_MS(_timeRef - r.lastRead),
-                (location.equals(srcAlias) ? "@" : " "),
-                srcAlias,
-                r.n, r.mean, r.stdDev, r.min, r.max,
-                stats.getReadIntervalMean(),
-                stats.getReadIntervalStdDev()));
+                    "%s, %s, %s, %s, %s, %s, %2d, %6.1f, %9.1f, %6.1f, %6.1f, %8.0f, %8.0f",
+                    epc,
+                    tid,
+                    state.abbrev(),
+                    DateTimeHelper.timeAsHMS_MS(_timeRef - r.lastRead),
+                    (location.equals(srcAlias) ? "@" : " "),
+                    srcAlias,
+                    r.n, r.mean, r.stdDev, r.min, r.max,
+                    stats.getReadIntervalMean(),
+                    stats.getReadIntervalStdDev()));
         }
     }
 
     public static final String STATS_DETAIL_CSV_HDR =
-        "epc,tid,state,cur-time,last-read,elapsed," +
-        "location-ind,sensor," +
-        "count," +
-        "mean-dBm,stddev-dBm,min-dBm,max-dBm," +
-        "mean-mW,stddev-mW,min-mW,max-mW" +
-        "mean-readInt,stddev-readInt";
+            "epc,tid,state,cur-time,last-read,elapsed," +
+                    "location-ind,sensor," +
+                    "count," +
+                    "mean-dBm,stddev-dBm,min-dBm,max-dBm," +
+                    "mean-mW,stddev-mW,min-mW,max-mW" +
+                    "mean-readInt,stddev-readInt";
 
     public void statsDetail(PrintWriter _pw, long _timeRef) {
         for (String srcAlias : deviceStatsMap.keySet()) {
@@ -229,14 +229,14 @@ public class Tag implements Comparable<Tag> {
             TagStats.Results mw = stats.inMilliWatts();
 
             _pw.println(String.format(
-                "%s,%s,%s,%s,%s,%s,%s,%s,%2d,%.1f,%.1f,%.1f,%.1f,%.14f,%.14f,%.14f,%.14f,%.1f,%.1f",
-                epc, tid, state.abbrev(), _timeRef, db.lastRead,
-                DateTimeHelper.timeAsHMS_MS(_timeRef - db.lastRead),
-                (location.equals(srcAlias) ? "@" : " "), srcAlias,
-                db.n,
-                db.mean, db.stdDev, db.min, db.max,
-                mw.mean, mw.stdDev, mw.min, mw.max,
-                stats.getReadIntervalMean(), stats.getReadIntervalStdDev()));
+                    "%s,%s,%s,%s,%s,%s,%s,%s,%2d,%.1f,%.1f,%.1f,%.1f,%.14f,%.14f,%.14f,%.14f,%.1f,%.1f",
+                    epc, tid, state.abbrev(), _timeRef, db.lastRead,
+                    DateTimeHelper.timeAsHMS_MS(_timeRef - db.lastRead),
+                    (location.equals(srcAlias) ? "@" : " "), srcAlias,
+                    db.n,
+                    db.mean, db.stdDev, db.min, db.max,
+                    mw.mean, mw.stdDev, mw.min, mw.max,
+                    stats.getReadIntervalMean(), stats.getReadIntervalStdDev()));
         }
     }
 

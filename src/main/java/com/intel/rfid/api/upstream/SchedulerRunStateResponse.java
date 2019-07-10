@@ -13,5 +13,5 @@ public class SchedulerRunStateResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _summary;
     }
-    
+
 }

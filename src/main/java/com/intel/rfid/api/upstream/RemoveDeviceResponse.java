@@ -10,6 +10,7 @@ public class RemoveDeviceResponse extends JsonResponseOK {
 
     public static class Result {
         public String device_id;
+
         public Result(String _deviceId) {
             device_id = _deviceId;
         }
@@ -19,5 +20,5 @@ public class RemoveDeviceResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = new Result(_deviceId);
     }
-    
+
 }

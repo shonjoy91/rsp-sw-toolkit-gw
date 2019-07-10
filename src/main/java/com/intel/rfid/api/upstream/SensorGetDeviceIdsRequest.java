@@ -13,5 +13,5 @@ public class SensorGetDeviceIdsRequest extends JsonRequest {
     public SensorGetDeviceIdsRequest() {
         method = METHOD_NAME;
     }
-    
+
 }

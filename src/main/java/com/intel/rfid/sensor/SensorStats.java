@@ -37,11 +37,11 @@ public class SensorStats {
         @Override
         public String toString() {
             return "Data{" +
-                   "avgTagCount=" + avgTagCount +
-                   ", avgRssiMw=" + avgRssiMw +
-                   ", avgRssiDbm=" + avgRssiDbm +
-                   ", avgUtilization=" + avgUtilization +
-                   '}';
+                    "avgTagCount=" + avgTagCount +
+                    ", avgRssiMw=" + avgRssiMw +
+                    ", avgRssiDbm=" + avgRssiDbm +
+                    ", avgUtilization=" + avgUtilization +
+                    '}';
         }
 
     }

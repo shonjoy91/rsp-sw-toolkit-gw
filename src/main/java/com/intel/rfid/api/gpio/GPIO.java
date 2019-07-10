@@ -6,24 +6,24 @@ package com.intel.rfid.api.gpio;
 
 public class GPIO {
 
-  public enum Direction {
-      INPUT,
-      OUTPUT;
-  }
+    public enum Direction {
+        INPUT,
+        OUTPUT;
+    }
 
-  public enum PinFunction {
-      START_READING,
-      STOP_READING,
-      SENSOR_CONNECTED,
-      SENSOR_DISCONNECTED,
-      SENSOR_TRANSMITTING,
-      SENSOR_READING_TAGS,
-      NOT_ASSIGNED;
-  }
+    public enum PinFunction {
+        START_READING,
+        STOP_READING,
+        SENSOR_CONNECTED,
+        SENSOR_DISCONNECTED,
+        SENSOR_TRANSMITTING,
+        SENSOR_READING_TAGS,
+        NOT_ASSIGNED;
+    }
 
-  public enum State {
-      ASSERTED,
-      DEASSERTED,
-      UNKNOWN;
-  }
+    public enum State {
+        ASSERTED,
+        DEASSERTED,
+        UNKNOWN;
+    }
 }

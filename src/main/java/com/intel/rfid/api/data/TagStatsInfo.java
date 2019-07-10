@@ -43,7 +43,7 @@ public class TagStatsInfo {
         stat.min = _results.min;
         stat.max = _results.max;
 
-        epc_map.computeIfAbsent(_epc, k->new ArrayList<>()).add(stat);
+        epc_map.computeIfAbsent(_epc, k -> new ArrayList<>()).add(stat);
 
         source_aliases.add(_sourceAlias);
     }

@@ -14,5 +14,5 @@ public class SchedulerGetRunStateRequest extends JsonRequest {
     public SchedulerGetRunStateRequest() {
         method = METHOD_NAME;
     }
-    
+
 }

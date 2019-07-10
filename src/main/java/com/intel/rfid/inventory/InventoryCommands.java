@@ -60,61 +60,61 @@ public class InventoryCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(SUMMARY, DETAIL, EXITING,
-                                         UNLOAD, SNAPSHOT),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(SUMMARY, DETAIL, EXITING,
+                                                     UNLOAD, SNAPSHOT),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(WAYPOINTS),
-                    new StringsCompleter(SHOW, SNAPSHOT),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(WAYPOINTS),
+                                new StringsCompleter(SHOW, SNAPSHOT),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(MOBILITY),
-                    new StringsCompleter(SHOW, INFO),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(MOBILITY),
+                                new StringsCompleter(SHOW, INFO),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(MOBILITY),
-                    new StringsCompleter(SET),
-                    new MobilityProfileConfig(),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(MOBILITY),
+                                new StringsCompleter(SET),
+                                new MobilityProfileConfig(),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(STATS),
-                    new StringsCompleter(SHOW, SNAPSHOT, SET_REGEX, CHECK_REGEX,
-                                         START_RECORDING, STOP_RECORDING),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(STATS),
+                                new StringsCompleter(SHOW, SNAPSHOT, SET_REGEX, CHECK_REGEX,
+                                                     START_RECORDING, STOP_RECORDING),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
     }
 
@@ -192,7 +192,7 @@ public class InventoryCommands implements Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
 
         switch (_action) {
             case SUMMARY:
@@ -227,7 +227,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doStats(ArgumentIterator _argIter, PrettyPrinter _out)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
 
         if (!_argIter.hasNext()) {
             usageStats(_out);
@@ -264,7 +264,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobility(ArgumentIterator _argIter, PrettyPrinter _out)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
         if (!_argIter.hasNext()) {
             usageMobility(_out);
             return;
@@ -292,7 +292,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobilitySet(ArgumentIterator _argIter, RssiAdjuster adj)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
         String id = _argIter.next();
         MobilityProfile mp = MobilityProfileConfig.getProfile(id);
         if (mp == null) {
@@ -302,7 +302,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobilityShow(PrettyPrinter _out, RssiAdjuster adj)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
         _out.line("ACTIVE:");
         adj.showMobilityProfile(_out);
         _out.blank();
@@ -315,7 +315,7 @@ public class InventoryCommands implements Support {
 
 
     private void doWaypoints(ArgumentIterator _argIter, PrettyPrinter _out)
-        throws GatewayException, IOException {
+            throws GatewayException, IOException {
 
         if (!_argIter.hasNext()) {
             usageWaypoints(_out);

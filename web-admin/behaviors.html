@@ -457,6 +457,7 @@
                     break;
                 case "boolean":
                     if((behavior[key] && val === "false") || (!behavior[key] && val === "true") ) {
+                        changed = true;
                         behavior[key] = (val === "true");
                     }
                     break;

@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.schedule;
 
-import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.console.ArgumentIterator;
 import com.intel.rfid.console.BetterEnumCompleter;
 import com.intel.rfid.console.SyntaxException;

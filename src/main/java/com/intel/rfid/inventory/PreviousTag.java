@@ -4,9 +4,9 @@
  */
 package com.intel.rfid.inventory;
 
-import com.intel.rfid.tag.TagState;
-import com.intel.rfid.tag.TagDirection;
 import com.intel.rfid.tag.Tag;
+import com.intel.rfid.tag.TagDirection;
+import com.intel.rfid.tag.TagState;
 
 public class PreviousTag {
 

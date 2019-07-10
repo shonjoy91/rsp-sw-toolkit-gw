@@ -13,5 +13,5 @@ public class ClusterGetTemplateResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _template;
     }
-    
+
 }

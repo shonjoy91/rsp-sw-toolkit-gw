@@ -50,20 +50,20 @@ public class ClusterManagerCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(SHOW, SHOW_TOKENS, EXPORT_TOKENS),
-                    new NullCompleter()
-                ),
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(LOAD_FILE),
-                    new FileNameCompleter(),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(SHOW, SHOW_TOKENS, EXPORT_TOKENS),
+                                new NullCompleter()
+                        ),
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(LOAD_FILE),
+                                new FileNameCompleter(),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
     }
 
@@ -86,7 +86,7 @@ public class ClusterManagerCommands implements Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
         switch (_action) {
 
@@ -108,7 +108,7 @@ public class ClusterManagerCommands implements Support {
     }
 
     private void doLoadFile(ArgumentIterator _argIter, PrettyPrinter _out)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
 
         Path p = Paths.get(new File(_argIter.next()).getCanonicalPath());
@@ -116,5 +116,5 @@ public class ClusterManagerCommands implements Support {
         clusterMgr.loadConfig(p);
         _out.line("completed");
     }
-    
+
 }

@@ -11,5 +11,5 @@ public class SensorSoftwareRepoVersions {
     public String pkg_manifest_version = "UNKNOWN";
     public String uboot_version = "UNKNOWN";
     public String linux_version = "UNKNOWN";
-    
+
 }

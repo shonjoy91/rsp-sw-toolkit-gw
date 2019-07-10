@@ -4,6 +4,8 @@
  */
 package com.intel.rfid.api.sensor;
 
+import java.util.Arrays;
+
 public enum GeoRegion {
     AUSTRALIA(923250),
     BRAZIL(915250),
@@ -28,5 +30,8 @@ public enum GeoRegion {
 
     GeoRegion(int _centerFrequency) { centerFrequency = _centerFrequency; }
 
+    public static String[] asStrings() {
+        return Arrays.stream(values()).map(Enum::name).toArray(String[]::new);
+    }
 }
 

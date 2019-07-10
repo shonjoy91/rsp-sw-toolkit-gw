@@ -9,7 +9,7 @@ import jline.console.completer.Completer;
 import java.util.List;
 
 public class AnyStringCompleter
-    implements Completer {
+        implements Completer {
 
     public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
 

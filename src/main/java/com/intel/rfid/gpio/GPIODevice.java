@@ -7,13 +7,13 @@ package com.intel.rfid.gpio;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.JsonRpcError;
 import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.JsonRpcError;
 import com.intel.rfid.api.data.Connection;
-import com.intel.rfid.api.gpio.GPIODeviceInfo;
-import com.intel.rfid.api.gpio.GPIOInfo;
 import com.intel.rfid.api.gpio.GPIO;
 import com.intel.rfid.api.gpio.GPIOConnectRequest;
+import com.intel.rfid.api.gpio.GPIODeviceInfo;
+import com.intel.rfid.api.gpio.GPIOInfo;
 import com.intel.rfid.api.gpio.GPIOInputNotification;
 import com.intel.rfid.api.gpio.GPIOSetStateRequest;
 import com.intel.rfid.api.sensor.SensorHeartbeatNotification;
@@ -48,7 +48,7 @@ public class GPIODevice {
     protected static final ObjectMapper MAPPER = Jackson.getMapper();
     protected final Object msgHandleLock = new Object();
     protected final Map<String, ResponseHandler> responseHandlers = new HashMap<>();
-    
+
     public GPIODevice(String _deviceId, GPIOManager _manager) {
         deviceInfo = new GPIODeviceInfo();
         deviceInfo.device_id = _deviceId;
@@ -67,7 +67,7 @@ public class GPIODevice {
                 } else {
                     outputs++;
                 }
-            }    
+            }
         } else {
             logGPIO.warn("Cannot set GPIODeviceInfo, {} does not match {}", deviceInfo.device_id, _info.device_id);
         }
@@ -155,7 +155,7 @@ public class GPIODevice {
                     responseHandlers.remove(id);
                 } else {
                     logGPIO.warn("{} unhandled json msg: {}",
-                                deviceInfo.device_id, MAPPER.writeValueAsString(rootNode));
+                                 deviceInfo.device_id, MAPPER.writeValueAsString(rootNode));
                 }
 
             } catch (Exception e) {
@@ -176,7 +176,8 @@ public class GPIODevice {
                     break;
 
                 case GPIOInputNotification.METHOD_NAME:
-                    GPIOInputNotification inputNotification = MAPPER.treeToValue(_rootNode, GPIOInputNotification.class);
+                    GPIOInputNotification inputNotification = MAPPER.treeToValue(_rootNode,
+                                                                                 GPIOInputNotification.class);
                     onGPIOInputNotification(inputNotification);
                     break;
 
@@ -265,7 +266,7 @@ public class GPIODevice {
 
     private static final String FMT = "%-12s %-12s %-12s %-12s";
     public static final String HDR = String
-        .format(FMT, "device", "state", "inputs", "outputs");
+            .format(FMT, "device", "state", "inputs", "outputs");
 
     @Override
     public String toString() {

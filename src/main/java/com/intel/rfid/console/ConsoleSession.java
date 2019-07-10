@@ -54,17 +54,17 @@ public class ConsoleSession implements Runnable {
         keepGoing = true;
 
         try (
-            FilterOutputStream fos = new FilterOutputStream(out) {
-                final int cr = System.getProperty("line.separator").charAt(0);
+                FilterOutputStream fos = new FilterOutputStream(out) {
+                    final int cr = System.getProperty("line.separator").charAt(0);
 
-                @Override
-                public void write(final int i) throws IOException {
-                    super.write(i);
-                    if (i == cr) {
-                        super.write(ConsoleReader.RESET_LINE);
+                    @Override
+                    public void write(final int i) throws IOException {
+                        super.write(i);
+                        if (i == cr) {
+                            super.write(ConsoleReader.RESET_LINE);
+                        }
                     }
                 }
-            }
 
         ) {
 
@@ -76,8 +76,8 @@ public class ConsoleSession implements Runnable {
             List<Completer> comps = new ArrayList<>();
 
             comps.add(new ArgumentCompleter(
-                new StringsCompleter(QUIT_CMD, EXIT_CMD),
-                new NullCompleter()));
+                    new StringsCompleter(QUIT_CMD, EXIT_CMD),
+                    new NullCompleter()));
 
             commander.getCompleters(comps);
 

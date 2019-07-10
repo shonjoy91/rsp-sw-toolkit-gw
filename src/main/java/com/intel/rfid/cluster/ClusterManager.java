@@ -73,7 +73,7 @@ public class ClusterManager {
         ClusterConfig newConfig = fromFile(_clusterCfgPath);
         loadConfig(newConfig);
     }
-    
+
     public void loadConfig(ClusterConfig newConfig) throws ConfigException {
         validate(newConfig);
 
@@ -82,7 +82,7 @@ public class ClusterManager {
             persist();
             updateTokenMap();
         }
-        
+
         align();
     }
 
@@ -97,7 +97,7 @@ public class ClusterManager {
         align();
         return cc;
     }
-    
+
     private void align() {
         if (sensorMgr == null) {
             log.warn("missing reference to sensor manager");
@@ -116,16 +116,16 @@ public class ClusterManager {
             // but then the align might not work because the disconnect sequencing / messaging is asynchronous
             // mostly need to kick off if using provisioning tokens (what if they have changed in new file??)
             sensorMgr.disconnectAll();
-        } else if(clusterCfg != null) {            
+        } else if (clusterCfg != null) {
             final Set<String> sensorIDsInConfig = new HashSet<>();
 
-            for(Cluster cluster : clusterCfg.clusters) {
-                for(List<String> sensorGroup : cluster.sensor_groups) {
+            for (Cluster cluster : clusterCfg.clusters) {
+                for (List<String> sensorGroup : cluster.sensor_groups) {
                     sensorIDsInConfig.addAll(sensorGroup);
                 }
             }
 
-            for(String id : sensorIDsInConfig) {
+            for (String id : sensorIDsInConfig) {
                 SensorPlatform sensor = sensorMgr.establishRSP(id);
                 alignSensor(sensor);
             }
@@ -139,24 +139,24 @@ public class ClusterManager {
     public ClusterConfig getConfig() {
         ClusterConfig cc = null;
         synchronized (clusterCfgLock) {
-            if(clusterCfg != null) {
+            if (clusterCfg != null) {
                 try {
                     cc = mapper.readValue(mapper.writeValueAsBytes(clusterCfg), ClusterConfig.class);
-                } catch(IOException _e) {
+                } catch (IOException _e) {
                     log.warn("error: {}", _e.getMessage());
                 }
             }
         }
         return cc;
     }
-    
+
     public ClusterTemplate getTemplate() {
         ClusterTemplate clusterTemplate = new ClusterTemplate();
         clusterTemplate.personalities = Arrays.asList(Personality.values());
-        for(Behavior b : BehaviorConfig.available().values()) {
+        for (Behavior b : BehaviorConfig.available().values()) {
             clusterTemplate.behavior_ids.add(b.id);
         }
-        if(sensorMgr != null) {
+        if (sensorMgr != null) {
             sensorMgr.getDeviceIds(clusterTemplate.sensor_device_ids);
         }
         return clusterTemplate;
@@ -191,7 +191,7 @@ public class ClusterManager {
 
     public static boolean isExpired(ProvisionToken _pt) {
         return _pt.expirationTimestamp != ProvisionToken.NEVER_EXPIRES &&
-               _pt.expirationTimestamp < System.currentTimeMillis();
+                _pt.expirationTimestamp < System.currentTimeMillis();
     }
 
     public List<ProvisionToken> getProvionTokens() {
@@ -394,7 +394,7 @@ public class ClusterManager {
     // assumption that appropriate synchronization occurs before calling
     private void updateTokenMap() {
         tokens.clear();
-        if(clusterCfg == null) { return; }
+        if (clusterCfg == null) { return; }
         for (Cluster c : clusterCfg.clusters) {
             for (ProvisionToken pt : c.tokens) {
                 tokens.put(pt.token, pt);
@@ -404,13 +404,13 @@ public class ClusterManager {
 
     private void persist() {
         synchronized (clusterCfgLock) {
-            if (clusterCfg == null) { 
+            if (clusterCfg == null) {
                 try {
                     Files.deleteIfExists(CACHE_PATH);
                 } catch (IOException _e) {
                     log.error("failed deleting: {} : ", CACHE_PATH.toAbsolutePath(), _e);
                 }
-                return; 
+                return;
             }
 
             try (OutputStream os = Files.newOutputStream(CACHE_PATH)) {

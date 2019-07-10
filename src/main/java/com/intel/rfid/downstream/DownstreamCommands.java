@@ -47,14 +47,14 @@ public class DownstreamCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(
-            new AggregateCompleter(
-                new ArgumentCompleter(
-                    new StringsCompleter(CMD_ID),
-                    new StringsCompleter(SHOW, ENABLE_JMDNS, DISABLE_JMDNS),
-                    new NullCompleter()
+                new AggregateCompleter(
+                        new ArgumentCompleter(
+                                new StringsCompleter(CMD_ID),
+                                new StringsCompleter(SHOW, ENABLE_JMDNS, DISABLE_JMDNS),
+                                new NullCompleter()
+                        )
                 )
-            )
-                  );
+        );
 
     }
 
@@ -72,7 +72,7 @@ public class DownstreamCommands implements Support {
 
     @Override
     public void doAction(String action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws SyntaxException, IOException {
+            throws SyntaxException, IOException {
 
         switch (action) {
             case SHOW:

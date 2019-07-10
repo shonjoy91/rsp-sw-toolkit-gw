@@ -31,7 +31,7 @@ public class GatewayDeviceAlertNotification extends JsonNotification {
         }
         params.alert_number = _deviceAlert.params.alert_number;
         params.alert_description = _deviceAlert.params.alert_description;
-        params.severity = _deviceAlert.params.severity.toString();
+        params.severity = _deviceAlert.params.severity;
         if (_deviceAlert.params.optional != null) {
             params.optional.putAll(_deviceAlert.params.optional);
         }

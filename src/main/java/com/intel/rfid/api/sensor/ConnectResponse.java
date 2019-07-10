@@ -11,10 +11,10 @@ import java.util.List;
 
 public class ConnectResponse extends JsonResponseOK {
 
-    public ConnectResponse(String _id, 
+    public ConnectResponse(String _id,
                            String _facilityId,
                            long _currTime,
-                           String _ntpHost, 
+                           String _ntpHost,
                            List<String> _softwareRepos,
                            String _sshPublicKey) {
         super(_id, Boolean.TRUE);

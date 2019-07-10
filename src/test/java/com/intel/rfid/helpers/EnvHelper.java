@@ -50,9 +50,9 @@ public class EnvHelper {
         try {
             ch.qos.logback.classic.Logger logger;
             String[] logClasses = {
-                "org.eclipse.jetty",
-                "javax.jmdns.impl",
-                "org.quartz"
+                    "org.eclipse.jetty",
+                    "javax.jmdns.impl",
+                    "org.quartz"
             };
 
             for (String s : logClasses) {

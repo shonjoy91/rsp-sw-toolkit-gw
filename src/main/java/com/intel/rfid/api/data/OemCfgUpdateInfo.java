@@ -8,7 +8,7 @@ import com.intel.rfid.api.sensor.GeoRegion;
 
 public class OemCfgUpdateInfo {
 
-    public enum Status { IN_PROGRESS, RESET_RADIO, COMPLETE, ERROR, FAIL }
+    public enum Status {IN_PROGRESS, RESET_RADIO, COMPLETE, ERROR, FAIL}
 
     public long sent_on;
     public String device_id;

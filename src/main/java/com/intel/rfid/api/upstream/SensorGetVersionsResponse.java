@@ -13,5 +13,5 @@ public class SensorGetVersionsResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _versions;
     }
-    
+
 }

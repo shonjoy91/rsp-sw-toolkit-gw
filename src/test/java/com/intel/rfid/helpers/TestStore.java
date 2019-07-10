@@ -25,7 +25,7 @@ public class TestStore {
     public int rssiWeak() { return (minRSSI + (maxRSSI - minRSSI) / 3); }
 
     public int rssiMin() { return minRSSI; }
-    
+
     public MockGateway gateway;
     public MockSensorPlatform sensorFront01;
     public MockSensorPlatform sensorFront02;
@@ -79,24 +79,24 @@ public class TestStore {
         sensorB01 = establish("RSP-150011", Facility.B);
         sensorCexit01 = establish("RSP-150012", Facility.C, Personality.EXIT);
         sensorCexit02 = establish("RSP-150013", Facility.C, Personality.EXIT);
-        
+
         resetTimestamps();
 
     }
 
     public void resetTimestamps() {
-       now = System.currentTimeMillis();
-         time_m10 = now - (0 * 60 * 1000);
-         time_m09 = now - (1 * 60 * 1000);
-         time_m08 = now - (2 * 60 * 1000);
-         time_m07 = now - (3 * 60 * 1000);
-         time_m06 = now - (4 * 60 * 1000);
-         time_m05 = now - (5 * 60 * 1000);
-         time_m04 = now - (6 * 60 * 1000);
-         time_m03 = now - (7 * 60 * 1000);
-         time_m02 = now - (8 * 60 * 1000);
-         time_m01 = now - (9 * 60 * 1000);
-         time_m00 = now - (10 * 60 * 1000);
+        now = System.currentTimeMillis();
+        time_m10 = now - (0 * 60 * 1000);
+        time_m09 = now - (1 * 60 * 1000);
+        time_m08 = now - (2 * 60 * 1000);
+        time_m07 = now - (3 * 60 * 1000);
+        time_m06 = now - (4 * 60 * 1000);
+        time_m05 = now - (5 * 60 * 1000);
+        time_m04 = now - (6 * 60 * 1000);
+        time_m03 = now - (7 * 60 * 1000);
+        time_m02 = now - (8 * 60 * 1000);
+        time_m01 = now - (9 * 60 * 1000);
+        time_m00 = now - (10 * 60 * 1000);
     }
 
     public MockSensorPlatform establish(String _sensorId, Facility _facility) {
@@ -113,6 +113,7 @@ public class TestStore {
     }
 
     int tagSerialNum = 1;
+
     public TagRead generateReadData(long _lastReadOn) {
         TagRead tagRead = new TagRead();
         tagRead.epc = String.format("EPC%06d", tagSerialNum);
@@ -125,7 +126,7 @@ public class TestStore {
     }
 
     public ClusterConfig getRetailUseCaseClusterConfig() {
-        
+
         ClusterConfig cfg = new ClusterConfig();
         cfg.id = "RetailUseCaseClusterConfigExample";
         Cluster cluster;

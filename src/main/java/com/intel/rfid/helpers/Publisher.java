@@ -104,9 +104,9 @@ public class Publisher<T> {
             }
 
             runnables = listeners
-                .stream()
-                .map(listener -> (Runnable) () -> _notifyHow.accept(listener))
-                .collect(Collectors.toList());
+                    .stream()
+                    .map(listener -> (Runnable) () -> _notifyHow.accept(listener))
+                    .collect(Collectors.toList());
         }
         log.debug("Done");
 

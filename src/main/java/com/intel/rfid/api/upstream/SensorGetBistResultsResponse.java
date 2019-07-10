@@ -13,5 +13,5 @@ public class SensorGetBistResultsResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _results;
     }
-    
+
 }

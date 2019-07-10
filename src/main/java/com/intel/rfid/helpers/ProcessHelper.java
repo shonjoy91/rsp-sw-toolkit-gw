@@ -94,8 +94,8 @@ public class ProcessHelper {
         @Override
         public void run() {
             try (BufferedReader br =
-                     new BufferedReader(
-                         new InputStreamReader(is))) {
+                         new BufferedReader(
+                                 new InputStreamReader(is))) {
 
                 String curLine;
                 while ((curLine = br.readLine()) != null) {

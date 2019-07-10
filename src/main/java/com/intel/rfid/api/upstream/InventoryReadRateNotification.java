@@ -9,7 +9,7 @@ import com.intel.rfid.api.JsonNotification;
 public class InventoryReadRateNotification extends JsonNotification {
 
     public static final String METHOD_NAME = "inventory_read_rate_per_second";
-    
+
     public InventoryReadRateNotification() {
         method = METHOD_NAME;
     }
@@ -20,7 +20,7 @@ public class InventoryReadRateNotification extends JsonNotification {
     }
 
     public Params params = new Params();
-    
+
     public class Params {
         public long read_rate_per_second;
     }

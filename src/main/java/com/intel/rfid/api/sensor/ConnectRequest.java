@@ -14,7 +14,7 @@ public class ConnectRequest extends JsonRequest {
 
     public RSPInfo params = new RSPInfo();
 
-    public ConnectRequest() { 
+    public ConnectRequest() {
         method = METHOD_NAME;
     }
 

@@ -4,17 +4,17 @@
  */
 package com.intel.rfid.gpio;
 
-import com.intel.rfid.api.gpio.GPIOMapping;
-import com.intel.rfid.api.gpio.GPIOInfo;
 import com.intel.rfid.api.gpio.GPIO;
+import com.intel.rfid.api.gpio.GPIOInfo;
+import com.intel.rfid.api.gpio.GPIOMapping;
 import com.intel.rfid.console.AnyStringCompleter;
 import com.intel.rfid.console.ArgumentIterator;
 import com.intel.rfid.console.BetterEnumCompleter;
 import com.intel.rfid.console.SyntaxException;
-import com.intel.rfid.helpers.PrettyPrinter;
-import com.intel.rfid.sensor.SensorManager;
-import com.intel.rfid.sensor.SensorIdCompleter;
 import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.helpers.PrettyPrinter;
+import com.intel.rfid.sensor.SensorIdCompleter;
+import com.intel.rfid.sensor.SensorManager;
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
 import jline.console.completer.NullCompleter;
@@ -59,37 +59,37 @@ public class GPIOCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SHOW_DEVICES,
-                                 SHOW_MAPPING,
-                                 CLEAR_MAPPING),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SHOW_DEVICES,
+                                     SHOW_MAPPING,
+                                     CLEAR_MAPPING),
+                new NullCompleter()
         ));
 
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SHOW_DEVICE_INFO),
-            new GPIODeviceIdCompleter(gpioMgr),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SHOW_DEVICE_INFO),
+                new GPIODeviceIdCompleter(gpioMgr),
+                new NullCompleter()
         ));
-    
+
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(MAP_GPIO),
-            new SensorIdCompleter(sensorMgr),
-            new GPIODeviceIdCompleter(gpioMgr),
-            new AnyStringCompleter(),
-            new BetterEnumCompleter(GPIO.PinFunction.class),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(MAP_GPIO),
+                new SensorIdCompleter(sensorMgr),
+                new GPIODeviceIdCompleter(gpioMgr),
+                new AnyStringCompleter(),
+                new BetterEnumCompleter(GPIO.PinFunction.class),
+                new NullCompleter()
         ));
-    
+
         _comps.add(new ArgumentCompleter(
-            new StringsCompleter(CMD_ID),
-            new StringsCompleter(SET_STATE),
-            new GPIODeviceIdCompleter(gpioMgr),
-            new AnyStringCompleter(),
-            new BetterEnumCompleter(GPIO.State.class),
-            new NullCompleter()
+                new StringsCompleter(CMD_ID),
+                new StringsCompleter(SET_STATE),
+                new GPIODeviceIdCompleter(gpioMgr),
+                new AnyStringCompleter(),
+                new BetterEnumCompleter(GPIO.State.class),
+                new NullCompleter()
         ));
     }
 
@@ -119,7 +119,7 @@ public class GPIOCommands implements Support {
 
     @Override
     public void doAction(String action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws SyntaxException, GatewayException, IOException {
+            throws SyntaxException, GatewayException, IOException {
 
         switch (action) {
             case SHOW_DEVICES:

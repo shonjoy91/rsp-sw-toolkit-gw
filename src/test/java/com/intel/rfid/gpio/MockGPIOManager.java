@@ -6,14 +6,13 @@ package com.intel.rfid.gpio;
 
 
 import com.intel.rfid.sensor.SensorManager;
-import com.intel.rfid.gpio.GPIOManager;
 
 public class MockGPIOManager extends GPIOManager {
 
-  public MockGPIOManager(SensorManager _sensorMgr) {
+    public MockGPIOManager(SensorManager _sensorMgr) {
 
-    super(_sensorMgr);
+        super(_sensorMgr);
 
-  }
+    }
 
 }

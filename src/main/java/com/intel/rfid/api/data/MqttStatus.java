@@ -13,5 +13,5 @@ public class MqttStatus {
     public String broker_uri = "unknown";
     public List<String> subscribes = new ArrayList<>();
     public List<String> publishes = new ArrayList<>();
-    
+
 }

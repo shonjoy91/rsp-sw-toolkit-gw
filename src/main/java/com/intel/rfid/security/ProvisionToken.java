@@ -26,10 +26,10 @@ public class ProvisionToken {
     @Override
     public String toString() {
         return "ProvisionToken{" +
-               "username='" + username + '\'' +
-               ", token='" + token + '\'' +
-               ", generatedTimestamp=" + generatedTimestamp +
-               ", expirationTimestamp=" + expirationTimestamp +
-               '}';
+                "username='" + username + '\'' +
+                ", token='" + token + '\'' +
+                ", generatedTimestamp=" + generatedTimestamp +
+                ", expirationTimestamp=" + expirationTimestamp +
+                '}';
     }
 }

@@ -12,5 +12,5 @@ public class SensorGetGeoRegionResponse extends GetGeoRegionResponse {
     public SensorGetGeoRegionResponse(String _id, GeoRegion _region) {
         super(_id, _region);
     }
-    
+
 }

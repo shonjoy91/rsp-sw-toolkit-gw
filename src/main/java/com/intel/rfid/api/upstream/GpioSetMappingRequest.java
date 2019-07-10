@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.api.upstream;
 
-import com.intel.rfid.api.gpio.GPIOMapping;
 import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.gpio.GPIOMapping;
 
 public class GpioSetMappingRequest extends JsonRequest {
 

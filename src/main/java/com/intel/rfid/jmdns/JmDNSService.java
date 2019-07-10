@@ -48,9 +48,9 @@ public class JmDNSService {
 
     public JmDNSService() {
         REGISTER_TYPE = ConfigManager.instance.getOptString(
-            "jmdns.register.type", "_rfid._tcp.local.");
+                "jmdns.register.type", "_rfid._tcp.local.");
         REGISTER_NAME_PREFIX = ConfigManager.instance.getOptString(
-            "jmdns.register.name.prefix", "RFID-Gateway");
+                "jmdns.register.name.prefix", "RFID-Gateway");
 
         serviceAnnouncement = new ServiceAnnouncement();
         serviceAnnouncement.update();
@@ -140,7 +140,7 @@ public class JmDNSService {
                      jmdns.getInetAddress().getHostAddress());
 
             final ServiceInfo info = ServiceInfo.create(
-                REGISTER_TYPE, fullName, "", 0, 0, 0, false, mapper.writeValueAsBytes(serviceAnnouncement));
+                    REGISTER_TYPE, fullName, "", 0, 0, 0, false, mapper.writeValueAsBytes(serviceAnnouncement));
 
             jmdns.registerService(info);
 

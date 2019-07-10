@@ -21,7 +21,8 @@
 
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("scheduler_get_run_state");
+            reqeustSummary();
+            setInterval(reqeustSummary, 5000);
         }
     }
 
@@ -45,6 +46,10 @@
     };
 
 
+    function reqeustSummary() {
+        gwSocket.sendJsonRequest("scheduler_get_run_state");
+    }
+
     function onSchedulerSummary(scheduler_summary) {
 
         if(checkResponseError(scheduler_summary)) { return;}
@@ -62,7 +67,7 @@
         }
 
         if (scheduler_summary.clusters == null || scheduler_summary.clusters.length === 0) {
-            document.getElementById("scheduler_clusters").innerHTML = ""
+            document.getElementById("scheduler_clusters").innerHTML = "";
             return;
         }
 

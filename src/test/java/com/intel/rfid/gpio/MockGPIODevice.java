@@ -7,8 +7,8 @@ package com.intel.rfid.gpio;
 
 public class MockGPIODevice extends GPIODevice {
 
-  public MockGPIODevice(String _deviceId, MockGPIOManager _manager) {
-    super(_deviceId, _manager);
-  }
+    public MockGPIODevice(String _deviceId, MockGPIOManager _manager) {
+        super(_deviceId, _manager);
+    }
 
 }

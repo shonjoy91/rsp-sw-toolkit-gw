@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Tag Statistics</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "about";
+
+    var gwSocket = new GatewayWebSocket();
+
+
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("gateway_get_versions", null);
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "gateway_get_versions":
+                var e = document.getElementById("gateway_software_version");
+                e.innerHTML = jsonRsp.result.software_version;
+                break;
+        }
+    };
+
+
+    function init() {
+        gwSocket.init();
+    }
+
+</script>
+
+<body onload="init()">
+
+<!-- Header -->
+<script src="header.js"></script>
+
+<!-- Content -->
+<div class="w3-row w3-padding w3-large w3-dark-grey">
+    <div class="w3-col w3-container" style="width:225px">Software Version:</div>
+    <div class="w3-rest" id="gateway_software_version"></div>
+</div>
+
+
+</body>
+
+</html>

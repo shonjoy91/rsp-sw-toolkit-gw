@@ -10,23 +10,23 @@ import com.intel.rfid.api.sensor.GeoRegion;
 
 public class SensorSetGeoRegionRequest extends JsonRequest {
 
-  public static final String METHOD_NAME = "sensor_set_geo_region";
+    public static final String METHOD_NAME = "sensor_set_geo_region";
 
-  public class Params {
-    public String devicd_id;
-    public GeoRegion region;
-  }
+    public class Params {
+        public String devicd_id;
+        public GeoRegion region;
+    }
 
-  public Params params = new Params();
+    public Params params = new Params();
 
-  public SensorSetGeoRegionRequest() { 
-    method = METHOD_NAME;
-  }
+    public SensorSetGeoRegionRequest() {
+        method = METHOD_NAME;
+    }
 
-  public SensorSetGeoRegionRequest(String _deviceId, GeoRegion _region) {
-    this();
-    params.devicd_id = _deviceId;
-    params.region = _region;
-  }
+    public SensorSetGeoRegionRequest(String _deviceId, GeoRegion _region) {
+        this();
+        params.devicd_id = _deviceId;
+        params.region = _region;
+    }
 
 }

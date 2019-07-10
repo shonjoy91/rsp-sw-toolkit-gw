@@ -1,13 +1,13 @@
 package com.intel.rfid.inventory;
 
 import com.intel.rfid.api.data.InventoryEventItem;
-import com.intel.rfid.tag.Tag;
-import com.intel.rfid.tag.TagEvent;
-import com.intel.rfid.tag.TagState;
 import com.intel.rfid.api.sensor.TagRead;
 import com.intel.rfid.gateway.MockGateway;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.TestStore;
+import com.intel.rfid.tag.Tag;
+import com.intel.rfid.tag.TagEvent;
+import com.intel.rfid.tag.TagState;
 import com.intel.rfid.upstream.UpstreamInventoryEventInfo;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -31,8 +31,6 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
     private List<UpstreamInventoryEventInfo> upstreamEvents = new ArrayList<>();
 
 
-
-
     public void onUpstreamEvent(UpstreamInventoryEventInfo _uie) {
         upstreamEvents.add(_uie);
     }
@@ -40,7 +38,6 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
     TestStore store;
     MockGateway gateway;
     MockInventoryManager invMgr;
-
 
 
     public TagEventsTest() {
@@ -53,7 +50,7 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
 
     // TODO: additional test cases that exercise varying mobility profiles
     // along with times and signal strength
-    
+
     @Test
     public void testElevatorFacilityMovement() {
 
@@ -145,7 +142,7 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
         assertThat(tag02.getLocation()).isEqualTo(store.sensorA01.asLocation());
         assertThat(tag03.getLocation()).isEqualTo(store.sensorB01.asLocation());
         assertThat(tag04.getLocation()).isEqualTo(store.sensorCexit02.asLocation());
-        
+
         // departure / arrival pairs
         item = uie.data.get(0);
         assertThat(item.event_type).isEqualTo(TagEvent.departed.toString());

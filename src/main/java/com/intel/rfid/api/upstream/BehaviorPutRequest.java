@@ -10,7 +10,7 @@ import com.intel.rfid.api.sensor.Behavior;
 public class BehaviorPutRequest extends JsonRequest {
 
     public static final String METHOD_NAME = "behavior_put";
-    
+
     public Behavior params;
 
     public BehaviorPutRequest() {

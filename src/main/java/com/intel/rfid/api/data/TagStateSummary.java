@@ -5,7 +5,7 @@
 package com.intel.rfid.api.data;
 
 public class TagStateSummary {
-    
+
     public int PRESENT;
     public int EXITING;
     public int DEPARTED_EXIT;

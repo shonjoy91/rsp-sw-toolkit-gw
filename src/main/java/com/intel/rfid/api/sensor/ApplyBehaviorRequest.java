@@ -20,7 +20,7 @@ public class ApplyBehaviorRequest extends JsonRequest {
         params.action = _action;
         params.action_time = 0;
     }
-    
+
     public Params params = new Params();
 
     public enum Action {START, STOP}

@@ -116,8 +116,8 @@ public class EndPointManager {
             httpCfg.addCustomizer(new SecureRequestCustomizer());
             HttpConnectionFactory httpCnxFactory = new HttpConnectionFactory(httpCfg);
             SslConnectionFactory sslCnxFactory =
-                new SslConnectionFactory(SecurityContext.instance().getJettySslContextFactory(),
-                                         "http/1.1");
+                    new SslConnectionFactory(SecurityContext.instance().getJettySslContextFactory(),
+                                             "http/1.1");
             ServerConnector sslConnector = new ServerConnector(server, sslCnxFactory, httpCnxFactory);
             sslConnector.setPort(ConfigManager.instance.getProvisionTlsPort());
             server.addConnector(sslConnector);
@@ -137,17 +137,17 @@ public class EndPointManager {
 
         holder = new ServletHolder(new RootCACertEndPoint());
         context.addServlet(holder, ConfigManager.PROVISION_ROOT_CA_PATH);
-        log.info("adding {} on {}", 
-                 RootCACertEndPoint.class.getSimpleName(), 
+        log.info("adding {} on {}",
+                 RootCACertEndPoint.class.getSimpleName(),
                  ConfigManager.PROVISION_ROOT_CA_PATH);
 
         holder = new ServletHolder(new SensorCredentialsEndPoint(sensorMgr));
         context.addServlet(holder, ConfigManager.PROVISION_SENSOR_CREDENTIALS_PATH);
-        log.info("adding {} on {}", 
-                 SensorCredentialsEndPoint.class.getSimpleName(), 
+        log.info("adding {} on {}",
+                 SensorCredentialsEndPoint.class.getSimpleName(),
                  ConfigManager.PROVISION_SENSOR_CREDENTIALS_PATH);
 
-        holder = new ServletHolder(new AdminWebSocketServlet(clusterMgr, 
+        holder = new ServletHolder(new AdminWebSocketServlet(clusterMgr,
                                                              sensorMgr,
                                                              gpioMgr,
                                                              inventoryMgr,
@@ -159,21 +159,21 @@ public class EndPointManager {
                  AdminWebSocketServlet.class.getSimpleName(),
                  "/web-admin-socket");
 
-        context.setWelcomeFiles(new String[] {"dashboard.html"});
+        context.setWelcomeFiles(new String[]{"dashboard.html"});
         holder = new ServletHolder("web-admin-files-servlet", DefaultServlet.class);
         holder.setInitParameter("resourceBase", Env.getWebAdminResourcePath().toString());
-        holder.setInitParameter("pathInfoOnly","true");
+        holder.setInitParameter("pathInfoOnly", "true");
         context.addServlet(holder, "/" + Env.getWebAdminResourcePath().getFileName().toString() + "/*");
         log.info("adding web-admin-servlet on {}", holder.getInitParameter("resourceBase"));
 
 
         holder = new ServletHolder("repo-servlet", DefaultServlet.class);
         holder.setInitParameter("resourceBase", Env.getSensorSoftwareRepoPath().toString());
-        holder.setInitParameter("pathInfoOnly","true");
+        holder.setInitParameter("pathInfoOnly", "true");
         context.addServlet(holder, "/" + ConfigManager.instance.getSensorRepoBase() + "/*");
         log.info("adding DefaultServlet on {}", holder.getInitParameter("resourceBase"));
     }
-    
+
     protected void addErrorHandlers() {
         ErrorHandler errorHandler = new ErrorHandler();
         errorHandler.setShowStacks(false);

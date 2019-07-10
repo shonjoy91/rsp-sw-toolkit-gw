@@ -22,6 +22,7 @@ import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
 import com.intel.rfid.api.data.TagInfo;
 import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
+import com.intel.rfid.api.sensor.GatewayVersions;
 import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
@@ -39,6 +40,12 @@ import com.intel.rfid.api.upstream.ClusterSetConfigRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
+import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsResponse;
+import com.intel.rfid.api.upstream.GatewayGetSensorSWRepoVersionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetSensorSwRepoVersionsResponse;
+import com.intel.rfid.api.upstream.GatewayGetVersionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetVersionsResponse;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoRequest;
@@ -313,13 +320,12 @@ public class JsonRpcController
             switch (reqMethod) {
 
 
-                case CMD_OEM_GET_AVAILABLE_REGIONS:
-                    sendOK(reqId, GeoRegion.values());
+                case GatewayGetOEMAvailableRegionsRequest.METHOD_NAME:
+                case GatewayGetSensorSWRepoVersionsRequest.METHOD_NAME:
+                case GatewayGetVersionsRequest.METHOD_NAME:
+                    handleGatewayCommand(reqId, reqMethod);
                     break;
-                case CMD_GW_GET_SENSOR_SW_REPO_VERSIONS:
-                    onGetSensorSoftwareRepoVersions(reqId);
-                    break;
-                    
+
                 case BehaviorGetRequest.METHOD_NAME:
                 case BehaviorGetAllRequest.METHOD_NAME:
                 case BehaviorPutRequest.METHOD_NAME:
@@ -353,11 +359,11 @@ public class JsonRpcController
                     sendResponse(new UpstreamGetMqttStatusResponse(reqId, upstreamMgr.getMqttStatus()));
                     break;
                 }
-                
+
                 case RemoveDeviceRequest.METHOD_NAME:
                     handleRemoveDevice(rootNode, reqId);
                     break;
-                    
+
                 case SchedulerGetRunStateRequest.METHOD_NAME:
                     sendResponse(new SchedulerRunStateResponse(reqId, scheduleMgr.getSummary()));
                     break;
@@ -398,7 +404,7 @@ public class JsonRpcController
                 case SUBSCRIBE:
                     handleSubscription(rootNode, reqId);
                     break;
-                    
+
                 default:
                     log.warn("unhandled websocket method: {}", reqMethod);
                     sendErr(reqId, JsonRpcError.Type.FUNCTION_NOT_SUPPORTED, reqMethod);
@@ -447,9 +453,9 @@ public class JsonRpcController
     }
 
 
-    protected void handleClusterCommand(JsonNode _rootNode, String _reqId, String _reqMethod) 
+    protected void handleClusterCommand(JsonNode _rootNode, String _reqId, String _reqMethod)
             throws IOException, ConfigException {
-        
+
         switch (_reqMethod) {
             case ClusterSetConfigRequest.METHOD_NAME:
                 ClusterSetConfigRequest cscr = mapper.treeToValue(_rootNode, ClusterSetConfigRequest.class);
@@ -465,11 +471,34 @@ public class JsonRpcController
                 sendResponse(new ClusterConfigResponse(_reqId, clusterMgr.deleteConfig()));
                 break;
         }
-    }     
-    
-    protected void handleGPIOCommand(JsonNode _rootNode, String _reqId, String _reqMethod) 
-            throws IOException, ConfigException {
-        
+    }
+
+    protected void handleGatewayCommand(String _reqId, String _reqMethod) {
+
+        switch (_reqMethod) {
+            case GatewayGetOEMAvailableRegionsRequest.METHOD_NAME: {
+                sendResponse(new GatewayGetOEMAvailableRegionsResponse(_reqId, GeoRegion.asStrings()));
+                break;
+            }
+            case GatewayGetSensorSWRepoVersionsRequest.METHOD_NAME: {
+                List<String> archs = new ArrayList<>();
+                SensorSoftwareRepoVersions versions = new SensorSoftwareRepoVersions();
+                ConfigManager.instance.getRepoInfo(archs, versions);
+                sendResponse(new GatewayGetSensorSwRepoVersionsResponse(_reqId, versions));
+                break;
+            }
+            case GatewayGetVersionsRequest.METHOD_NAME: {
+                GatewayVersions versions = new GatewayVersions();
+                versions.software_version = Version.asString();
+                sendResponse(new GatewayGetVersionsResponse(_reqId, versions));
+                break;
+            }
+        }
+    }
+
+    protected void handleGPIOCommand(JsonNode _rootNode, String _reqId, String _reqMethod)
+            throws JsonProcessingException {
+
         switch (_reqMethod) {
             case GpioSetMappingRequest.METHOD_NAME:
                 GpioSetMappingRequest gcmr = mapper.treeToValue(_rootNode, GpioSetMappingRequest.class);
@@ -483,8 +512,8 @@ public class JsonRpcController
                 sendResponse(new JsonResponseOK(_reqId, "OK"));
                 break;
         }
-    }     
-    
+    }
+
     protected void handleInventoryCommand(JsonNode _rootNode, String _reqId, String _reqMethod)
             throws JsonProcessingException {
 
@@ -506,8 +535,10 @@ public class JsonRpcController
                 break;
             }
             case InventoryGetTagStatsInfoRequest.METHOD_NAME: {
-                InventoryGetTagStatsInfoRequest req = mapper.treeToValue(_rootNode, InventoryGetTagStatsInfoRequest.class);
-                sendResponse(new InventoryGetTagStatsInfoResponse(_reqId, inventoryMgr.getStatsInfo(req.params.filter_pattern)));
+                InventoryGetTagStatsInfoRequest req = mapper.treeToValue(_rootNode,
+                                                                         InventoryGetTagStatsInfoRequest.class);
+                sendResponse(new InventoryGetTagStatsInfoResponse(_reqId,
+                                                                  inventoryMgr.getStatsInfo(req.params.filter_pattern)));
                 break;
             }
             case InventoryUnloadRequest.METHOD_NAME: {
@@ -515,13 +546,13 @@ public class JsonRpcController
                 sendResponse(new JsonResponseOK(_reqId, null));
             }
         }
-            
+
     }
-    
+
     protected void handleRemoveDevice(JsonNode _rootNode, String _reqId) throws IOException {
         RemoveDeviceRequest req = mapper.treeToValue(_rootNode, RemoveDeviceRequest.class);
     }
-    
+
     protected void handleSensorLocalCommand(JsonNode _rootNode, String _reqId, String _reqMethod) {
 
         if (_rootNode.get("params") == null || _rootNode.get("params").get("device_id") == null) {
@@ -586,15 +617,12 @@ public class JsonRpcController
                 handler = sensor.reboot();
                 break;
             case SensorRemoveRequest.METHOD_NAME:
-                if(sensorMgr.remove(sensor)) {
-                    handler = new ResponseHandler(sensor.getDeviceId(),
-                                                  JsonRpcError.Type.NO_ERROR,
-                                                  "OK");
-                } else {
-                    handler = new ResponseHandler(sensor.getDeviceId(),
-                                                  JsonRpcError.Type.WRONG_STATE,
-                                                  "Unable to remove sensor");
+                SensorManager.RemoveResult result = sensorMgr.remove(sensor);
+                JsonRpcError.Type type = JsonRpcError.Type.NO_ERROR;
+                if (!result.success) {
+                    type = JsonRpcError.Type.WRONG_STATE;
                 }
+                handler = new ResponseHandler(sensor.getDeviceId(), type, result.message);
                 break;
             case SensorSetLedRequest.METHOD_NAME:
                 try {
@@ -629,23 +657,19 @@ public class JsonRpcController
 
     }
 
-    protected void handleSchedulerSetRunState(JsonNode _rootNode, String _reqId) throws IOException, IllegalArgumentException {
+    protected void handleSchedulerSetRunState(JsonNode _rootNode, String _reqId)
+            throws IOException, IllegalArgumentException {
         SchedulerSetRunStateRequest req = mapper.treeToValue(_rootNode, SchedulerSetRunStateRequest.class);
         scheduleMgr.setRunState(req.params.run_state);
         ScheduleRunState actualRunState = scheduleMgr.getRunState();
-        if(req.params.run_state == actualRunState) {
+        if (req.params.run_state == actualRunState) {
             sendResponse(new SchedulerRunStateResponse(_reqId, scheduleMgr.getSummary()));
         } else {
-            sendErr(_reqId, JsonRpcError.Type.INTERNAL_ERROR, "chaging run state failed, scheduler run state: " +actualRunState.toString());
+            sendErr(_reqId,
+                    JsonRpcError.Type.INTERNAL_ERROR,
+                    "chaging run state failed, scheduler run state: " + actualRunState.toString());
         }
 
-    }
-
-    protected void onGetSensorSoftwareRepoVersions(String _reqId) {
-        List<String> archs = new ArrayList<>();
-        SensorSoftwareRepoVersions versions = new SensorSoftwareRepoVersions();
-        ConfigManager.instance.getRepoInfo(archs, versions);
-        sendOK(_reqId, versions);
     }
 
     protected void handleSubscription(JsonNode _rootNode, String _reqId) throws IOException {

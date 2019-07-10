@@ -34,11 +34,11 @@ public class SystemCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(
-            new ArgumentCompleter(
-                new StringsCompleter(CMD_ID),
-                new StringsCompleter(INFO),
-                new NullCompleter())
-                  );
+                new ArgumentCompleter(
+                        new StringsCompleter(CMD_ID),
+                        new StringsCompleter(INFO),
+                        new NullCompleter())
+        );
 
     }
 

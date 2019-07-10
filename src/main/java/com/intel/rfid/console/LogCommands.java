@@ -37,20 +37,20 @@ public class LogCommands implements Support {
     public void getCompleters(List<Completer> _comps) {
 
         _comps.add(
-            new ArgumentCompleter(
-                new StringsCompleter(CMD_ID),
-                new StringsCompleter(SHOW),
-                new NullCompleter())
-                  );
+                new ArgumentCompleter(
+                        new StringsCompleter(CMD_ID),
+                        new StringsCompleter(SHOW),
+                        new NullCompleter())
+        );
 
         _comps.add(
-            new ArgumentCompleter(
-                new StringsCompleter(CMD_ID),
-                new StringsCompleter(SET),
-                new LoggerCompleter(),
-                new LogLevelCompleter(),
-                new NullCompleter())
-                  );
+                new ArgumentCompleter(
+                        new StringsCompleter(CMD_ID),
+                        new StringsCompleter(SET),
+                        new LoggerCompleter(),
+                        new LogLevelCompleter(),
+                        new NullCompleter())
+        );
 
     }
 
@@ -66,7 +66,7 @@ public class LogCommands implements Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-        throws SyntaxException, IOException {
+            throws SyntaxException, IOException {
 
         switch (_action) {
             case SHOW:
@@ -85,8 +85,8 @@ public class LogCommands implements Support {
         String levelId = _argIter.next();
 
         if (logId.isEmpty() ||
-            logId.equals("*") ||
-            Logger.ROOT_LOGGER_NAME.equals(logId)) {
+                logId.equals("*") ||
+                Logger.ROOT_LOGGER_NAME.equals(logId)) {
 
             logId = Logger.ROOT_LOGGER_NAME;
         }
@@ -95,7 +95,7 @@ public class LogCommands implements Support {
         if (!"PARENT".equals(levelId)) {
             logLevel = Level.toLevel(levelId, Level.OFF);
             if (logLevel.equals(Level.OFF) &&
-                !levelId.equalsIgnoreCase("OFF")) {
+                    !levelId.equalsIgnoreCase("OFF")) {
                 _out.line("Error, invalid log level specified!");
                 return;
             }

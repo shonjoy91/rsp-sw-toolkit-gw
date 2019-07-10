@@ -6,7 +6,7 @@
       "facility_id": "BackStock",
       "behavior_id": "ClusterDeepScan_PORTS_1",
       "sensor_groups": [
-        ["RSP-150000"], 
+        ["RSP-150000"],
         ["RSP-150001"]
       ]
     }, {

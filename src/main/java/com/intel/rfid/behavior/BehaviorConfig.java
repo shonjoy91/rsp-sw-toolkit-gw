@@ -73,7 +73,7 @@ public class BehaviorConfig {
     public static Behavior deleteBehavior(String _behaviorId) throws IOException {
         Behavior behavior = getBehavior(_behaviorId);
         Path p = BASE_DIR_PATH.resolve(_behaviorId + ".json");
-        if(Files.deleteIfExists(p)) {
+        if (Files.deleteIfExists(p)) {
             return behavior;
         } else {
             throw new IOException("behavior " + _behaviorId + " not found on disk");

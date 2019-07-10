@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.schedule;
 
-import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.ScheduleRunState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,11 +15,11 @@ public class SchedulerSummary {
     public ScheduleRunState run_state;
     public List<ScheduleRunState> available_states = Arrays.asList(ScheduleRunState.values());
     public List<Cluster> clusters = new ArrayList<>();
-    
+
     public void copyFrom(SchedulerSummary _other) {
         run_state = _other.run_state;
         clusters.addAll(_other.clusters);
     }
-    
-    
+
+
 }

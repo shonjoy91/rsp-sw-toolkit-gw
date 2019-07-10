@@ -20,16 +20,16 @@ package com.intel.rfid.jmdns;
 
 public class MockJmDNSService extends JmDNSService {
 
-  @Override
-  public boolean start() {
-    log.info(this.getClass().getSimpleName() + " started");
-    return true;
-  }
+    @Override
+    public boolean start() {
+        log.info(this.getClass().getSimpleName() + " started");
+        return true;
+    }
 
-  @Override
-  public boolean stop() {
-    log.info(this.getClass().getSimpleName() + " stopped");
-    return true;
-  }
+    @Override
+    public boolean stop() {
+        log.info(this.getClass().getSimpleName() + " stopped");
+        return true;
+    }
 
 }

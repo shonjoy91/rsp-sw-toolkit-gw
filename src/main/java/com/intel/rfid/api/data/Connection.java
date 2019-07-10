@@ -5,10 +5,10 @@
 package com.intel.rfid.api.data;
 
 public class Connection {
-    
+
     public enum State {
-        DISCONNECTED, 
-        CONNECTING, 
+        DISCONNECTED,
+        CONNECTING,
         CONNECTED
     }
 
@@ -19,6 +19,7 @@ public class Connection {
         READY,
         IN_RESET,
         RESYNC,
-        FORCED_DISCONNECT
+        FORCED_DISCONNECT,
+        REMOVED
     }
 }

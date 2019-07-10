@@ -13,5 +13,5 @@ public class SensorGetBasicInfoResponse extends JsonResponseOK {
         super(_id, Boolean.TRUE);
         result = _info;
     }
-    
+
 }

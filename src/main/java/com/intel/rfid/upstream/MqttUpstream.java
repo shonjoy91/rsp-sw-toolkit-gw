@@ -4,17 +4,16 @@
  */
 package com.intel.rfid.upstream;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
 import com.intel.rfid.api.data.MqttStatus;
-import com.intel.rfid.api.upstream.InventoryEventNotification;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.mqtt.Mqtt;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.io.IOException;
 
 public class MqttUpstream extends Mqtt {
 
@@ -61,35 +60,34 @@ public class MqttUpstream extends Mqtt {
         dispatch.onMessage(_topic, _msg);
     }
 
-    public void publish(GatewayDeviceAlertNotification _alert) {
-        try {
-            log.info("publishing alert {}", mapper.writeValueAsString(_alert));
-            publish(ALERTS_TOPIC, mapper.writeValueAsBytes(_alert), DEFAULT_QOS);
-        } catch (GatewayException | JsonProcessingException e) {
-            log.error("error", e);
-        }
+    public void publishAlert(Object _msg) {
+        publish(ALERTS_TOPIC, _msg);
     }
 
-    public void publish(UpstreamInventoryEventInfo _uie) {
-        try {
-            log.info("publishing {} events", _uie.data.size());
-            InventoryEventNotification notification = new InventoryEventNotification(_uie);
-            publish(EVENTS_TOPIC, mapper.writeValueAsBytes(notification), DEFAULT_QOS);
-        } catch (Exception e) {
-            log.error("error: ", e);
-        }
+    public void publishEvent(Object _msg) {
+        publish(EVENTS_TOPIC, _msg);
     }
 
-    public void publishResponse(byte[] _msg) throws GatewayException {
-        publish(RESPONSE_TOPIC, _msg, DEFAULT_QOS);
+    public void publishResponse(Object _msg) {
+        publish(RESPONSE_TOPIC, _msg);
     }
-    
-    public void publishNotification(byte[] _msg) throws GatewayException {
-        publish(NOTIFICATION_TOPIC, _msg, DEFAULT_QOS);
+
+    public void publishNotification(Object _msg) {
+        publish(NOTIFICATION_TOPIC, _msg);
+    }
+
+    private void publish(String _topic, Object _msg) {
+        try {
+            publish(_topic, mapper.writeValueAsBytes(_msg), DEFAULT_QOS);
+        } catch (IOException | GatewayException _e) {
+            log.error("error {}", _e.getMessage());
+        }
+
     }
 
 
     // TOOD: remove this in favor of getMqttStatus()
+    @Deprecated
     public void status(PrettyPrinter _out) {
         super.status(_out);
         _out.line("pub: " + ALERTS_TOPIC);

@@ -5,36 +5,34 @@
 package com.intel.rfid.gpio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.intel.rfid.api.gpio.GPIOMapping;
-import com.intel.rfid.api.gpio.GPIOInfo;
 import com.intel.rfid.api.JsonRequest;
 import com.intel.rfid.api.gpio.GPIO;
 import com.intel.rfid.api.gpio.GPIOConnectResponse;
+import com.intel.rfid.api.gpio.GPIOInfo;
 import com.intel.rfid.api.gpio.GPIOInputEvent;
 import com.intel.rfid.api.gpio.GPIOInputNotification;
-import com.intel.rfid.sensor.SensorManager;
-import com.intel.rfid.sensor.SensorPlatform;
-import com.intel.rfid.sensor.ReadStateEvent;
+import com.intel.rfid.api.gpio.GPIOMapping;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.Env;
-import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.ExecutorUtils;
+import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.Publisher;
-
+import com.intel.rfid.sensor.ReadStateEvent;
+import com.intel.rfid.sensor.SensorManager;
+import com.intel.rfid.sensor.SensorPlatform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream; 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -57,7 +55,8 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     private SensorManager sensorMgr;
 
     private final Publisher<GPIOInputEventListener> gpioInputEventPublisher = new Publisher<>(executorLock,
-                                                                                                eventExecutor);
+                                                                                              eventExecutor);
+
     public interface GPIOInputEventListener {
         void onGPIOInputEvent(GPIOInputEvent _gie);
     }
@@ -121,7 +120,7 @@ public class GPIOManager implements SensorManager.ReadStateListener {
         // to this particular sensor for SENSOR_TRANSMITTING
         for (GPIOMapping mapping : gpioMappings) {
             if ((mapping.sensor_device_id.equals(_rse.deviceId)) &&
-                (mapping.function == GPIO.PinFunction.SENSOR_TRANSMITTING)) {
+                    (mapping.function == GPIO.PinFunction.SENSOR_TRANSMITTING)) {
 
                 GPIODevice device = gpioDevices.get(mapping.gpio_device_id);
                 if (device != null) {
@@ -173,7 +172,7 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     }
 
     public void sendGPIOConnectResponse(String _responseId, String _deviceId)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
         if (downstreamMgr == null) {
             throw new GatewayException("missing gpio manager reference");
@@ -185,7 +184,7 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     }
 
     public void sendGPIOCommand(String _deviceId, JsonRequest _req)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
         if (downstreamMgr == null) {
             throw new GatewayException("missing gpio manager reference");
@@ -194,14 +193,14 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     }
 
     public void handleGPIOInput(String _deviceId, GPIOInputNotification _gin)
-        throws IOException, GatewayException {
+            throws IOException, GatewayException {
 
         log.info("handleGPIOInput from {} and index {}", _deviceId, _gin.params.gpio_info.index);
         // Loop through the mappings to see if there is anything assigned
         // to this particular device and pin
         for (GPIOMapping mapping : gpioMappings) {
             if ((mapping.gpio_device_id.equals(_deviceId)) &&
-                (mapping.gpio_info.index == _gin.params.gpio_info.index)) {
+                    (mapping.gpio_info.index == _gin.params.gpio_info.index)) {
 
                 SensorPlatform sensor = sensorMgr.getSensor(mapping.sensor_device_id);
                 if (sensor != null) {

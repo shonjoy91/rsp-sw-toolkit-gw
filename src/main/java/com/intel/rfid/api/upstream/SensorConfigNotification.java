@@ -16,7 +16,7 @@ public class SensorConfigNotification extends JsonNotification {
     public SensorConfigNotification() {
         method = METHOD_NAME;
     }
-    
+
     public SensorConfigNotification(SensorConfigInfo _sensorConfigInfo) {
         this();
         params = _sensorConfigInfo;

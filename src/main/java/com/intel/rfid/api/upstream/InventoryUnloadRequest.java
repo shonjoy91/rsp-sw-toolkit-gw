@@ -13,5 +13,5 @@ public class InventoryUnloadRequest extends JsonRequest {
     public InventoryUnloadRequest() {
         method = METHOD_NAME;
     }
-    
+
 }

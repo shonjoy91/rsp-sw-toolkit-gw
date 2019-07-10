@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.upstream;
 
-import com.intel.rfid.api.data.InventoryEventItem;
 import com.intel.rfid.api.data.InventoryEventInfo;
+import com.intel.rfid.api.data.InventoryEventItem;
 import com.intel.rfid.tag.Tag;
 import com.intel.rfid.tag.TagEvent;
 
@@ -32,5 +32,5 @@ public class UpstreamInventoryEventInfo extends InventoryEventInfo {
         item.location = _tag.getLocation();
         data.add(item);
     }
-    
+
 }

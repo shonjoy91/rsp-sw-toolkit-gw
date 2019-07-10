@@ -29,6 +29,7 @@ function mapSeverityToColor(severity) {
 }
 
 var icons = {
+    about: "fas fa-info-circle",
     dashboard: "fa fa-tachometer-alt",
     sensors: "fa fa-rss",
     inventory: "fa fa-tags",

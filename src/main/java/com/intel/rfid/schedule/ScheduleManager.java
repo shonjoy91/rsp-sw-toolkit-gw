@@ -5,12 +5,12 @@
 package com.intel.rfid.schedule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.data.Connection;
 import com.intel.rfid.alerts.ConnectionStateEvent;
+import com.intel.rfid.api.data.Cluster;
+import com.intel.rfid.api.data.Connection;
 import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.behavior.BehaviorConfig;
-import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.cluster.ClusterRunner;
 import com.intel.rfid.gateway.Env;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +41,7 @@ import static com.intel.rfid.api.data.ScheduleRunState.ALL_SEQUENCED;
 import static com.intel.rfid.api.data.ScheduleRunState.INACTIVE;
 
 public class ScheduleManager
-    implements SensorManager.ConnectionStateListener {
+        implements SensorManager.ConnectionStateListener {
 
     public static final ScheduleRunState DEFAULT_RUN_STATE = ALL_SEQUENCED;
 
@@ -105,7 +106,7 @@ public class ScheduleManager
                 startupRunState = cacheState.runState;
             }
 
-        } catch (FileNotFoundException _e) {
+        } catch (FileNotFoundException | NoSuchFileException _e) {
             // this is a don't care really, but most code quality tools
             // gripe about empty catch blocks
             log.debug("cache file does not yet exist");
@@ -146,10 +147,14 @@ public class ScheduleManager
     public synchronized void onConnectionStateChange(ConnectionStateEvent _cse) {
 
         // don't care
-        if (_cse.current != Connection.State.CONNECTED) { return; }
-
-        // don't care
         if (runState == INACTIVE) { return; }
+
+        if (_cse.current == Connection.State.CONNECTING) { return; }
+
+        if (_cse.current == Connection.State.DISCONNECTED && _cse.cause == Connection.Cause.REMOVED) {
+            changeRunState(runState);
+            return;
+        }
 
         // already handled at least once
         for (ClusterRunner cr : clusterRunners) {
@@ -162,7 +167,7 @@ public class ScheduleManager
         if (runState == ALL_ON) {
             try {
                 Behavior behavior = BehaviorConfig.getBehavior(BEHAVIOR_ID_ALL_ON);
-                ClusterRunner runner = new ClusterRunner(clusterMgr, 
+                ClusterRunner runner = new ClusterRunner(clusterMgr,
                                                          _cse.rsp,
                                                          behavior);
                 clusterFutures.add(clusterExec.submit(runner));
@@ -174,14 +179,14 @@ public class ScheduleManager
             // there should only be a single cluster in here, 
             // but it is not this method's responsibility to enforce that
             for (ClusterRunner runner : clusterRunners) {
-                runner.notifyNewSensor();
+                runner.notifySensorUpdate();
             }
         } else {
             Cluster cluster = clusterMgr.lookup(_cse.rsp);
             if (cluster == null) { return; }
             for (ClusterRunner runner : clusterRunners) {
                 if (runner.getClusterId().equals(cluster.id)) {
-                    runner.notifyNewSensor();
+                    runner.notifySensorUpdate();
                     break;
                 }
             }
@@ -226,7 +231,7 @@ public class ScheduleManager
         }
 
         // generate clusters as needed
-        if(!clusterRunners.isEmpty() && !clusterFutures.isEmpty()) {
+        if (!clusterRunners.isEmpty() && !clusterFutures.isEmpty()) {
             log.warn("bad threading is occuring with cluster runners {} and futures {}",
                      clusterRunners.size(), clusterFutures.size());
             clusterRunners.clear();
@@ -265,10 +270,10 @@ public class ScheduleManager
             runStatePublisher.notifyListeners(l -> l.onScheduleRunState(runState, summary));
         }
     }
-    
+
     protected void startClusters() {
         log.info("Starting {} clusters", clusterRunners.size());
-        for(ClusterRunner runner : clusterRunners) {
+        for (ClusterRunner runner : clusterRunners) {
             clusterFutures.add(clusterExec.submit(runner));
         }
     }

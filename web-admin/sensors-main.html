@@ -176,6 +176,9 @@
 
     function onSensorConnectionState(params) {
         handleConnectionState(params.device_id, params.connection_state);
+        if(params.connection_state === "CONNECTED") {
+            gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: params.device_id });
+        }
     }
 
     function onSensorReadState(params) {

@@ -51,7 +51,7 @@ public abstract class MqttMsgHandler extends Thread {
 
             if (!loggedOnce) {
                 log.warn("data handler queue is full. " +
-                         "messages will be dropped until space is available");
+                                 "messages will be dropped until space is available");
                 loggedOnce = true;
             }
         } else {

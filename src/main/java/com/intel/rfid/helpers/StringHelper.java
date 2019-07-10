@@ -34,7 +34,7 @@ public class StringHelper {
 
         return p;
     }
-    
+
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
     }

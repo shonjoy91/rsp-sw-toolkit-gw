@@ -717,7 +717,6 @@ public class InventoryManager
         if (cache.tags.size() > 0) {
             try (OutputStream os = Files.newOutputStream(CACHE_PATH)) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(os, cache);
-                log.info("wrote {}", CACHE_PATH);
             } catch (IOException e) {
                 log.error("failed persisting inventory {}", e.getMessage());
             }

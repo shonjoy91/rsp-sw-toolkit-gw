@@ -16,10 +16,10 @@ public class SensorConnectionStateNotification extends JsonNotification {
     public SensorConnectionStateNotification() {
         method = METHOD_NAME;
     }
-    
+
     public SensorConnectionStateNotification(SensorConnectionStateInfo _info) {
         this();
         params = _info;
     }
-    
+
 }

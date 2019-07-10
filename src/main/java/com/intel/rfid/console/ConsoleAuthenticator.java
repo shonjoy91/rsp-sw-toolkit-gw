@@ -23,7 +23,7 @@ public class ConsoleAuthenticator implements PasswordAuthenticator {
             return false;
         }
         return (_userId != null && _userId.equals(crd.userId)) &&
-               (_password != null && _password.equals(crd.password));
+                (_password != null && _password.equals(crd.password));
     }
 
 }

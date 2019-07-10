@@ -57,7 +57,8 @@ public class MqttDownstream extends Mqtt {
         super.onConnect();
         try {
             String deviceId = ConfigManager.instance.getGatewayDeviceId();
-            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(deviceId, GatewayStatusUpdateNotification.READY);
+            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(deviceId,
+                                                                                      GatewayStatusUpdateNotification.READY);
             publishGWStatus(mapper.writeValueAsBytes(gsu));
             log.info("Published GatewayStatusUpdateNotification.READY");
         } catch (Exception e) {
