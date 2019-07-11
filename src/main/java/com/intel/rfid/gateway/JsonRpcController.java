@@ -54,7 +54,6 @@ import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoResponse;
 import com.intel.rfid.api.upstream.InventorySummaryNotification;
 import com.intel.rfid.api.upstream.InventoryUnloadRequest;
-import com.intel.rfid.api.upstream.RemoveDeviceRequest;
 import com.intel.rfid.api.upstream.SchedulerGetRunStateRequest;
 import com.intel.rfid.api.upstream.SchedulerRunStateNotification;
 import com.intel.rfid.api.upstream.SchedulerRunStateResponse;
@@ -124,10 +123,6 @@ public class JsonRpcController
 
         void sendJsonNotification(JsonNotification _notification);
     }
-
-    public static final String CMD_OEM_GET_AVAILABLE_REGIONS = "oem_get_available_regions";
-    public static final String CMD_GW_GET_SENSOR_SW_REPO_VERSIONS = "gateway_get_sensor_software_repo_versions";
-
 
     public static final String SUBSCRIBE = "subscribe";
 
@@ -360,10 +355,6 @@ public class JsonRpcController
                     break;
                 }
 
-                case RemoveDeviceRequest.METHOD_NAME:
-                    handleRemoveDevice(rootNode, reqId);
-                    break;
-
                 case SchedulerGetRunStateRequest.METHOD_NAME:
                     sendResponse(new SchedulerRunStateResponse(reqId, scheduleMgr.getSummary()));
                     break;
@@ -379,12 +370,15 @@ public class JsonRpcController
                     sendResponse(new SensorGetDeviceIdsResponse(reqId, sensorDeviceIds));
                     break;
                 }
-                case SensorGetBasicInfoRequest.METHOD_NAME:
-                    handleSensorLocalCommand(rootNode, reqId, reqMethod);
-                    break;
-                case SensorForceAllDisconnectRequest.METHOD_NAME:
+                case SensorForceAllDisconnectRequest.METHOD_NAME: {
                     sensorMgr.disconnectAll();
                     sendOK(reqId, "OK");
+                    break;
+                }
+
+                case SensorGetBasicInfoRequest.METHOD_NAME:
+                case SensorRemoveRequest.METHOD_NAME:
+                    handleSensorLocalCommand(rootNode, reqId, reqMethod);
                     break;
 
                 case SensorGetBistResultsRequest.METHOD_NAME:
@@ -396,17 +390,15 @@ public class JsonRpcController
                 case SensorSetLedRequest.METHOD_NAME:
                 case SensorResetRequest.METHOD_NAME:
                 case SensorRebootRequest.METHOD_NAME:
-                case SensorRemoveRequest.METHOD_NAME:
                     handleSensorRoundTripCommand(rootNode, reqId, reqMethod);
                     break;
-
 
                 case SUBSCRIBE:
                     handleSubscription(rootNode, reqId);
                     break;
 
                 default:
-                    log.warn("unhandled websocket method: {}", reqMethod);
+                    log.warn("unhandled JsonRPC method: {}", reqMethod);
                     sendErr(reqId, JsonRpcError.Type.FUNCTION_NOT_SUPPORTED, reqMethod);
                     break;
             }
@@ -549,10 +541,6 @@ public class JsonRpcController
 
     }
 
-    protected void handleRemoveDevice(JsonNode _rootNode, String _reqId) throws IOException {
-        RemoveDeviceRequest req = mapper.treeToValue(_rootNode, RemoveDeviceRequest.class);
-    }
-
     protected void handleSensorLocalCommand(JsonNode _rootNode, String _reqId, String _reqMethod) {
 
         if (_rootNode.get("params") == null || _rootNode.get("params").get("device_id") == null) {
@@ -571,6 +559,14 @@ public class JsonRpcController
         switch (_reqMethod) {
             case SensorGetBasicInfoRequest.METHOD_NAME: {
                 sendResponse(new SensorGetBasicInfoResponse(_reqId, sensor.getBasicInfo()));
+                break;
+            }
+            case SensorRemoveRequest.METHOD_NAME: {
+                SensorManager.RemoveResult result = sensorMgr.remove(sensor);
+                if (!result.success) {
+                    sendErr(_reqId, JsonRpcError.Type.WRONG_STATE, result.message);
+                }
+                sendOK(_reqId, result.message);
                 break;
             }
         }
@@ -592,7 +588,6 @@ public class JsonRpcController
             return;
         }
 
-        // TODO: this has to return the corresponding request id of the original, not the sensor response
         ResponseHandler handler = null;
         switch (_reqMethod) {
             case SensorGetBistResultsRequest.METHOD_NAME:
@@ -615,14 +610,6 @@ public class JsonRpcController
                 break;
             case SensorRebootRequest.METHOD_NAME:
                 handler = sensor.reboot();
-                break;
-            case SensorRemoveRequest.METHOD_NAME:
-                SensorManager.RemoveResult result = sensorMgr.remove(sensor);
-                JsonRpcError.Type type = JsonRpcError.Type.NO_ERROR;
-                if (!result.success) {
-                    type = JsonRpcError.Type.WRONG_STATE;
-                }
-                handler = new ResponseHandler(sensor.getDeviceId(), type, result.message);
                 break;
             case SensorSetLedRequest.METHOD_NAME:
                 try {

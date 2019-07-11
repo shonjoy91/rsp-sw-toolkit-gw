@@ -15,6 +15,7 @@ import com.intel.rfid.api.sensor.AlertSeverity;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
 import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
+import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.api.upstream.InventoryEventNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.downstream.DownstreamManager;
@@ -120,6 +121,10 @@ public class UpstreamManager
 
     public void send(GatewayHeartbeatNotification _gwhb) {
         mqttUpstream.publishEvent(_gwhb);
+    }
+
+    public void send(GatewayStatusUpdateNotification _not) {
+        mqttUpstream.publishAlert(_not);
     }
 
     @Override

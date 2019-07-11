@@ -5,12 +5,6 @@
 package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonNotification;
-import com.intel.rfid.api.data.InventorySummary;
-import com.intel.rfid.schedule.SchedulerSummary;
-import com.intel.rfid.sensor.SensorStateSummary;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class GatewayHeartbeatNotification extends JsonNotification {
 
@@ -18,6 +12,12 @@ public class GatewayHeartbeatNotification extends JsonNotification {
 
     public GatewayHeartbeatNotification() {
         method = METHOD_NAME;
+    }
+
+    public GatewayHeartbeatNotification(String _deviceId) {
+        this();
+        params.sent_on = System.currentTimeMillis();
+        params.device_id = _deviceId;
     }
 
     public Params params = new Params();

@@ -6,6 +6,7 @@ package com.intel.rfid.downstream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.JsonNotification;
 import com.intel.rfid.api.JsonRequest;
 import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.api.gpio.GPIOConnectRequest;
@@ -15,7 +16,6 @@ import com.intel.rfid.api.sensor.ConnectResponse;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.exception.GatewayException;
-import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.gpio.GPIODevice;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
@@ -116,15 +116,13 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
                  mapper.writeValueAsString(_rsp.result));
     }
 
-    public void sendGWStatus(String _status) {
-        GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(ConfigManager.instance.getGatewayDeviceId(),
-                                                                                  _status);
+    public void send(GatewayStatusUpdateNotification _not) {
         try {
-            mqttDownstream.publishGWStatus(mapper.writeValueAsBytes(gsu));
-            log.info("Published GatewayStatusUpdate {}", _status);
+            mqttDownstream.publishGWStatus(mapper.writeValueAsBytes(_not));
+            log.info("Published GatewayStatusUpdate {}", _not);
         } catch (GatewayException | JsonProcessingException _e) {
             log.error("failed to send gateway status update {} {}",
-                      _status, _e.getMessage());
+                      _not.params.status, _e.getMessage());
         }
     }
 
@@ -323,6 +321,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
 
     }
 
+    @Deprecated
     public void show(PrettyPrinter _out) {
 
         _out.line("JmDNS Service started: " + jmDNSService.isStarted());

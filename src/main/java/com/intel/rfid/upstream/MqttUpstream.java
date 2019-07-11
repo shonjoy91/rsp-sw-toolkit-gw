@@ -6,8 +6,10 @@ package com.intel.rfid.upstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.MqttStatus;
+import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.gateway.GatewayStatus;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.mqtt.Mqtt;
@@ -44,6 +46,20 @@ public class MqttUpstream extends Mqtt {
     public interface Dispatch {
         void onMessage(final String _topic, final MqttMessage _msg);
     }
+
+    protected void onConnect() {
+        super.onConnect();
+        try {
+            String deviceId = ConfigManager.instance.getGatewayDeviceId();
+            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(deviceId,
+                                                                                      GatewayStatus.GATEWAY_STARTED);
+            publishAlert(mapper.writeValueAsBytes(gsu));
+            log.info("Published {}", GatewayStatus.GATEWAY_STARTED);
+        } catch (Exception e) {
+            log.warn("Error publishing {}", GatewayStatus.GATEWAY_STARTED.label, e);
+        }
+    }
+
 
     @Override
     public void messageArrived(final String _topic, final MqttMessage _msg) throws Exception {

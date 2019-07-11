@@ -4,7 +4,6 @@
  */
 package com.intel.rfid.gateway;
 
-import com.intel.rfid.api.data.InventorySummary;
 import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
 import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
@@ -152,7 +151,10 @@ public class Gateway implements CLICommandBuilder {
             Thread.currentThread().interrupt();
         }
 
-        downstreamMgr.sendGWStatus(GatewayStatusUpdateNotification.SHUTTING_DOWN);
+        GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(ConfigManager.instance.getGatewayDeviceId(),
+                                                                                  GatewayStatus.GATEWAY_SHUTTING_DOWN);
+        downstreamMgr.send(gsu);
+        upstreamMgr.send(gsu);
 
         endPointMgr.stop();
         scheduleMgr.stop();
@@ -190,10 +192,7 @@ public class Gateway implements CLICommandBuilder {
 
 
     private void heartbeatTask() {
-        GatewayHeartbeatNotification hb = new GatewayHeartbeatNotification();
-        ConfigManager cfgMgr = ConfigManager.instance;
-        hb.params.sent_on = System.currentTimeMillis();
-        hb.params.device_id = cfgMgr.getGatewayDeviceId();
+        GatewayHeartbeatNotification hb = new GatewayHeartbeatNotification(ConfigManager.instance.getGatewayDeviceId());
         upstreamMgr.send(hb);
     }
 

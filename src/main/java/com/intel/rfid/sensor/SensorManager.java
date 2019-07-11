@@ -24,6 +24,7 @@ import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.gateway.ConfigManager;
 import com.intel.rfid.gateway.Env;
+import com.intel.rfid.gateway.GatewayStatus;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
@@ -318,7 +319,9 @@ public class SensorManager {
     // provision token configuration change requiring sensors to re-authenticate 
     public void disconnectAll() {
         if (downstreamMgr != null) {
-            downstreamMgr.sendGWStatus(GatewayStatusUpdateNotification.SHUTTING_DOWN);
+            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(ConfigManager.instance.getGatewayDeviceId(),
+                                                                                      GatewayStatus.GATEWAY_SHUTTING_DOWN);
+            downstreamMgr.send(gsu);
         }
 
         // mark all sensors as disconnected

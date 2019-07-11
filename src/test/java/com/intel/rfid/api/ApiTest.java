@@ -3,15 +3,20 @@ package com.intel.rfid.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.intel.rfid.api.data.ClusterConfig;
+import com.intel.rfid.api.data.DeviceAlertDetails;
+import com.intel.rfid.api.data.DeviceAlertType;
 import com.intel.rfid.api.data.FilterPattern;
 import com.intel.rfid.api.data.InventorySummary;
 import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.api.data.OemCfgUpdateInfo;
 import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.data.SensorConnectionStateInfo;
+import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
 import com.intel.rfid.api.data.TagInfo;
 import com.intel.rfid.api.sensor.BISTResults;
 import com.intel.rfid.api.sensor.Behavior;
+import com.intel.rfid.api.sensor.DeviceAlertNotification;
+import com.intel.rfid.api.sensor.GatewayVersions;
 import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.LEDState;
@@ -34,6 +39,15 @@ import com.intel.rfid.api.upstream.ClusterSetConfigRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
+import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
+import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsResponse;
+import com.intel.rfid.api.upstream.GatewayGetSensorSWRepoVersionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetSensorSwRepoVersionsResponse;
+import com.intel.rfid.api.upstream.GatewayGetVersionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetVersionsResponse;
+import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
+import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoRequest;
@@ -77,6 +91,7 @@ import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.cluster.MockClusterManager;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.gateway.Env;
+import com.intel.rfid.gateway.GatewayStatus;
 import com.intel.rfid.gateway.MockGateway;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.Jackson;
@@ -160,50 +175,75 @@ public class ApiTest {
         outDir = Paths.get("/tmp/api/upstream");
         Env.ensurePath(outDir);
 
-        persistJsonApi("_ClusterAllSeq_Ports_1", new BehaviorGetRequest("ClusterAllSeq_Ports_1"));
-        persistJsonApi("_ClusterAllSeq_Ports_1", new BehaviorDeleteRequest("ClusterAllSeq_Ports_1"));
+        JsonRequest req;
+        JsonResponse rsp;
+        JsonNotification not;
 
-        BehaviorPutRequest behPutReq = new BehaviorPutRequest(new Behavior());
-        persistJsonApi("_DEFAULT", behPutReq);
-
-        BehaviorGetAllRequest behGetAllReq = new BehaviorGetAllRequest();
-        persistJsonApi(behGetAllReq);
-        BehaviorResponse behRsp = new BehaviorResponse(behGetAllReq.id,
-                                                       new ArrayList<>(BehaviorConfig.available().values()));
-        persistJsonApi(behRsp);
-
-        persistJsonApi(new ClusterGetConfigRequest());
+        persistJsonApi(new BehaviorDeleteRequest("ExampleBehaviorID"));
+        persistJsonApi(new BehaviorGetRequest("ExampleBehaviorID"));
+        req = new BehaviorGetAllRequest();
+        persistJsonApi(req);
+        rsp = new BehaviorResponse(req.id, new ArrayList<>(BehaviorConfig.available().values()));
+        persistJsonApi(rsp);
+        persistJsonApi(new BehaviorPutRequest(new Behavior()));
 
         persistJsonApi(new ClusterDeleteConfigRequest());
+        persistJsonApi(new ClusterGetConfigRequest());
+        req = new ClusterGetTemplateRequest();
+        persistJsonApi(req);
+        persistJsonApi(new ClusterGetTemplateResponse(req.id, clusterMgr.getTemplate()));
 
-        ClusterGetTemplateRequest clusterGetTemplateReq = new ClusterGetTemplateRequest();
-        persistJsonApi(clusterGetTemplateReq);
-        persistJsonApi(new ClusterGetTemplateResponse(clusterGetTemplateReq.id, clusterMgr.getTemplate()));
+        req = new ClusterSetConfigRequest(retailUseCaseClusterCfg);
+        persistJsonApi(req);
 
-        ClusterSetConfigRequest clusterSetCfgReqRetailUseCase = new ClusterSetConfigRequest(retailUseCaseClusterCfg);
-        persistJsonApi("_use_case_retail", clusterSetCfgReqRetailUseCase);
+        ClusterConfigResponse clusterCfgRsp = new ClusterConfigResponse(req.id, retailUseCaseClusterCfg);
+        persistJsonApi(clusterCfgRsp);
 
-        ClusterConfigResponse clusterCfgRspRetailUseCase = new ClusterConfigResponse(clusterSetCfgReqRetailUseCase.id,
-                                                                                     retailUseCaseClusterCfg);
-        persistJsonApi("_use_case_retail", clusterCfgRspRetailUseCase);
 
-        DownstreamGetMqttStatusRequest downstreamGetMqttStatusReq = new DownstreamGetMqttStatusRequest();
-        persistJsonApi(downstreamGetMqttStatusReq);
-
-        GpioClearMappingsRequest gpioClearMappingsRequest = new GpioClearMappingsRequest();
-        persistJsonApi(gpioClearMappingsRequest);
-
-        GpioSetMappingRequest gpioSetMappingRequest = new GpioSetMappingRequest();
-        persistJsonApi(gpioSetMappingRequest);
-
+        req = new DownstreamGetMqttStatusRequest();
+        persistJsonApi(req);
         MqttStatus mqttStatus = gateway.getMockDownstreamManager().getMqttStatus();
-        DownstreamGetMqttStatusResponse downstreamGetMqttStatusRsp = new DownstreamGetMqttStatusResponse(
-                downstreamGetMqttStatusReq.id,
+        rsp = new DownstreamGetMqttStatusResponse(
+                req.id,
                 mqttStatus);
-        persistJsonApi(downstreamGetMqttStatusRsp);
+        persistJsonApi(rsp);
 
-        DownstreamMqttStatusNotification downstreamGetMqttStatusNot = new DownstreamMqttStatusNotification(mqttStatus);
-        persistJsonApi(downstreamGetMqttStatusNot);
+        not = new DownstreamMqttStatusNotification(mqttStatus);
+        persistJsonApi(not);
+
+        DeviceAlertNotification alertNot = new DeviceAlertNotification();
+        alertNot.params.device_id = "some.gw.deviceid";
+        alertNot.params.alert_description = DeviceAlertType.HighMemoryUsage.toString();
+        alertNot.params.alert_number = DeviceAlertType.HighMemoryUsage.id;
+        alertNot.params.sent_on = System.currentTimeMillis();
+        persistJsonApi(new GatewayDeviceAlertNotification(alertNot));
+
+        req = new GatewayGetOEMAvailableRegionsRequest();
+        persistJsonApi(req);
+        persistJsonApi(new GatewayGetOEMAvailableRegionsResponse(req.id, GeoRegion.asStrings()));
+
+        req = new GatewayGetSensorSWRepoVersionsRequest();
+        persistJsonApi(req);
+        SensorSoftwareRepoVersions ssrv = new SensorSoftwareRepoVersions();
+        ssrv.app_version = "19.3.7.11";
+        ssrv.platform_support_version = "19.2.3.5";
+        ssrv.pkg_manifest_version = "19.3.8.11";
+        ssrv.uboot_version = "2018.11.3";
+        ssrv.linux_version = "linux-5.1";
+        persistJsonApi(new GatewayGetSensorSwRepoVersionsResponse(req.id, ssrv));
+
+        req = new GatewayGetVersionsRequest();
+        persistJsonApi(req);
+        GatewayVersions gwv = new GatewayVersions();
+        gwv.software_version = "19.3.7.14";
+        persistJsonApi(req.id, new GatewayGetVersionsResponse(req.id, gwv));
+
+        persistJsonApi(new GatewayHeartbeatNotification("device.host.name"));
+        persistJsonApi(new GatewayStatusUpdateNotification("device.host.name", GatewayStatus.GATEWAY_STARTED));
+        
+        persistJsonApi(new GpioClearMappingsRequest());
+        persistJsonApi(new GpioSetMappingRequest());
+
 
         UpstreamGetMqttStatusRequest upstreamGetMqttStatusReq = new UpstreamGetMqttStatusRequest();
         persistJsonApi(upstreamGetMqttStatusReq);

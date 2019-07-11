@@ -9,6 +9,7 @@ import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.gateway.GatewayStatus;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.mqtt.Mqtt;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -58,11 +59,11 @@ public class MqttDownstream extends Mqtt {
         try {
             String deviceId = ConfigManager.instance.getGatewayDeviceId();
             GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(deviceId,
-                                                                                      GatewayStatusUpdateNotification.READY);
+                                                                                      GatewayStatus.GATEWAY_STARTED);
             publishGWStatus(mapper.writeValueAsBytes(gsu));
-            log.info("Published GatewayStatusUpdateNotification.READY");
+            log.info("Published {}", GatewayStatus.GATEWAY_STARTED);
         } catch (Exception e) {
-            log.warn("Error publish GatewayStatusUpdateNotification.READY:", e);
+            log.warn("Error publishing {}", GatewayStatus.GATEWAY_STARTED.label, e);
         }
     }
 
@@ -113,6 +114,7 @@ public class MqttDownstream extends Mqtt {
         MqttStatus summary = super.getSummary();
         summary.publishes.add(COMMAND_TOPIC);
         summary.publishes.add(GW_STATUS_TOPIC);
+        
         return summary;
     }
 
