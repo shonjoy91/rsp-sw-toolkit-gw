@@ -40,8 +40,8 @@ import com.intel.rfid.api.upstream.ClusterSetConfigRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
-import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsResponse;
+import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsResponse;
 import com.intel.rfid.api.upstream.GatewayGetSensorSWRepoVersionsRequest;
 import com.intel.rfid.api.upstream.GatewayGetSensorSwRepoVersionsResponse;
 import com.intel.rfid.api.upstream.GatewayGetVersionsRequest;
@@ -315,7 +315,7 @@ public class JsonRpcController
             switch (reqMethod) {
 
 
-                case GatewayGetOEMAvailableRegionsRequest.METHOD_NAME:
+                case GatewayGetAllGeoRegionsRequest.METHOD_NAME:
                 case GatewayGetSensorSWRepoVersionsRequest.METHOD_NAME:
                 case GatewayGetVersionsRequest.METHOD_NAME:
                     handleGatewayCommand(reqId, reqMethod);
@@ -468,8 +468,8 @@ public class JsonRpcController
     protected void handleGatewayCommand(String _reqId, String _reqMethod) {
 
         switch (_reqMethod) {
-            case GatewayGetOEMAvailableRegionsRequest.METHOD_NAME: {
-                sendResponse(new GatewayGetOEMAvailableRegionsResponse(_reqId, GeoRegion.asStrings()));
+            case GatewayGetAllGeoRegionsRequest.METHOD_NAME: {
+                sendResponse(new GatewayGetAllGeoRegionsResponse(_reqId, GeoRegion.asStrings()));
                 break;
             }
             case GatewayGetSensorSWRepoVersionsRequest.METHOD_NAME: {

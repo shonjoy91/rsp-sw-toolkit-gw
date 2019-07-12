@@ -1,7 +1,7 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "18",
-  "result" : {
+  "method" : "scheduler_run_state",
+  "params" : {
     "run_state" : "FROM_CONFIG",
     "available_states" : [ "INACTIVE", "ALL_ON", "ALL_SEQUENCED", "FROM_CONFIG" ],
     "clusters" : [ {

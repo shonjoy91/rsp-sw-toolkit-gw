@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "21",
+  "id" : "20",
   "result" : {
     "device_id" : "RSP-150000",
     "connection_state" : "DISCONNECTED",

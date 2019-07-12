@@ -23,7 +23,7 @@
             clearAllData();
             gwSocket.sendJsonRequest("scheduler_set_run_state", {run_state: "INACTIVE"});
             gwSocket.sendJsonRequest("gateway_get_sensor_sw_repo_versions");
-            gwSocket.sendJsonRequest("gateway_get_oem_available_regions");
+            gwSocket.sendJsonRequest("gateway_get_all_geo_regions");
             gwSocket.sendJsonRequest("sensor_get_device_ids");
         }
     }

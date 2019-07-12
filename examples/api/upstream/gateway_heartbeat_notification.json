@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "gateway_heartbeat",
+  "params" : {
+    "sent_on" : 1562969407702,
+    "device_id" : "device.host.name"
+  }
+}

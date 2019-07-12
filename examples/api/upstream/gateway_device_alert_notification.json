@@ -1,0 +1,14 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "device_alert",
+  "params" : {
+    "sent_on" : 1562969407680,
+    "device_id" : "some.gw.deviceid",
+    "gateway_id" : null,
+    "facilities" : [ ],
+    "alert_number" : 104,
+    "alert_description" : "HighMemoryUsage",
+    "severity" : null,
+    "optional" : { }
+  }
+}

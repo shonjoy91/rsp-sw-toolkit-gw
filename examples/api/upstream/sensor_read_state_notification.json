@@ -1,0 +1,10 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "sensor_read_state_notification",
+  "params" : {
+    "device_id" : "RSP-150000",
+    "previous_state" : "PEND_START",
+    "current_state" : "STARTED",
+    "behavior_id" : "BehaviorId"
+  }
+}

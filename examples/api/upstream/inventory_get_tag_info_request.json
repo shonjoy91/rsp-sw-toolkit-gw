@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "12",
+  "id" : "14",
   "method" : "inventory_get_tag_info",
   "params" : {
     "filter_pattern" : "*"

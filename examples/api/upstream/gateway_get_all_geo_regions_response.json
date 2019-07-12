@@ -1,0 +1,5 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "9",
+  "result" : [ "AUSTRALIA", "BRAZIL", "CHINA", "ETSI", "ETSI_UPPER", "HONG_KONG", "INDIA", "INDONESIA", "JAPAN", "KOREA", "MALAYSIA", "NEW_ZEALAND", "RUSSIA", "SINGAPORE", "TAIWAN", "THAILAND", "USA", "VIETNAM" ]
+}

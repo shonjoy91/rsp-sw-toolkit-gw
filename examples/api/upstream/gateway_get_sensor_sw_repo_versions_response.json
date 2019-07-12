@@ -1,0 +1,11 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "10",
+  "result" : {
+    "app_version" : "19.3.7.11",
+    "platform_support_version" : "19.2.3.5",
+    "pkg_manifest_version" : "19.3.8.11",
+    "uboot_version" : "2018.11.3",
+    "linux_version" : "linux-5.1"
+  }
+}

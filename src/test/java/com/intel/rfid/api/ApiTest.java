@@ -3,14 +3,15 @@ package com.intel.rfid.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.intel.rfid.api.data.ClusterConfig;
-import com.intel.rfid.api.data.DeviceAlertDetails;
 import com.intel.rfid.api.data.DeviceAlertType;
 import com.intel.rfid.api.data.FilterPattern;
 import com.intel.rfid.api.data.InventorySummary;
 import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.api.data.OemCfgUpdateInfo;
+import com.intel.rfid.api.data.ReadState;
 import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.data.SensorConnectionStateInfo;
+import com.intel.rfid.api.data.SensorReadStateInfo;
 import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
 import com.intel.rfid.api.data.TagInfo;
 import com.intel.rfid.api.sensor.BISTResults;
@@ -40,8 +41,8 @@ import com.intel.rfid.api.upstream.DownstreamGetMqttStatusRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
 import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
-import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetOEMAvailableRegionsResponse;
+import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsRequest;
+import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsResponse;
 import com.intel.rfid.api.upstream.GatewayGetSensorSWRepoVersionsRequest;
 import com.intel.rfid.api.upstream.GatewayGetSensorSwRepoVersionsResponse;
 import com.intel.rfid.api.upstream.GatewayGetVersionsRequest;
@@ -50,6 +51,7 @@ import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
 import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
+import com.intel.rfid.api.upstream.InventoryEventNotification;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoResponse;
 import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoRequest;
@@ -57,9 +59,8 @@ import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoResponse;
 import com.intel.rfid.api.upstream.InventoryReadRateNotification;
 import com.intel.rfid.api.upstream.InventorySummaryNotification;
 import com.intel.rfid.api.upstream.InventoryUnloadRequest;
-import com.intel.rfid.api.upstream.RemoveDeviceRequest;
-import com.intel.rfid.api.upstream.RemoveDeviceResponse;
 import com.intel.rfid.api.upstream.SchedulerGetRunStateRequest;
+import com.intel.rfid.api.upstream.SchedulerRunStateNotification;
 import com.intel.rfid.api.upstream.SchedulerRunStateResponse;
 import com.intel.rfid.api.upstream.SchedulerSetRunStateRequest;
 import com.intel.rfid.api.upstream.SensorConfigNotification;
@@ -77,6 +78,7 @@ import com.intel.rfid.api.upstream.SensorGetStateRequest;
 import com.intel.rfid.api.upstream.SensorGetStateResponse;
 import com.intel.rfid.api.upstream.SensorGetVersionsRequest;
 import com.intel.rfid.api.upstream.SensorGetVersionsResponse;
+import com.intel.rfid.api.upstream.SensorReadStateNotification;
 import com.intel.rfid.api.upstream.SensorRebootRequest;
 import com.intel.rfid.api.upstream.SensorRemoveRequest;
 import com.intel.rfid.api.upstream.SensorResetRequest;
@@ -96,10 +98,12 @@ import com.intel.rfid.gateway.MockGateway;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.TestStore;
+import com.intel.rfid.inventory.InventoryManager;
 import com.intel.rfid.inventory.MockInventoryManager;
 import com.intel.rfid.schedule.MockScheduleManager;
 import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.sensor.MockSensorPlatform;
+import com.intel.rfid.upstream.UpstreamInventoryEventInfo;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -111,7 +115,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ApiTest {
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+
+public class ApiTest  implements InventoryManager.UpstreamEventListener {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -123,6 +129,12 @@ public class ApiTest {
         EnvHelper.afterTests();
     }
 
+    private List<UpstreamInventoryEventInfo> upstreamEvents = new ArrayList<>();
+
+    public void onUpstreamEvent(UpstreamInventoryEventInfo _uie) {
+        upstreamEvents.add(_uie);
+    }
+    
     ObjectMapper mapper = Jackson.getMapper();
     ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
     Path outDir;
@@ -144,7 +156,9 @@ public class ApiTest {
 
         gateway = new MockGateway();
         invMgr = gateway.getMockInventoryManager();
+        invMgr.addUpstreamEventListener(this);
         invMgr.unload();
+        
         schedMgr = gateway.getMockScheduleManager();
         clusterMgr = gateway.getMockClusterManager();
         sensorMgr = gateway.getMockSensorManager();
@@ -179,6 +193,7 @@ public class ApiTest {
         JsonResponse rsp;
         JsonNotification not;
 
+        // Behavior
         persistJsonApi(new BehaviorDeleteRequest("ExampleBehaviorID"));
         persistJsonApi(new BehaviorGetRequest("ExampleBehaviorID"));
         req = new BehaviorGetAllRequest();
@@ -187,6 +202,7 @@ public class ApiTest {
         persistJsonApi(rsp);
         persistJsonApi(new BehaviorPutRequest(new Behavior()));
 
+        // Cluster
         persistJsonApi(new ClusterDeleteConfigRequest());
         persistJsonApi(new ClusterGetConfigRequest());
         req = new ClusterGetTemplateRequest();
@@ -199,7 +215,7 @@ public class ApiTest {
         ClusterConfigResponse clusterCfgRsp = new ClusterConfigResponse(req.id, retailUseCaseClusterCfg);
         persistJsonApi(clusterCfgRsp);
 
-
+        // Downstream
         req = new DownstreamGetMqttStatusRequest();
         persistJsonApi(req);
         MqttStatus mqttStatus = gateway.getMockDownstreamManager().getMqttStatus();
@@ -211,6 +227,7 @@ public class ApiTest {
         not = new DownstreamMqttStatusNotification(mqttStatus);
         persistJsonApi(not);
 
+        // Gateway
         DeviceAlertNotification alertNot = new DeviceAlertNotification();
         alertNot.params.device_id = "some.gw.deviceid";
         alertNot.params.alert_description = DeviceAlertType.HighMemoryUsage.toString();
@@ -218,9 +235,9 @@ public class ApiTest {
         alertNot.params.sent_on = System.currentTimeMillis();
         persistJsonApi(new GatewayDeviceAlertNotification(alertNot));
 
-        req = new GatewayGetOEMAvailableRegionsRequest();
+        req = new GatewayGetAllGeoRegionsRequest();
         persistJsonApi(req);
-        persistJsonApi(new GatewayGetOEMAvailableRegionsResponse(req.id, GeoRegion.asStrings()));
+        persistJsonApi(new GatewayGetAllGeoRegionsResponse(req.id, GeoRegion.asStrings()));
 
         req = new GatewayGetSensorSWRepoVersionsRequest();
         persistJsonApi(req);
@@ -241,34 +258,21 @@ public class ApiTest {
         persistJsonApi(new GatewayHeartbeatNotification("device.host.name"));
         persistJsonApi(new GatewayStatusUpdateNotification("device.host.name", GatewayStatus.GATEWAY_STARTED));
         
+        // Gpio
         persistJsonApi(new GpioClearMappingsRequest());
         persistJsonApi(new GpioSetMappingRequest());
 
 
-        UpstreamGetMqttStatusRequest upstreamGetMqttStatusReq = new UpstreamGetMqttStatusRequest();
-        persistJsonApi(upstreamGetMqttStatusReq);
-
-        mqttStatus = gateway.getMockUpstreamManager().getMqttStatus();
-        UpstreamGetMqttStatusResponse upstreamGetMqttStatusRsp = new UpstreamGetMqttStatusResponse(
-                upstreamGetMqttStatusReq.id,
-                mqttStatus);
-        persistJsonApi(upstreamGetMqttStatusRsp);
-
-        UpstreamMqttStatusNotification upstreamGetMqttStatusNot = new UpstreamMqttStatusNotification(mqttStatus);
-        persistJsonApi(upstreamGetMqttStatusNot);
-
-
-        FilterPattern wildcard = new FilterPattern("*");
-        InventoryGetTagInfoRequest invGetTagInfoReq = new InventoryGetTagInfoRequest(wildcard);
-        persistJsonApi(invGetTagInfoReq);
-
-        InventoryDataNotification invDataNot = new InventoryDataNotification();
-
+        // Inventory
         long readTimeOrig = System.currentTimeMillis();
         TagRead tagRead01 = testStore.generateReadData(readTimeOrig);
         TagRead tagRead02 = testStore.generateReadData(readTimeOrig);
         TagRead tagRead03 = testStore.generateReadData(readTimeOrig);
 
+        InventoryDataNotification invDataNot = new InventoryDataNotification();
+
+        // uie extends InventoryEvent
+        upstreamEvents.clear();
 
         invDataNot.params.device_id = testStore.sensorBack01.getDeviceId();
         invDataNot.params.data.add(tagRead01);
@@ -276,6 +280,9 @@ public class ApiTest {
         invDataNot.params.data.add(tagRead03);
         invMgr.onInventoryData(invDataNot, testStore.sensorBack01);
 
+        assertThat(upstreamEvents.size()).isGreaterThan(0);
+        persistJsonApi(new InventoryEventNotification(upstreamEvents.get(0)));
+                
         readTimeOrig += 2000;
         tagRead01.last_read_on = readTimeOrig;
         tagRead02.last_read_on = readTimeOrig;
@@ -287,12 +294,14 @@ public class ApiTest {
         invDataNot.params.data.add(tagRead03);
         invMgr.onInventoryData(invDataNot, testStore.sensorFront01);
 
+        FilterPattern wildcard = new FilterPattern("*");
+        InventoryGetTagInfoRequest invGetTagInfoReq = new InventoryGetTagInfoRequest(wildcard);
+        persistJsonApi(invGetTagInfoReq);
 
         List<TagInfo> tagInfoList = new ArrayList<>();
         invMgr.getTagInfo(invGetTagInfoReq.params.filter_pattern, tagInfoList);
-        InventoryGetTagInfoResponse invGetTagInfoRsp = new InventoryGetTagInfoResponse(invGetTagInfoReq.id,
-                                                                                       tagInfoList);
-        persistJsonApi(invGetTagInfoRsp);
+        rsp = new InventoryGetTagInfoResponse(invGetTagInfoReq.id, tagInfoList);
+        persistJsonApi(rsp);
 
         InventoryGetTagStatsInfoRequest invGetTagStatsInfoReq = new InventoryGetTagStatsInfoRequest(wildcard);
         persistJsonApi(invGetTagStatsInfoReq);
@@ -312,44 +321,27 @@ public class ApiTest {
         InventoryUnloadRequest invUnloadReq = new InventoryUnloadRequest();
         persistJsonApi(invUnloadReq);
 
-        RemoveDeviceRequest remDeviceReq = new RemoveDeviceRequest(theSensor.getDeviceId());
-        persistJsonApi(remDeviceReq);
-        persistJsonApi(new RemoveDeviceResponse(remDeviceReq.id, theSensor.getDeviceId()));
 
-
+        // Scheduler
         persistJsonApi(new SchedulerGetRunStateRequest());
-
-        SchedulerSetRunStateRequest schedSetRunStateReq = new SchedulerSetRunStateRequest(ScheduleRunState.INACTIVE);
-        persistJsonApi("_INACTIVE", schedSetRunStateReq);
-
-        schedSetRunStateReq.generateId();
-        schedSetRunStateReq.params.run_state = ScheduleRunState.ALL_ON;
-        persistJsonApi("_ALL_ON", schedSetRunStateReq);
-
-        schedSetRunStateReq.generateId();
-        schedSetRunStateReq.params.run_state = ScheduleRunState.ALL_SEQUENCED;
-        persistJsonApi("_ALL_SEQUENCED", schedSetRunStateReq);
-
-        schedSetRunStateReq.generateId();
-        schedSetRunStateReq.params.run_state = ScheduleRunState.FROM_CONFIG;
-        persistJsonApi("_FROM_CONFIG", schedSetRunStateReq);
-
+        req = new SchedulerSetRunStateRequest(ScheduleRunState.FROM_CONFIG);
+        persistJsonApi(req);
         clusterMgr.loadConfig(retailUseCaseClusterCfg);
         schedMgr.setRunState(ScheduleRunState.FROM_CONFIG);
-        persistJsonApi(new SchedulerRunStateResponse(schedSetRunStateReq.id, schedMgr.getSummary()));
+        persistJsonApi(new SchedulerRunStateResponse(req.id, schedMgr.getSummary()));
+        persistJsonApi(new SchedulerRunStateNotification(schedMgr.getSummary()));
 
-
+        // Sensor
         persistJsonApi(new SensorConfigNotification(theSensor.getConfigInfo()));
-
         persistJsonApi(new SensorConnectionStateNotification(new SensorConnectionStateInfo(theSensor.getDeviceId(),
                                                                                            theSensor.getConnectionState())));
+        persistJsonApi(new SensorForceAllDisconnectRequest());
+        req = new SensorGetBasicInfoRequest(theSensor.getDeviceId());
+        persistJsonApi(req);
+        persistJsonApi(new SensorGetBasicInfoResponse(req.id, theSensor.getBasicInfo()));
 
-        SensorGetBasicInfoRequest sensorGetBasicInfoReq = new SensorGetBasicInfoRequest(theSensor.getDeviceId());
-        persistJsonApi(sensorGetBasicInfoReq);
-        persistJsonApi(new SensorGetBasicInfoResponse(sensorGetBasicInfoReq.id, theSensor.getBasicInfo()));
-
-        SensorGetBistResultsRequest sensorGetBistResultsReq = new SensorGetBistResultsRequest(theSensor.getDeviceId());
-        persistJsonApi(sensorGetBistResultsReq);
+        req = new SensorGetBistResultsRequest(theSensor.getDeviceId());
+        persistJsonApi(req);
 
         BISTResults bistResults = new BISTResults();
         bistResults.region = GeoRegion.USA;
@@ -368,37 +360,18 @@ public class ApiTest {
         rfPortStatus2.connected = false;
         bistResults.rf_port_statuses.add(rfPortStatus2);
 
-        persistJsonApi(new SensorGetBistResultsResponse(sensorGetBistResultsReq.id,
-                                                        bistResults));
+        persistJsonApi(new SensorGetBistResultsResponse(req.id, bistResults));
 
-        SensorGetDeviceIdsRequest sensorGetDeviceIdsReq = new SensorGetDeviceIdsRequest();
-        persistJsonApi(sensorGetDeviceIdsReq);
+        req = new SensorGetDeviceIdsRequest();
+        persistJsonApi(req);
         List<String> deviceIdList = new ArrayList<>();
         sensorMgr.getDeviceIds(deviceIdList);
-        persistJsonApi(new SensorGetDeviceIdsResponse(sensorGetDeviceIdsReq.id, deviceIdList));
+        persistJsonApi(new SensorGetDeviceIdsResponse(req.id, deviceIdList));
 
-        SensorGetGeoRegionRequest sensorGetGeoRegionReq = new SensorGetGeoRegionRequest();
-        persistJsonApi(sensorGetGeoRegionReq);
-        persistJsonApi(new SensorGetGeoRegionResponse(sensorGetGeoRegionReq.id, GeoRegion.USA));
+        req = new SensorGetGeoRegionRequest();
+        persistJsonApi(req);
+        persistJsonApi(new SensorGetGeoRegionResponse(req.id, GeoRegion.USA));
 
-        SensorSetGeoRegionRequest sensorSetGeoRegionReq = new SensorSetGeoRegionRequest(theSensor.getDeviceId(),
-                                                                                        GeoRegion.USA);
-        persistJsonApi(sensorSetGeoRegionReq);
-
-        persistJsonApi(new SensorForceAllDisconnectRequest());
-        persistJsonApi(new SensorRebootRequest());
-        persistJsonApi(new SensorRemoveRequest());
-        persistJsonApi(new SensorResetRequest());
-
-        OemCfgUpdateInfo updateInfo = new OemCfgUpdateInfo();
-        updateInfo.current_line_num = 120;
-        updateInfo.total_lines = 137;
-        updateInfo.device_id = theSensor.getDeviceId();
-        updateInfo.file = "USA.freq.plan.txt";
-        updateInfo.region = GeoRegion.USA;
-        updateInfo.sent_on = System.currentTimeMillis();
-        updateInfo.status = OemCfgUpdateInfo.Status.IN_PROGRESS;
-        persistJsonApi(new OemCfgUpdateNotification(updateInfo));
 
         SensorGetStateRequest sensorGetStateReq = new SensorGetStateRequest();
         persistJsonApi(sensorGetStateReq);
@@ -425,12 +398,39 @@ public class ApiTest {
         sensorSWVersions.uboot_version = "2019.04.20190426225448";
         persistJsonApi(new SensorGetVersionsResponse(sensorGetVersionsReq.id, sensorSWVersions));
 
-        SensorSetLedRequest sensorSetLedReq = new SensorSetLedRequest(theSensor.getDeviceId(), LEDState.Disabled);
-        persistJsonApi("_" + LEDState.Disabled.toString(), sensorSetLedReq);
-
+        persistJsonApi(new SensorReadStateNotification(new SensorReadStateInfo(theSensor.getDeviceId(),
+                                                                               ReadState.PEND_START,
+                                                                               ReadState.STARTED,
+                                                                               "BehaviorId")));
+        persistJsonApi(new SensorRebootRequest());
+        persistJsonApi(new SensorRemoveRequest());
+        persistJsonApi(new SensorResetRequest());
+        persistJsonApi(new SensorSetGeoRegionRequest(theSensor.getDeviceId(), GeoRegion.USA));
+        persistJsonApi(new SensorSetLedRequest(theSensor.getDeviceId(), LEDState.Disabled));
         persistJsonApi(new SensorStateSummaryNotification(sensorMgr.getSummary()));
-
         persistJsonApi(new SensorUpdateSoftwareRequest());
+
+        // This notification "goes" upstream but it is a pass through from the sensor API
+        OemCfgUpdateInfo updateInfo = new OemCfgUpdateInfo();
+        updateInfo.current_line_num = 120;
+        updateInfo.total_lines = 137;
+        updateInfo.device_id = theSensor.getDeviceId();
+        updateInfo.file = "USA.freq.plan.txt";
+        updateInfo.region = GeoRegion.USA;
+        updateInfo.sent_on = System.currentTimeMillis();
+        updateInfo.status = OemCfgUpdateInfo.Status.IN_PROGRESS;
+        persistJsonApi(new OemCfgUpdateNotification(updateInfo));
+
+        // Upstream
+        req = new UpstreamGetMqttStatusRequest();
+        persistJsonApi(req);
+
+        mqttStatus = gateway.getMockUpstreamManager().getMqttStatus();
+        rsp = new UpstreamGetMqttStatusResponse(
+                req.id,
+                mqttStatus);
+        persistJsonApi(rsp);
+        persistJsonApi(new UpstreamMqttStatusNotification(mqttStatus));
 
     }
 }

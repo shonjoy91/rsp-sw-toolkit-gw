@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "11",
+  "id" : "32",
   "result" : {
     "connection_state" : "DISCONNECTED",
     "broker_uri" : "tcp://tim-U18-VB.local:1883",

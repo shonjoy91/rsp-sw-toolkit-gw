@@ -1,0 +1,7 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "11",
+  "result" : {
+    "software_version" : "19.3.7.14"
+  }
+}

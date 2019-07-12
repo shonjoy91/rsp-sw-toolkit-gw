@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "29",
+  "id" : "28",
   "method" : "sensor_reset",
   "params" : {
     "device_id" : null

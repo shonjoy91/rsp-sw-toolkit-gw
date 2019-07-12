@@ -1,5 +1,5 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "9",
+  "id" : "12",
   "method" : "gpio_clear_mappings"
 }

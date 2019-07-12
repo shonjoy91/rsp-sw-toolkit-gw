@@ -2,7 +2,7 @@
   "jsonrpc" : "2.0",
   "method" : "oem_cfg_update_status",
   "params" : {
-    "sent_on" : 1559951010944,
+    "sent_on" : 1562969407877,
     "device_id" : "RSP-150000",
     "region" : "USA",
     "file" : "USA.freq.plan.txt",

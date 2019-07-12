@@ -9,6 +9,10 @@ import com.intel.rfid.api.data.InventoryEventItem;
 import com.intel.rfid.tag.Tag;
 import com.intel.rfid.tag.TagEvent;
 
+/**
+ * a convenience class to add Tag details without exposing 
+ * the Tag class in the API
+ */
 public class UpstreamInventoryEventInfo extends InventoryEventInfo {
 
     public void add(String _epc, String _tid, String _location, String _facilityId, TagEvent _event, long _lastSeen) {

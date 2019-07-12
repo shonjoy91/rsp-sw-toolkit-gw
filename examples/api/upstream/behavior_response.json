@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "3",
+  "id" : "2",
   "result" : [ {
     "id" : "ClusterAllOn_PORTS_1",
     "operation_mode" : "NonContinuous",

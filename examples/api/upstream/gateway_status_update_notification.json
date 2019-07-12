@@ -1,0 +1,9 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "gw_status_update",
+  "params" : {
+    "sent_on" : 1562969407704,
+    "device_id" : "device.host.name",
+    "status" : "ready"
+  }
+}

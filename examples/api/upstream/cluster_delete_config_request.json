@@ -1,5 +1,5 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "5",
+  "id" : "4",
   "method" : "cluster_delete_config"
 }

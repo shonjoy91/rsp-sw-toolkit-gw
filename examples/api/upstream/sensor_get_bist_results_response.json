@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "22",
+  "id" : "21",
   "result" : {
     "rf_module_error" : false,
     "rf_status_code" : 0,

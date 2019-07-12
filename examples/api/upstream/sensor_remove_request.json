@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "28",
+  "id" : "27",
   "method" : "sensor_remove",
   "params" : {
     "device_id" : null
