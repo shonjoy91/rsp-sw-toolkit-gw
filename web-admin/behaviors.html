@@ -325,7 +325,7 @@
     function deleteBehavior(behaviorId) {
         deleteBehaviorCurId = behaviorId;
 
-        var wrapper = prepareModel();
+        var wrapper = prepareModal();
 
         var btnOK = document.createElement("button");
         btnOK.classList.add("w3-button");
@@ -372,7 +372,7 @@
     function copyBehavior(behaviorId) {
         copyBehaviorCurId = behaviorId;
 
-        var wrapper = prepareModel();
+        var wrapper = prepareModal();
         
         var msg = document.createElement("div");
         msg.innerHTML = copyInstructions;
@@ -489,7 +489,7 @@
     }
 
     function initiateUpload() {
-        var wrapper = prepareModel();
+        var wrapper = prepareModal();
         var input = document.createElement("input");
         
         input.id = "uploadBehaviorInput";
@@ -550,7 +550,7 @@
         document.getElementById("modal_overlay").style.display = 'none';
     }
 
-    function prepareModel() {
+    function prepareModal() {
         var mc = document.getElementById("modal_content");
         while (mc.firstChild) {
             mc.removeChild(mc.firstChild);
@@ -565,7 +565,7 @@
     }
     
     function showError(msg) {
-        var wrapper = prepareModel();
+        var wrapper = prepareModal();
 
         var div = document.createElement("div");
         div.innerHTML = msg;

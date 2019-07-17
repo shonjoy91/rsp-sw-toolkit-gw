@@ -7,6 +7,7 @@ var pages = {
     disti_cfg: {label: "Distributor Config", ref: "sensors-disti.html", icon: icons.configuration},
     cluster_cfg: {label: "Cluster Config", ref: "cluster-config.html", icon: icons.clusters},
     behaviors: {label: "Behaviors", ref: "behaviors.html", icon: icons.configuration },
+    mobility_profile: {label: "Mobility Profile", ref: "mobility-profile.html", icon: icons.mobility },
     about: {label: "About", ref: "about.html", icon: icons.about }
 };
 

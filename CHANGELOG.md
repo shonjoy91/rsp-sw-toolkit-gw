@@ -1,4 +1,6 @@
-Build 2019 Q3 01 (version 19.3.7.11)
+Build 2019Q3-1 
+
+    (re) added gateway heartbeat on the Upstream alerts channel.
 
     added about page to the web-admin to show the gateway software version etc.
 

@@ -43,6 +43,7 @@ var icons = {
     disconnected: "fa fa-unlink",
     reading: "fa fa-rss",
     stopped: "fas fa-square",
+    mobility: "fas fa-chart-line",
     old_calendar: "fa fa-calendar",
 };
 

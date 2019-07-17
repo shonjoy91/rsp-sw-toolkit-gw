@@ -44,10 +44,10 @@
             case "sensor_get_basic_info":
                 onSensorBasicInfo(jsonRsp.result);
                 break;
-            case "oem_get_available_regions":
-                onOemAvailablRegions(jsonRsp.result);
+            case "gateway_get_all_geo_regions":
+                onAllGeoRegions(jsonRsp.result);
                 break;
-            case "gateway_get_sensor_software_repo_versions":
+            case "gateway_get_sensor_sw_repo_versions":
                 onRepoVersions(jsonRsp.result);
                 break;
             case "sensor_get_geo_region":
@@ -130,7 +130,7 @@
         document.getElementById("repo_platform_support").innerHTML = params.platform_support_version;
     }
 
-    function onOemAvailablRegions(params) {
+    function onAllGeoRegions(params) {
         var e = document.getElementById("regions_container");
         while (e.firstChild) {
             e.removeChild(e.firstChild);
@@ -379,8 +379,8 @@
 
     <div id="available_configuration" class="w3-row w3-padding w3-border w3-blue w3-large">
         <div class="col_1">Target Configuration</div>
-        <div class="col_2" id="repo_app_version">version pending</div>
-        <div class="col_3" id="repo_platform_support">version pending</div>
+        <div class="col_2" id="repo_app_version"><i class="fas fa-spinner fa-pulse"></i></div>
+        <div class="col_3" id="repo_platform_support"><i class="fas fa-spinner fa-pulse"></i></div>
         <div class="col_4 w3-hover-white" id="selected_region" style="cursor: default" onClick="toggleRegionView()">
             Select a region
         </div>

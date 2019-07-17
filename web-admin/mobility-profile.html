@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<title>RSP Gateway Behaviors</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/fontawesome/css/all.css">
+<link rel="stylesheet" type="text/css" href="/web-admin/styles.css"/>
+
+<script src="/web-admin/socket-support.js"></script>
+<script src="/web-admin/common.js"></script>
+
+<script type="text/javascript">
+    var currentPage = "mobility_profile";
+
+    var gwSocket = new GatewayWebSocket();
+    
+    function onSocketState(state) {
+        if (state === "open") {
+            gwSocket.sendJsonRequest("mobility_profile_get");
+        }
+    }
+
+    gwSocket.addStateListener(onSocketState);
+
+    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+        switch (jsonReq.method) {
+            case "mobility_profile_get":
+            case "mobility_profile_set":
+                handleMobilityProfile(jsonRsp.result);
+                break;
+        }
+    };
+
+    function handleMobilityProfile(behaviorList) {
+
+        // for (var i = 0; i < behaviorList.length; i++) {
+        //     var behavior = behaviorList[i];
+        //     allTheBehaviors[behavior.id] = behavior;
+        //     var containerId = behavior.id + "_container";
+        //     var containter = document.getElementById(containerId);
+        //     if (containter === null) {
+        //         containter = createBehaviorContainer(behavior, containerId);
+        //     } else {
+        //         align(behavior);
+        //     }
+        // }
+    }
+    
+
+    
+    function init() {
+        gwSocket.init();
+    }
+
+    function showInputModal(subject, prompt) {
+        document.getElementById("modal_subject").innerHTML = subject;
+        document.getElementById("modal_prompt").innerHTML = prompt;
+        document.getElementById("modal_overlay").style.display = 'block';
+    }
+
+
+    function closeInputModal() {
+        document.getElementById("modal_overlay").style.display = 'none';
+    }
+
+    function prepareModal() {
+        var mc = document.getElementById("modal_content");
+        while (mc.firstChild) {
+            mc.removeChild(mc.firstChild);
+        }
+
+        var wrapper = newParamWrapperElement("");
+        wrapper.classList.add("w3-container");
+        wrapper.classList.add("w3-padding");
+        mc.appendChild(wrapper);
+
+        return wrapper;
+    }
+    
+    function showError(msg) {
+        var wrapper = prepareModal();
+
+        var div = document.createElement("div");
+        div.innerHTML = msg;
+        div.classList.add("w3-large");
+        div.classList.add("w3-padding")
+        
+        wrapper.appendChild(div);
+
+        showInputModal("ERROR", "");
+    }
+
+</script>
+
+<style>
+    .fixed_header {
+        height: 120px;
+    }
+
+
+    .fixed_content {
+        margin-top: 120px;
+    }
+
+</style>
+<body onload="init()">
+
+<!-- Header -->
+<div class="fixed_header w3-black">
+    <script src="header.js"></script>
+    <div id="page_commands" class="w3-bar w3-blue w3-padding">
+        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
+            <i class="fa fa-upload"> </i> Upload From File
+        </div>
+    </div>
+</div>
+
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+        <div class="w3-bar w3-blue w3-large">
+            <div class="w3-bar-item" id="modal_subject"></div>
+            <div class="w3-bar-item" id="modal_prompt"></div>
+            <div class="w3-bar-item">
+                <button class="w3-button w3-display-topright" onclick='closeInputModal();'>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="modal_content"></div>
+    </div>
+</div>
+
+<div id="content_container" class="fixed_content">
+</div>
+
+</body>
+
+</html>

@@ -36,7 +36,7 @@
     };
 
     var stats_update;
-    
+
     // maps sensor id and epc to corresponding indexes;
     var colLookup = {};
 
@@ -52,7 +52,7 @@
         table.style.overflow = "auto";
         // establish sensor id columns for header row
         headerRow = table.rows[0];
-        
+
         for (i = 0; i < stats_update.source_aliases.length; i++) {
             id = stats_update.source_aliases[i];
             if (typeof colLookup[id] === 'undefined') {
@@ -82,21 +82,21 @@
             // skip the header row!!
             for (i = 1; i < table.rows.length; i++) {
                 // look up row by epc
-                if(table.rows[i].cells[0].innerHTML === epc) {
+                if (table.rows[i].cells[0].innerHTML === epc) {
                     row = table.rows[i];
                     break;
                 }
             }
 
-            if(row === null) {
+            if (row === null) {
                 // skip the header row!!
                 for (i = 1; i < table.rows.length; i++) {
-                    if(table.rows[i].cells[0].innerHTML > epc) {
+                    if (table.rows[i].cells[0].innerHTML > epc) {
                         break;
                     }
                 }
                 row = table.insertRow(i);
-    
+
                 for (var k = 0; k < table.rows[0].cells.length; k++) {
                     cell = row.insertCell(k);
                     cell.classList.add("w3-border-bottom");
@@ -107,9 +107,9 @@
             var statsList = stats_update.epc_map[epc];
             for (i = 0; i < statsList.length; i++) {
                 var stat = statsList[i];
-                for(var x = 0; x < row.cells.length; x++) {
-                    
-                    if(table.rows[0].cells[x].id === stat.source_alias) {
+                for (var x = 0; x < row.cells.length; x++) {
+
+                    if (table.rows[0].cells[x].id === stat.source_alias) {
                         cell = row.cells[x];
                         if (stat.is_location) {
                             cell.classList.add("w3-dark-grey");
@@ -141,37 +141,38 @@
 
         if (elapsed < t1) {
             if (mean > r1) {
-                color = "#FF0000";
+                color = "#00FF00";
             } else if (mean > r2) {
                 color = "#FFFF00";
             } else {
-                color = "#0000FF";
+                color = "#FF0000";
             }
         } else if (elapsed < t2) {
             if (mean > r1) {
-                color = "#CC0000";
+                color = "#00CC00";
             } else if (mean > r2) {
                 color = "#CCCC00";
             } else {
-                color = "#0000CC";
+                color = "#CC0000";
             }
         } else if (elapsed < t3) {
             if (mean > r1) {
-                color = "#990000";
+                color = "#009900";
             } else if (mean > r2) {
                 color = "#999900";
             } else {
-                color = "#000099";
+                color = "#990000";
             }
         } else {
             if (mean > r1) {
-                color = "#660000";
+                color = "#006600";
             } else if (mean > r2) {
                 color = "#666600";
             } else {
-                color = "#000066";
+                color = "#660000";
             }
         }
+
         return color;
     }
 
@@ -197,7 +198,7 @@
 
     function showLegendOnce() {
         var val = getCookie("tag_stats_shown");
-        if(val !== "true") {
+        if (val !== "true") {
             showLegend();
             setCookie("tag_stats_shown", "true");
         }
@@ -248,70 +249,86 @@
     <div class="w3-modal-content w3-animate-top w3-white">
         <div class="w3-bar">
             <div class="w3-bar-item w3-button w3-right" onclick='closeResultsModal();'>
-                    <i class="fa fa-times"></i>
+                <i class="fa fa-times"></i>
             </div>
         </div>
-        
+
         <table class="w3-table w3-bordered">
             <tr>
                 <th class="w3-center"><i class="fas fa-info-circle w3-xxxlarge"></i></th>
-                <td style="vertical-align: top">
-                    The tag statistics table shows the average signal strength (dBm)
-                    of the last 20 tag reads from each sensor/antenna
-                    that has seen the tag.
-                </td>
-            </tr>
-            <tr>
-                <th class="w3-center" style="vertical-align: baseline"><h3>Location</h3></th>
-                <td style="vertical-align: baseline">
-                    Cells with <span class="w3-gray w3-padding">&nbsp;grey&nbsp;</span> background indicate tag's current location
-                </td>
-            </tr>
-            <tr>
-                <th class="w3-center" style="vertical-align: baseline"><h3>Tag Read Quality</h3></th>
-                <td style="vertical-align: baseline">
-                    Hue indicates signal strength.
+                <td>
+                    The tag statistics table shows the average signal strength (RSSI in dBm) of the last 20 tag reads 
                     <br>
-                    Shade indicates time since last read.
+                    from each <strong>Sensor Antenna Port</strong> or <strong>Alias</strong> that has read the tag
                 </td>
             </tr>
             <tr>
-                <td colspan="2">
-
-                    <table class="w3-table">
+                <th class="w3-center" style="vertical-align: baseline"><h4>Location</h4></th>
+                <td>
+                    Cells with <span class="w3-gray w3-padding-small">&nbsp;<strong>GREY</strong>&nbsp;</span> background 
+                    indicate which <strong>Sensor Antenna Port</strong> or <strong>Alias</strong> has been computed as 
+                    reading with the best quality.
+                    <br>
+                    This is generally the strongest and most recent RSSI.
+                    (see <em><a href="mobility-profile.html">Mobility profile</a></em>)
+                </td>
+            </tr>
+            <tr>
+                <th class="w3-center" style="vertical-align: baseline"><h4>Quality</h4></th>
+                <td>
+                    <table class="w3-table w3-dark-gray">
                         <tr>
-                            <th style="width: 25%;">&nbsp;</th>
-                            <th style="width: 25%;">rssi > -50</th>
-                            <th style="width: 25%;">-50 > rssi > -70</th>
-                            <th style="width: 25%;">-70 > rssi</th>
+                            <th style="width: 25%;" class="w3-black" colspan="2" rowspan="2">Elapsed Time</th>
+                            <th style="width: 25%;" class="w3-dark-gray">
+                                <i class="fas fa-long-arrow-alt-left"></i>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                Stronger
+                            </th>
+                            <th style="width: 25%;" class="w3-center w3-dark-gray"></th>
+                            <th style="width: 25%;" class="w3-right-align w3-dark-gray">
+                                Weaker
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <i class="fas fa-long-arrow-alt-right"></i></th>
                         </tr>
                         <tr>
-                            <th>less than 01 minute</th>
+                            <td class="w3-dark-gray w3-center">rssi &gt; -50</td>
+                            <td class="w3-dark-gray w3-center">-50 &lt; rssi &gt; -70</td>
+                            <td class="w3-dark-gray w3-center">-70 &lt; rssi</td>
+                        </tr>
+
+                        <tr>
+                            <th class="w3-black">
+                                <i class="fas fa-long-arrow-alt-up"></i> Newer
+                            </th>
+                            <td class="w3-black w3-right-align">&lt; 01 min</td>
                             <td id="t0r0">&nbsp;</td>
                             <td id="t0r1">&nbsp;</td>
                             <td id="t0r2">&nbsp;</td>
                         </tr>
                         <tr>
-                            <th>less than 05 minutes</th>
+                            <th class="w3-black"></th>
+                            <td class="w3-black w3-right-align">&lt; 05 min</td>
                             <td id="t1r0">&nbsp;</td>
                             <td id="t1r1">&nbsp;</td>
                             <td id="t1r2">&nbsp;</td>
                         </tr>
                         <tr>
-                            <th>less than 15 minutes</th>
+                            <th class="w3-black"></th>
+                            <td class="w3-black w3-right-align">&lt; 15 min</td>
                             <td id="t2r0">&nbsp;</td>
                             <td id="t2r1">&nbsp;</td>
                             <td id="t2r2">&nbsp;</td>
                         </tr>
                         <tr>
-                            <th>more than 15 minutes</th>
+                            <th class="w3-black">
+                                <i class="fas fa-long-arrow-alt-down"></i> Older
+                            </th>
+                            <td class="w3-black w3-right-align">&gt; 15 min</td>
                             <td id="t3r0">&nbsp;</td>
                             <td id="t3r1">&nbsp;</td>
                             <td id="t3r2">&nbsp;</td>
                         </tr>
                     </table>
-
-
                 </td>
             </tr>
         </table>
