@@ -56,16 +56,18 @@ Storing output in tags_in_view_of_rsp_4
 
 ### Run the Simulator
 
-To simulate the presence of RSP's, execute the "rsp-sim.sh" script.  For help, execute the script with no arguments to see usage information.
+To simulate the presence of RSP's, execute the "rsp-sim.sh" script.
 
+- For help, execute the script with no arguments to see usage information.
 ```
 :~$ ./rsp-sim.sh 
 
 This script simulates the API messages between the specified number of
 Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - Gateway.
 
-Usage: rsp-sim.sh <count>
+Usage: rsp-sim.sh <count> [read_percent]
 where <count> is the number of RSP's to simulate.
+where [read_percent] is the optional percent (1-100) of tag population to be read per inventory_data packet (500 ms). default: 100
 
 This script depends on the mosquitto-clients package being installed.
 Run 'sudo apt install mosquitto-clients' to install.
@@ -73,11 +75,86 @@ Run 'sudo apt install mosquitto-clients' to install.
 NOTE: The Intel RSP SW Toolkit - Gateway must be running BEFORE
       attempting to execute this script.
 
+```
+
+- Simulate 5 RSPs reading all 100% of their tag population every 500 milliseconds
+```
 :~$ ./rsp-sim.sh 5
 Creating default rsp data...
 Press CTRL-C to disconnect.
 ```
 
+- Simulate 3 RSPs reading a random 25% of their tag population every 500 milliseconds
+```
+:~$ ./rsp-sim.sh 3 25
+Creating default rsp data...
+Press CTRL-C to disconnect.
+```
+
+### Additional Options
+Some additional simulator options can be set by setting them _BEFORE_ the script filename using the following bash syntax:
+```
+NO_COLOR=1 QUIET=1 QOS=2 ./rsp_sim.sh 3
+```
+#### Available options
+```
+NO_COLOR=1                  // Disable the use of terminal colors and formatting (default: 0)
+QUIET=1                     // Disable logging (default: 0)
+QOS=0 | QOS=1 | QOS=2       // Set the QOS (quality of service) to use when subscribing and poublishing MQTT messages (default: 1)
+CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (default: 127.0.0.1)
+```
+
+
+### Example Simulator Output
+```
+:~$ NO_COLOR=1 ./rsp-sim.sh 3 33
+requesting root certificate from http://127.0.0.1:8080/provision/root-ca-cert
+Creating default rsp data...
+RSP-150000 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
+[07/26/2019 12:34:06 PM] RSP-150000            --->> connect              
+[07/26/2019 12:34:06 PM] RSP-150000            --->> status_update        
+RSP-150001 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
+[07/26/2019 12:34:06 PM] RSP-150001            --->> connect              
+[07/26/2019 12:34:06 PM] RSP-150001            --->> status_update        
+RSP-150002 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
+[07/26/2019 12:34:06 PM] RSP-150002            --->> connect              
+[07/26/2019 12:34:06 PM] RSP-150002            --->> status_update        
+
+
+******************************************
+*     Connected to RSP Controller        *
+******************************************
+*                                        *
+*     Press CTRL-C to disconnect         *
+*                                        *
+******************************************
+
+
+[07/26/2019 12:34:06 PM] RSP-150000            --->> heartbeat            
+[07/26/2019 12:34:06 PM] RSP-150001            --->> heartbeat            
+[07/26/2019 12:34:06 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:06 PM] RSP-150002            --->> heartbeat            
+[07/26/2019 12:34:07 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:07 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:08 PM] RSP-150000 <<---  id: 57494 apply_behavior       // request
+[07/26/2019 12:34:08 PM] RSP-150000 id: 57494  --->> apply_behavior       // response
+[07/26/2019 12:34:08 PM] RSP-150001 <<---  id: 57495 apply_behavior       // request
+[07/26/2019 12:34:08 PM] RSP-150001 id: 57495  --->> apply_behavior       // response
+[07/26/2019 12:34:08 PM] RSP-150000            --->> inventory_complete   
+[07/26/2019 12:34:08 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:08 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:09 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:09 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:10 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:11 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:11 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:12 PM] RSP-150001            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:12 PM] RSP-150001            --->> inventory_complete   
+[07/26/2019 12:34:12 PM] RSP-150002 <<---  id: 57496 apply_behavior       // request
+[07/26/2019 12:34:12 PM] RSP-150002 id: 57496  --->> apply_behavior       // response
+[07/26/2019 12:34:12 PM] RSP-150002            --->> inventory_data       // 990 tags
+[07/26/2019 12:34:13 PM] RSP-150002            --->> inventory_data       // 990 tags
+```
 
 ## Use the Gateway Command Line Interface (CLI)
 

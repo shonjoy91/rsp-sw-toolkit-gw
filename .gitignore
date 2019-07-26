@@ -1,4 +1,10 @@
+# ide
+.idea
+
 # gradle stuff
 .gradle
 /build/
 
+# rsp-sim files
+rsp-sim/rsp_*
+rsp-sim/tags_in_view_of_rsp_*
