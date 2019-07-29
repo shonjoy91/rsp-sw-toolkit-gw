@@ -1,4 +1,4 @@
-# Gateway
+# RSP Controller
 
 The features and functionality included in this reference design are 
 intended to showcase the capabilities of the Intel® RFID Sensor Platform (Intel® RSP) 
@@ -6,14 +6,14 @@ by demonstrating the use of the API to collect and process RFID tag read informa
 
 ##### _THIS SOFTWARE IS NOT INTENDED TO BE A COMPLETE END-TO-END INVENTORY MANAGEMENT SOLUTION._  
 
-The Gateway is a Java application built with Gradle. As such, it can run on any OS that supports 
+The RSP Controller is a Java application built with Gradle. As such, it can run on any OS that supports 
 a Java Runtime Environment version 8 or greater. The following instructions will get you a copy 
 of the project up and running on your local machine for development and testing purposes.  
 
 #### Getting Started Windows
 
 Instructions for build and installation in a Windows environment can be found in the 
-[Installation & User's Guide](docs/338443-002_Intel-RSP-SW-Toolkit-Gateway.pdf)
+[Installation & User's Guide](docs/Intel-RSP-Controller_User_Guide.pdf)
 
 #### Getting Started Linux (recommended)
 The following instructions assume an Ubuntu 18.04 installation.
@@ -67,17 +67,16 @@ As the senor's connect, tthe gateway will schedule them to read RFID tags in seq
 ##### Monitor
 
 ###### --- Web Admin http://localhost:8080/web-admin/
-The gateway provides a web based administration interface for configuration and monitoring. 
-The home page is a dashboard presentint status of several components 
-of the gateway including the number of sensors connected and a summary
-of the number of tags being read.
+The RSP Controller provides a web based interface for configuration and monitoring. 
+The home page is a dashboard showing the status of several components in the RSP Controller
+including the number of sensors connected and a summary of the number of tags being read.
 
 ###### --- Command Line Interface
-The gateway provides a command line interface (CLI) for configuration and monitoring. 
+The RSP Controller provides a command line interface (CLI) for configuration and monitoring. 
 To view the supported commands and parameters, use the tab completion feature that is included.
 To view command help, enter the command and press enter.
 
-Connect to the gateway's CLI and explore as follows.
+Connect to the RSP Controller's CLI and explore as follows.
 ```bash
 ssh -p5222 gwconsole@localhost
 password: gwconsole
@@ -106,8 +105,8 @@ rfid-gw> inventory summary
 ```
 
 ###### --- MQTT
-Open a terminal window and subscribe to the gateway events topic in order to monitor 
-tag events as produced by the gateway.
+Open a terminal window and subscribe to the events topic in order to monitor the
+tag events produced by the RSP Controller.
 
 ```bash
 #-- monitor the upstream events topic
