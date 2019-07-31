@@ -4,7 +4,7 @@
  */
 package com.intel.rfid.console;
 
-import com.intel.rfid.gateway.Version;
+import com.intel.rfid.controller.Version;
 import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;

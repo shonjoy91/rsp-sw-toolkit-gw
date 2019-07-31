@@ -1,6 +1,6 @@
 package com.intel.rfid.cluster;
 
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class ClusterTestHelper {
         try {
             Path p = Paths.get(getTestResourceFile(_testConfig).getAbsolutePath());
             _clusterMgr.loadConfig(p);
-        } catch (IOException | GatewayException _e) {
+        } catch (IOException | RSPControllerException _e) {
             fail(_e.getMessage());
         }
     }

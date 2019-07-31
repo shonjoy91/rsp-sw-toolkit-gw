@@ -41,7 +41,7 @@ public class Publisher<T> {
     // the notifiers that are called often, since read contention is far
     // less likely.
     // It might also make sense to use this class in a Map keyed on topics,
-    // located in a central place (the gateway?) or passed to the manager 
+    // located in a central place (the controller?) or passed to the manager 
     // instances, so they can fire-and-forget messages
     // that other service need to act upon.
     private final Set<T> listeners = Collections.newSetFromMap(new WeakHashMap<>());

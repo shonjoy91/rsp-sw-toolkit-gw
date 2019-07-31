@@ -5,7 +5,7 @@
 package com.intel.rfid.helpers;
 
 import ch.qos.logback.classic.Level;
-import com.intel.rfid.gateway.Env;
+import com.intel.rfid.controller.Env;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -113,7 +113,7 @@ public class EnvHelper {
                    testResourceDirPath.toFile().isDirectory());
 
         // be sure to set the system property before referencing Env class
-        System.setProperty(Env.SYS_PROP_GW_HOME, testRunPath.toString());
+        System.setProperty(Env.SYS_PROP_HOME, testRunPath.toString());
 
         // this section actually creates the config and cache directories
         if (testRunPath.toFile().exists()) {

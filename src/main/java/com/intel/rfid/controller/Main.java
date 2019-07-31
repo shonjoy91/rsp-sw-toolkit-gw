@@ -2,7 +2,7 @@
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package com.intel.rfid.gateway;
+package com.intel.rfid.controller;
 
 import com.intel.rfid.console.ConsoleAuthenticator;
 import com.intel.rfid.console.ConsoleShellFactory;
@@ -20,26 +20,27 @@ import static org.apache.sshd.common.config.keys.KeyUtils.RSA_ALGORITHM;
 
 public class Main {
 
-    protected static final Logger log = LoggerFactory.getLogger(Gateway.class);
+    protected static final Logger log = LoggerFactory.getLogger(RSPController.class);
 
     static volatile boolean keepGoing = true;
 
     public static void main(String[] _args) {
+        // TODO: get this into a single string.
         log.info("--");
-        log.info("-- RFID Gateway ");
+        log.info("-- RSP Controller ");
         log.info("-- " + Version.asString());
         log.info("--");
-        log.info("-- Starting gateway services...");
+        log.info("-- Starting controller services...");
 
         System.out.println("--");
-        System.out.println("-- RFID Gateway ");
+        System.out.println("-- RSP Controller ");
         System.out.println("-- " + Version.asString());
         System.out.println("--");
-        System.out.print("-- Starting gateway services");
+        System.out.print("-- Starting controller services");
         TimeIndicator ti = new TimeIndicator();
         ti.start();
-        Gateway gateway = Gateway.build();
-        gateway.start();
+        RSPController rspController = RSPController.build();
+        rspController.start();
         ti.stop();
         System.out.println("--");
 
@@ -52,7 +53,7 @@ public class Main {
             hkp.setAlgorithm(RSA_ALGORITHM);
             sshd.setKeyPairProvider(hkp);
             sshd.setPasswordAuthenticator(new ConsoleAuthenticator());
-            sshd.setShellFactory(new ConsoleShellFactory(gateway));
+            sshd.setShellFactory(new ConsoleShellFactory(rspController));
             sshd.start();
         } catch (Exception e) {
             log.error("Problem starting sshd for remote console acccess:", e);
@@ -84,8 +85,8 @@ public class Main {
             }
         }
 
-        System.out.print("-- Stopping gateway services");
-        log.info("-- Stopping gateway services");
+        System.out.print("-- Stopping controller services");
+        log.info("-- Stopping controller services");
         ti.start();
 
         try {
@@ -95,7 +96,7 @@ public class Main {
             log.error("Problem stopping the SSHD server:", e);
         }
 
-        gateway.stop();
+        rspController.stop();
 
         ti.stop();
         System.out.println("-- goodbye!");

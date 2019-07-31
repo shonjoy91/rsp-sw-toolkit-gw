@@ -42,7 +42,7 @@ import com.intel.rfid.api.sensor.SetMotionEventRequest;
 import com.intel.rfid.api.sensor.ShutdownRequest;
 import com.intel.rfid.api.sensor.SoftwareUpdateRequest;
 import com.intel.rfid.api.sensor.StatusUpdateNotification;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.schedule.AtomicTimeMillis;
@@ -481,7 +481,7 @@ public class SensorPlatform
         try {
             sensorMgr.sendConnectResponse(_msg.getId(), deviceId, facilityId);
             changeConnectionState(Connection.State.CONNECTING, null);
-        } catch (IOException | GatewayException _e) {
+        } catch (IOException | RSPControllerException _e) {
             logRSP.error("error sending connect response", _e);
         }
     }

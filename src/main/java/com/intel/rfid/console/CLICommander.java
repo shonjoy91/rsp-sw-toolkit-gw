@@ -8,7 +8,7 @@ import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.cluster.ClusterManagerCommands;
 import com.intel.rfid.downstream.DownstreamCommands;
 import com.intel.rfid.downstream.DownstreamManager;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.gpio.GPIOCommands;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.PrettyPrinter;
@@ -38,7 +38,7 @@ public class CLICommander {
 
         void doAction(String _action,
                       ArgumentIterator _argIter,
-                      PrettyPrinter _out) throws GatewayException, IOException;
+                      PrettyPrinter _out) throws RSPControllerException, IOException;
 
         void usage(PrettyPrinter _out);
     }

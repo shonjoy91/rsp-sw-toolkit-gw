@@ -2,10 +2,10 @@
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package com.intel.rfid.gateway;
+package com.intel.rfid.controller;
 
-import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
-import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RSPControllerHeartbeatNotification;
+import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.console.CLICommandBuilder;
 import com.intel.rfid.console.CLICommander;
@@ -24,18 +24,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Gateway implements CLICommandBuilder {
+public class RSPController implements CLICommandBuilder {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
-    // Even though there is only one gateway object used in a running
+    // Even though there is only one controller object used in a running
     // project, this reather elaborate construction scheme is in
     // place to support unit testing by swapping in effective test
     // objects i.e. a SensorManager that uses simulated sensor software
-    public static Gateway build() {
-        Gateway gw = new Gateway();
-        gw.init();
-        return gw;
+    public static RSPController build() {
+        RSPController rspController = new RSPController();
+        rspController.init();
+        return rspController;
     }
 
     protected ClusterManager clusterMgr;
@@ -47,10 +47,10 @@ public class Gateway implements CLICommandBuilder {
     protected UpstreamManager upstreamMgr;
     protected EndPointManager endPointMgr;
 
-    protected Gateway() { }
+    protected RSPController() { }
 
     protected void init() {
-        log.info("Gateway {} software initializing", Version.asString());
+        log.info("RSP Controller {} software initializing", Version.asString());
 
         if (clusterMgr == null) {
             clusterMgr = new ClusterManager();
@@ -111,11 +111,11 @@ public class Gateway implements CLICommandBuilder {
         // to support exiting behavior
         scheduleMgr.addRunStateListener(inventoryMgr);
 
-        log.info("Gateway initialized");
+        log.info("RSP Controller initialized");
     }
 
     public void start() {
-        log.info("Gateway {} starting", Version.asString());
+        log.info("RSP Controller {} starting", Version.asString());
 
         clusterMgr.start();
         sensorMgr.start();
@@ -131,12 +131,12 @@ public class Gateway implements CLICommandBuilder {
         }
         scheduler.scheduleAtFixedRate(this::heartbeatTask, 30, 30, TimeUnit.SECONDS);
 
-        log.info("Gateway started");
+        log.info("RSP Controller started");
     }
 
     public void stop() {
         // Stop in opposite order of starting
-        log.info("Gateway stopping");
+        log.info("RSP Controller stopping");
 
         try {
             scheduler.shutdown();
@@ -151,8 +151,8 @@ public class Gateway implements CLICommandBuilder {
             Thread.currentThread().interrupt();
         }
 
-        GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(ConfigManager.instance.getGatewayDeviceId(),
-                                                                                  GatewayStatus.GATEWAY_SHUTTING_DOWN);
+        RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(ConfigManager.instance.getRSPControllerDeviceId(),
+                                                                                              RSPControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN);
         downstreamMgr.send(gsu);
         upstreamMgr.send(gsu);
 
@@ -172,7 +172,7 @@ public class Gateway implements CLICommandBuilder {
         sensorMgr.removeDeviceAlertListener(upstreamMgr);
         sensorMgr.removeConnectionStateListener(scheduleMgr);
 
-        log.info("Gateway stopped");
+        log.info("RSP Controller stopped");
     }
 
     @Override
@@ -192,7 +192,7 @@ public class Gateway implements CLICommandBuilder {
 
 
     private void heartbeatTask() {
-        GatewayHeartbeatNotification hb = new GatewayHeartbeatNotification(ConfigManager.instance.getGatewayDeviceId());
+        RSPControllerHeartbeatNotification hb = new RSPControllerHeartbeatNotification(ConfigManager.instance.getRSPControllerDeviceId());
         upstreamMgr.send(hb);
     }
 

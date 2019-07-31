@@ -2,7 +2,7 @@
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package com.intel.rfid.gateway;
+package com.intel.rfid.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,10 +22,10 @@ import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
 import com.intel.rfid.api.data.TagInfo;
 import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
-import com.intel.rfid.api.sensor.GatewayVersions;
 import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
+import com.intel.rfid.api.sensor.RSPControllerVersions;
 import com.intel.rfid.api.upstream.BehaviorDeleteRequest;
 import com.intel.rfid.api.upstream.BehaviorGetAllRequest;
 import com.intel.rfid.api.upstream.BehaviorGetRequest;
@@ -40,12 +40,6 @@ import com.intel.rfid.api.upstream.ClusterSetConfigRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
-import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsResponse;
-import com.intel.rfid.api.upstream.GatewayGetSensorSWRepoVersionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetSensorSwRepoVersionsResponse;
-import com.intel.rfid.api.upstream.GatewayGetVersionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetVersionsResponse;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoRequest;
@@ -54,6 +48,12 @@ import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoResponse;
 import com.intel.rfid.api.upstream.InventorySummaryNotification;
 import com.intel.rfid.api.upstream.InventoryUnloadRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsResponse;
+import com.intel.rfid.api.upstream.RSPControllerGetSensorSWRepoVersionsRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetSensorSwRepoVersionsResponse;
+import com.intel.rfid.api.upstream.RSPControllerGetVersionsRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetVersionsResponse;
 import com.intel.rfid.api.upstream.SchedulerGetRunStateRequest;
 import com.intel.rfid.api.upstream.SchedulerRunStateNotification;
 import com.intel.rfid.api.upstream.SchedulerRunStateResponse;
@@ -315,10 +315,10 @@ public class JsonRpcController
             switch (reqMethod) {
 
 
-                case GatewayGetAllGeoRegionsRequest.METHOD_NAME:
-                case GatewayGetSensorSWRepoVersionsRequest.METHOD_NAME:
-                case GatewayGetVersionsRequest.METHOD_NAME:
-                    handleGatewayCommand(reqId, reqMethod);
+                case RSPControllerGetAllGeoRegionsRequest.METHOD_NAME:
+                case RSPControllerGetSensorSWRepoVersionsRequest.METHOD_NAME:
+                case RSPControllerGetVersionsRequest.METHOD_NAME:
+                    handleRSPControllerCommand(reqId, reqMethod);
                     break;
 
                 case BehaviorGetRequest.METHOD_NAME:
@@ -465,24 +465,24 @@ public class JsonRpcController
         }
     }
 
-    protected void handleGatewayCommand(String _reqId, String _reqMethod) {
+    protected void handleRSPControllerCommand(String _reqId, String _reqMethod) {
 
         switch (_reqMethod) {
-            case GatewayGetAllGeoRegionsRequest.METHOD_NAME: {
-                sendResponse(new GatewayGetAllGeoRegionsResponse(_reqId, GeoRegion.asStrings()));
+            case RSPControllerGetAllGeoRegionsRequest.METHOD_NAME: {
+                sendResponse(new RSPControllerGetAllGeoRegionsResponse(_reqId, GeoRegion.asStrings()));
                 break;
             }
-            case GatewayGetSensorSWRepoVersionsRequest.METHOD_NAME: {
+            case RSPControllerGetSensorSWRepoVersionsRequest.METHOD_NAME: {
                 List<String> archs = new ArrayList<>();
                 SensorSoftwareRepoVersions versions = new SensorSoftwareRepoVersions();
                 ConfigManager.instance.getRepoInfo(archs, versions);
-                sendResponse(new GatewayGetSensorSwRepoVersionsResponse(_reqId, versions));
+                sendResponse(new RSPControllerGetSensorSwRepoVersionsResponse(_reqId, versions));
                 break;
             }
-            case GatewayGetVersionsRequest.METHOD_NAME: {
-                GatewayVersions versions = new GatewayVersions();
+            case RSPControllerGetVersionsRequest.METHOD_NAME: {
+                RSPControllerVersions versions = new RSPControllerVersions();
                 versions.software_version = Version.asString();
-                sendResponse(new GatewayGetVersionsResponse(_reqId, versions));
+                sendResponse(new RSPControllerGetVersionsResponse(_reqId, versions));
                 break;
             }
         }

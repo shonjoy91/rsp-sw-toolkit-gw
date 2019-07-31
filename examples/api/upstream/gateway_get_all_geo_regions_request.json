@@ -1,7 +1,7 @@
 {
   "jsonrpc" : "2.0",
   "id" : "9",
-  "method" : "gateway_get_all_geo_regions",
+  "method" : "controller_get_all_geo_regions",
   "params" : {
     "device_id" : null
   }

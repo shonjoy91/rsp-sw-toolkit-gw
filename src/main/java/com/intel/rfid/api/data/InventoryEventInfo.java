@@ -9,7 +9,7 @@ import java.util.List;
 
 public class InventoryEventInfo {
     public long sent_on = System.currentTimeMillis();
-    public String gateway_id;
+    public String device_id;
     public List<InventoryEventItem> data = new ArrayList<>();
 
     @Override

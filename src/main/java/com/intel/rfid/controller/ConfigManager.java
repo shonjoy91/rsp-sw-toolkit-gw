@@ -2,7 +2,7 @@
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package com.intel.rfid.gateway;
+package com.intel.rfid.controller;
 
 import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
 import com.intel.rfid.api.sensor.SensorCredentials;
@@ -34,7 +34,7 @@ public class ConfigManager {
     ConfigManager() {
         properties = new Properties();
         // Default config is in lib folder, as it is meant to be immutable
-        Path p = Env.resolveConfig("gateway.cfg");
+        Path p = Env.resolveConfig("controller.cfg");
         try (InputStream is = Files.newInputStream(p)) {
             properties.load(is);
             log.info("loaded default configuration from: " + p);
@@ -126,26 +126,26 @@ public class ConfigManager {
     }
 
 
-    private String gwDeviceId = null;
+    private String controllerDeviceId = null;
 
-    public String getGatewayDeviceId() {
-        if (gwDeviceId == null) {
+    public String getRSPControllerDeviceId() {
+        if (controllerDeviceId == null) {
             try {
-                gwDeviceId = (String) properties.get("gateway.device_id");
-                if (gwDeviceId == null || gwDeviceId.length() == 0) {
-                    gwDeviceId = getHostname();
+                controllerDeviceId = (String) properties.get("controller.device_id");
+                if (controllerDeviceId == null || controllerDeviceId.length() == 0) {
+                    controllerDeviceId = getHostname();
                 }
             } catch (Exception e) {
-                log.error("Problems getting gateway device id", e);
+                log.error("Problems getting controller device id", e);
             }
         }
-        return gwDeviceId;
+        return controllerDeviceId;
     }
 
     /**
      * This facilitates defaulting configuration values to the hostname of
      * the system the code is running on, but allowing overriding those hosts
-     * in the config file if needed. Current design is that gateway host also
+     * in the config file if needed. Current design is that controller host also
      * is where the mqtt broker and the ntp server is running
      */
     public String getHost(String _key) {
@@ -175,7 +175,7 @@ public class ConfigManager {
     }
 
     public String getLocalHost() {
-        return getLocalHost("gateway.device_id");
+        return getLocalHost("controller.device_id");
     }
 
     String getHostname() throws UnknownHostException {
@@ -288,8 +288,8 @@ public class ConfigManager {
 
     public Credentials getConsoleCredentials() {
         Credentials credentials = new Credentials();
-        credentials.userId = getOptString("console.userid", "gwconsole");
-        credentials.password = getOptString("console.password", "gwconsole");
+        credentials.userId = getOptString("console.userid", "console");
+        credentials.password = getOptString("console.password", "console");
         return credentials;
     }
 
@@ -306,7 +306,7 @@ public class ConfigManager {
 
     public Credentials getMQTTUpstreamCredentials() {
         Credentials c = new Credentials();
-        c.userId = getOptString("mqtt.upstream.username", "RFID-GW-UPSTREAM");
+        c.userId = getOptString("mqtt.upstream.username", "RSP-CONTROLLER-UPSTREAM");
         c.password = get("mqtt.upstream.password");
         return c;
     }
@@ -319,7 +319,7 @@ public class ConfigManager {
 
     public Credentials getMQTTDownstreamCredentials() {
         Credentials c = new Credentials();
-        c.userId = getOptString("mqtt.downstream.username", "RFID-GW-DOWNSTREAM");
+        c.userId = getOptString("mqtt.downstream.username", "RSP-CONTROLLER-DOWNSTREAM");
         c.password = get("mqtt.downstream.password");
         return c;
     }

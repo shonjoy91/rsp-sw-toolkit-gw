@@ -69,7 +69,7 @@ public class ConsoleSession implements Runnable {
         ) {
 
             ConsoleReader console = new ConsoleReader(in, fos);
-            console.setPrompt("rfid-gw> ");
+            console.setPrompt("cli> ");
 
             PrettyPrinter pp = new PrettyPrinter(console.getOutput());
             CLICommander commander = cmdBuilder.buildCommander(pp);
@@ -84,7 +84,7 @@ public class ConsoleSession implements Runnable {
             console.addCompleter(new AggregateCompleter(comps));
 
             pp.blank();
-            pp.line("RFID Gateway console session");
+            pp.line("RSP Controller console session");
             pp.blank();
             pp.line("<tab> to view available commands");
             pp.line("'clear' to clear the screen/console");

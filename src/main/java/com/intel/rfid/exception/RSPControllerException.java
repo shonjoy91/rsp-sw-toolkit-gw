@@ -5,9 +5,9 @@
 package com.intel.rfid.exception;
 
 @SuppressWarnings({"serial"})
-public class GatewayException extends Exception {
+public class RSPControllerException extends Exception {
 
-    public GatewayException(String _msg) {
+    public RSPControllerException(String _msg) {
         super(_msg);
     }
 

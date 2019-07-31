@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Behaviors</title>
+<title>Behaviors</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,17 +14,17 @@
 <script type="text/javascript">
     var currentPage = "behaviors";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
     
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("behavior_get_all");
+            socket.sendJsonRequest("behavior_get_all");
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "behavior_get_all":
             case "behavior_put":
@@ -345,7 +345,7 @@
     function confirmDelete() {
         closeInputModal();
         toggleBehavior(deleteBehaviorCurId);
-        gwSocket.sendJsonRequest("behavior_delete", {behavior_id : deleteBehaviorCurId})
+        socket.sendJsonRequest("behavior_delete", {behavior_id : deleteBehaviorCurId})
     }
 
     function copyBehaviorClosure(behaviorId) {
@@ -366,7 +366,7 @@
         "connected. The system should send alerts if one of the cables is loosened or damaged and unusable.</p>" +
         "<p>Create and use a behavior with PORTS_3 in the id. When the sensor sees this behavior, " +
         "it will verify that there are at least 3 good antenna connections. If there are " +
-        "less ports available, the sensor sends an alert to the gateway.</p>";
+        "less ports available, the sensor sends an alert to the controller.</p>";
             
 
     function copyBehavior(behaviorId) {
@@ -417,7 +417,7 @@
         toggleBehavior(copyBehaviorCurId);
         var newBehavior = JSON.parse(JSON.stringify(allTheBehaviors[copyBehaviorCurId]));
         newBehavior.id = newId;
-        gwSocket.sendJsonRequest("behavior_put", newBehavior);
+        socket.sendJsonRequest("behavior_put", newBehavior);
     }
 
     function saveBehaviorClosure(behaviorId) {
@@ -468,7 +468,7 @@
            
         }
         if(changed) {
-            gwSocket.sendJsonRequest("behavior_put", behavior);  
+            socket.sendJsonRequest("behavior_put", behavior);  
         }
     }
 
@@ -527,7 +527,7 @@
             fileReader.onload = function(fileLoadedEvent){
                 try {
                 var uploadedBehavior = JSON.parse(fileLoadedEvent.target.result);
-                gwSocket.sendJsonRequest("behavior_put", uploadedBehavior);
+                socket.sendJsonRequest("behavior_put", uploadedBehavior);
                 } catch (err) {
                     showError(err.message);
                 }
@@ -536,7 +536,7 @@
     }
     
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
     function showInputModal(subject, prompt) {

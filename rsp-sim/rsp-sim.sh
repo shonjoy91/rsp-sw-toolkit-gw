@@ -8,7 +8,7 @@
 if [ "$#" -ne 1 ]; then
     echo
     echo "This script simulates the API messages between the specified numbers of"
-    echo "Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - Gateway."
+    echo "Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - RSP Controller."
     echo
     echo "Usage: rsp-sim.sh <count>"
     echo "where <count> is the number of RSP's to simulate."
@@ -16,7 +16,7 @@ if [ "$#" -ne 1 ]; then
     echo "This script depends on the mosquitto-clients package being installed."
     echo "Run 'sudo apt install mosquitto-clients' to install."
     echo
-    echo "NOTE: The Intel RSP SW Toolkit - Gateway must be running BEFORE"
+    echo "NOTE: The Intel RSP SW Toolkit - RSP Controller must be running BEFORE"
     echo "      attempting to execute this script."
     echo
     exit 1
@@ -30,15 +30,15 @@ if [ $RSPS -gt $MAX_RSPS ]; then
     RSPS=5
 fi
 
-GATEWAY_IP="127.0.0.1"
+RSP_CONTROLLER_IP="127.0.0.1"
 DEVICE_ID_INDEX=0
 FACILITY_ID_INDEX=1
 READ_STATE_INDEX=2
 TOKEN_INDEX=3
 DEFAULT_TOKEN="D544DF3F42EA86BED3C3D15FC321B8E949D666C06B008C6357580BC3816E00DE"
-ROOT_CERT_URL="http://$GATEWAY_IP:8080/provision/root-ca-cert"
-MQTT_CRED_URL="https://$GATEWAY_IP:8443/provision/sensor-credentials"
-MQTT_BROKER=$GATEWAY_IP
+ROOT_CERT_URL="http://$RSP_CONTROLLER_IP:8080/provision/root-ca-cert"
+MQTT_CRED_URL="https://$RSP_CONTROLLER_IP:8443/provision/sensor-credentials"
+MQTT_BROKER=${RSP_CONTROLLER_IP}
 HOST_BASE=150000
 RSP_FILE_BASE="rsp_"
 TAG_FILE_BASE="tags_in_view_of_rsp_"
@@ -335,8 +335,8 @@ while [ $index -lt $RSPS ]; do
 done
 
 
-# This loop connects the RSPs to the Gateway
-# assuming the Gateway is already running.
+# This loop connects the RSPs to the RSP Controller
+# assuming the RSP Controller is already running.
 index=0
 while [ $index -lt $RSPS ]; do
     rsp_file="$RSP_FILE_BASE""$index"
@@ -373,7 +373,7 @@ echo "Press CTRL-C to disconnect."
 
 
 # This loop sends heartbeat_indications
-# to the Gateway every 30 seconds, forever.
+# to the RSP Controller every 30 seconds, forever.
 while [ 0 -lt 1 ]; do
     index=0
     while [ $index -lt $RSPS ]; do

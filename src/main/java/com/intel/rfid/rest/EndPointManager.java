@@ -5,10 +5,10 @@
 package com.intel.rfid.rest;
 
 import com.intel.rfid.cluster.ClusterManager;
+import com.intel.rfid.controller.ConfigManager;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ConfigException;
-import com.intel.rfid.gateway.ConfigManager;
-import com.intel.rfid.gateway.Env;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.inventory.InventoryManager;
 import com.intel.rfid.schedule.ScheduleManager;

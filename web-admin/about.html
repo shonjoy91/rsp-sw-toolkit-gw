@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Tag Statistics</title>
+<title>Tag Statistics</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,21 +14,21 @@
 <script type="text/javascript">
     var currentPage = "about";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
 
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("gateway_get_versions", null);
+            socket.sendJsonRequest("controller_get_versions", null);
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
-            case "gateway_get_versions":
-                var e = document.getElementById("gateway_software_version");
+            case "controller_get_versions":
+                var e = document.getElementById("controller_software_version");
                 e.innerHTML = jsonRsp.result.software_version;
                 break;
         }
@@ -36,7 +36,7 @@
 
 
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
 </script>
@@ -49,7 +49,7 @@
 <!-- Content -->
 <div class="w3-row w3-padding w3-large w3-dark-grey">
     <div class="w3-col w3-container" style="width:225px">Software Version:</div>
-    <div class="w3-rest" id="gateway_software_version"></div>
+    <div class="w3-rest" id="controller_software_version"></div>
 </div>
 
 

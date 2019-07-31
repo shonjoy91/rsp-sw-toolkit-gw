@@ -4,7 +4,7 @@
  */
 package com.intel.rfid.console;
 
-import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.controller.ConfigManager;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 import org.slf4j.Logger;

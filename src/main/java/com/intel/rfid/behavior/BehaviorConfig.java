@@ -6,7 +6,7 @@ package com.intel.rfid.behavior;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.sensor.Behavior;
-import com.intel.rfid.gateway.Env;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.helpers.Jackson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Tag Statistics</title>
+<title>Tag Statistics</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,7 +14,7 @@
 <script type="text/javascript">
     var currentPage = "tag_stats";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
 
     function onSocketState(state) {
@@ -24,9 +24,9 @@
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "inventory_get_tag_stats_info":
                 stats_update = jsonRsp.result;
@@ -206,7 +206,7 @@
 
     function requestInventoryTagStatsInfo() {
         var pattern = document.getElementById("epc_filter_pattern").value;
-        gwSocket.sendJsonRequest("inventory_get_tag_stats_info", {filter_pattern: pattern});
+        socket.sendJsonRequest("inventory_get_tag_stats_info", {filter_pattern: pattern});
     }
 
     function sendEpcFilterPattern() {
@@ -235,7 +235,7 @@
         initEpcFilterInput();
         createLegendColors();
         showLegendOnce();
-        gwSocket.init();
+        socket.init();
     }
 
 </script>
@@ -259,7 +259,7 @@
                 <td>
                     The tag statistics table shows the average signal strength (RSSI in dBm) of the last 20 tag reads 
                     <br>
-                    from each <strong>Sensor Antenna Port</strong> or <strong>Alias</strong> that has read the tag
+                    from each <strong>Sensor Antenna Port</strong> or <strong>Alias</strong> that has read the tag.
                 </td>
             </tr>
             <tr>

@@ -1,4 +1,4 @@
-# Gateway
+# Intel&reg; RSP Constoller
 
 The features and functionality included in this reference design are 
 intended to showcase the capabilities of the Intel® RFID Sensor Platform (Intel® RSP) 
@@ -6,7 +6,7 @@ by demonstrating the use of the API to collect and process RFID tag read informa
 
 ##### _THIS SOFTWARE IS NOT INTENDED TO BE A COMPLETE END-TO-END INVENTORY MANAGEMENT SOLUTION._  
 
-The Gateway is a Java application built with Gradle. As such, it can run on any OS that supports 
+The Intel&reg; RSP Controller is a Java application built with Gradle. As such, it can run on any OS that supports 
 a Java Runtime Environment version 8 or greater. The following instructions will get you a copy 
 of the project up and running on your local machine for development and testing purposes.  
 
@@ -45,7 +45,7 @@ cd ~/projects/rsp-sw-toolkit-gw
 gradle clean deploy
 
 #-- !!!! CERTIFICATES ARE NEEDED !!!!
-#-- the sensors connect securely to the gateway using a self signed certificate.
+controller
 #-- a convenience script will generate these credentials in order to get the
 #-- reference deployment up and running quickly.
 mkdir -p ~/deploy/rsp-sw-toolkit-gw/cache
@@ -59,25 +59,25 @@ A shell script is provided to start the application in the foreground.
 cd ~/deploy/rsp-sw-toolkit-gw
 ~/deploy/rsp-sw-toolkit-gw/run.sh
 ```
-Connect an Intel&reg; RFID Sensor Platforms on the same network segment as the gateway. 
-The sensor will listen for a gateway announcement and initiate a connection. 
-As the senor's connect, tthe gateway will schedule them to read RFID tags in sequence
+Connect an Intel&reg; RFID Sensor Platform on the same network segment as the Intel&reg; RSP Controller Application. 
+The sensor will listen for the RSP Controller's mDNS announcement and initiate a connection. 
+As the senor's connect, the RSP Controller will schedule them to read RFID tags in sequence
 (one at a time).
 
 ##### Monitor
 
 ###### --- Web Admin http://localhost:8080/web-admin/
-The gateway provides a web based administration interface for configuration and monitoring. 
-The home page is a dashboard presentint status of several components 
-of the gateway including the number of sensors connected and a summary
-of the number of tags being read.
+The Intel&reg; RSP Controller Application provides a web based administration interface for configuration and monitoring. 
+The home page is a dashboard presenting status of several components including 
+the number of sensors connected and a summary of the number of tags being read.
 
 ###### --- Command Line Interface
-The gateway provides a command line interface (CLI) for configuration and monitoring. 
-To view the supported commands and parameters, use the tab completion feature that is included.
-To view command help, enter the command and press enter.
+The Intel&reg; RSP Controller Application provides a command line interface (CLI) for configuration and monitoring.  
+To view available commands, press enter at the prompt.  
+To view command help, enter the command and press enter.  
+To view available parameters or completion options, press the tab key.
 
-Connect to the gateway's CLI and explore as follows.
+Connect to the CLI and explore as follows.
 ```bash
 ssh -p5222 gwconsole@localhost
 password: gwconsole
@@ -106,8 +106,8 @@ rfid-gw> inventory summary
 ```
 
 ###### --- MQTT
-Open a terminal window and subscribe to the gateway events topic in order to monitor 
-tag events as produced by the gateway.
+Open a terminal window and subscribe to the upstream events topic in order to monitor 
+tag events as produced by the Intel&reg; RSP Controller Application.
 
 ```bash
 #-- monitor the upstream events topic

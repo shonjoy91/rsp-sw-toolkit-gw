@@ -12,12 +12,12 @@ import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.behavior.BehaviorConfig;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.exception.ExpiredTokenException;
-import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.exception.InvalidTokenException;
-import com.intel.rfid.gateway.Env;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.schedule.ScheduleManager;
@@ -59,7 +59,7 @@ public class ClusterManager {
     public void start() {
         try {
             restore();
-        } catch (IOException | GatewayException _e) {
+        } catch (IOException | RSPControllerException _e) {
             log.warn("failed restoring {} {}", CACHE_PATH, _e.getMessage());
         }
         log.info("started");

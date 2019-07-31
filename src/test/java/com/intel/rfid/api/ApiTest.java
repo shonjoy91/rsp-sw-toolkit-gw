@@ -17,11 +17,11 @@ import com.intel.rfid.api.data.TagInfo;
 import com.intel.rfid.api.sensor.BISTResults;
 import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
-import com.intel.rfid.api.sensor.GatewayVersions;
 import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
+import com.intel.rfid.api.sensor.RSPControllerVersions;
 import com.intel.rfid.api.sensor.RSPInfo;
 import com.intel.rfid.api.sensor.RfPortStatus;
 import com.intel.rfid.api.sensor.SensorSoftwareVersions;
@@ -40,15 +40,6 @@ import com.intel.rfid.api.upstream.ClusterSetConfigRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusRequest;
 import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
-import com.intel.rfid.api.upstream.GatewayDeviceAlertNotification;
-import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetAllGeoRegionsResponse;
-import com.intel.rfid.api.upstream.GatewayGetSensorSWRepoVersionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetSensorSwRepoVersionsResponse;
-import com.intel.rfid.api.upstream.GatewayGetVersionsRequest;
-import com.intel.rfid.api.upstream.GatewayGetVersionsResponse;
-import com.intel.rfid.api.upstream.GatewayHeartbeatNotification;
-import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
 import com.intel.rfid.api.upstream.InventoryEventNotification;
@@ -59,6 +50,15 @@ import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoResponse;
 import com.intel.rfid.api.upstream.InventoryReadRateNotification;
 import com.intel.rfid.api.upstream.InventorySummaryNotification;
 import com.intel.rfid.api.upstream.InventoryUnloadRequest;
+import com.intel.rfid.api.upstream.RSPControllerDeviceAlertNotification;
+import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsResponse;
+import com.intel.rfid.api.upstream.RSPControllerGetSensorSWRepoVersionsRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetSensorSwRepoVersionsResponse;
+import com.intel.rfid.api.upstream.RSPControllerGetVersionsRequest;
+import com.intel.rfid.api.upstream.RSPControllerGetVersionsResponse;
+import com.intel.rfid.api.upstream.RSPControllerHeartbeatNotification;
+import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
 import com.intel.rfid.api.upstream.SchedulerGetRunStateRequest;
 import com.intel.rfid.api.upstream.SchedulerRunStateNotification;
 import com.intel.rfid.api.upstream.SchedulerRunStateResponse;
@@ -91,10 +91,10 @@ import com.intel.rfid.api.upstream.UpstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.UpstreamMqttStatusNotification;
 import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.cluster.MockClusterManager;
+import com.intel.rfid.controller.Env;
+import com.intel.rfid.controller.MockRSPController;
+import com.intel.rfid.controller.RSPControllerStatus;
 import com.intel.rfid.exception.ConfigException;
-import com.intel.rfid.gateway.Env;
-import com.intel.rfid.gateway.GatewayStatus;
-import com.intel.rfid.gateway.MockGateway;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.TestStore;
@@ -117,7 +117,7 @@ import java.util.List;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-public class ApiTest  implements InventoryManager.UpstreamEventListener {
+public class ApiTest implements InventoryManager.UpstreamEventListener {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -134,13 +134,13 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
     public void onUpstreamEvent(UpstreamInventoryEventInfo _uie) {
         upstreamEvents.add(_uie);
     }
-    
+
     ObjectMapper mapper = Jackson.getMapper();
     ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
     Path outDir;
 
     TestStore testStore;
-    MockGateway gateway;
+    MockRSPController rspController;
     MockInventoryManager invMgr;
     MockScheduleManager schedMgr;
     MockClusterManager clusterMgr;
@@ -154,14 +154,14 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
         theSensor = testStore.sensorFront01;
         retailUseCaseClusterCfg = testStore.getRetailUseCaseClusterConfig();
 
-        gateway = new MockGateway();
-        invMgr = gateway.getMockInventoryManager();
+        rspController = new MockRSPController();
+        invMgr = rspController.getMockInventoryManager();
         invMgr.addUpstreamEventListener(this);
         invMgr.unload();
-        
-        schedMgr = gateway.getMockScheduleManager();
-        clusterMgr = gateway.getMockClusterManager();
-        sensorMgr = gateway.getMockSensorManager();
+
+        schedMgr = rspController.getMockScheduleManager();
+        clusterMgr = rspController.getMockClusterManager();
+        sensorMgr = rspController.getMockSensorManager();
     }
 
     protected void persistJsonApi(String _suffix, Object _obj) throws IOException {
@@ -218,7 +218,7 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
         // Downstream
         req = new DownstreamGetMqttStatusRequest();
         persistJsonApi(req);
-        MqttStatus mqttStatus = gateway.getMockDownstreamManager().getMqttStatus();
+        MqttStatus mqttStatus = rspController.getMockDownstreamManager().getMqttStatus();
         rsp = new DownstreamGetMqttStatusResponse(
                 req.id,
                 mqttStatus);
@@ -227,19 +227,19 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
         not = new DownstreamMqttStatusNotification(mqttStatus);
         persistJsonApi(not);
 
-        // Gateway
+        // RSPController
         DeviceAlertNotification alertNot = new DeviceAlertNotification();
-        alertNot.params.device_id = "some.gw.deviceid";
+        alertNot.params.device_id = "some.controller.deviceid";
         alertNot.params.alert_description = DeviceAlertType.HighMemoryUsage.toString();
         alertNot.params.alert_number = DeviceAlertType.HighMemoryUsage.id;
         alertNot.params.sent_on = System.currentTimeMillis();
-        persistJsonApi(new GatewayDeviceAlertNotification(alertNot));
+        persistJsonApi(new RSPControllerDeviceAlertNotification(alertNot));
 
-        req = new GatewayGetAllGeoRegionsRequest();
+        req = new RSPControllerGetAllGeoRegionsRequest();
         persistJsonApi(req);
-        persistJsonApi(new GatewayGetAllGeoRegionsResponse(req.id, GeoRegion.asStrings()));
+        persistJsonApi(new RSPControllerGetAllGeoRegionsResponse(req.id, GeoRegion.asStrings()));
 
-        req = new GatewayGetSensorSWRepoVersionsRequest();
+        req = new RSPControllerGetSensorSWRepoVersionsRequest();
         persistJsonApi(req);
         SensorSoftwareRepoVersions ssrv = new SensorSoftwareRepoVersions();
         ssrv.app_version = "19.3.7.11";
@@ -247,17 +247,18 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
         ssrv.pkg_manifest_version = "19.3.8.11";
         ssrv.uboot_version = "2018.11.3";
         ssrv.linux_version = "linux-5.1";
-        persistJsonApi(new GatewayGetSensorSwRepoVersionsResponse(req.id, ssrv));
+        persistJsonApi(new RSPControllerGetSensorSwRepoVersionsResponse(req.id, ssrv));
 
-        req = new GatewayGetVersionsRequest();
+        req = new RSPControllerGetVersionsRequest();
         persistJsonApi(req);
-        GatewayVersions gwv = new GatewayVersions();
-        gwv.software_version = "19.3.7.14";
-        persistJsonApi(req.id, new GatewayGetVersionsResponse(req.id, gwv));
+        RSPControllerVersions controllerVersions = new RSPControllerVersions();
+        controllerVersions.software_version = "19.3.7.14";
+        persistJsonApi(req.id, new RSPControllerGetVersionsResponse(req.id, controllerVersions));
 
-        persistJsonApi(new GatewayHeartbeatNotification("device.host.name"));
-        persistJsonApi(new GatewayStatusUpdateNotification("device.host.name", GatewayStatus.GATEWAY_STARTED));
-        
+        persistJsonApi(new RSPControllerHeartbeatNotification("device.host.name"));
+        persistJsonApi(new RSPControllerStatusUpdateNotification("device.host.name",
+                                                                 RSPControllerStatus.RSP_CONTROLLER_STARTED));
+
         // Gpio
         persistJsonApi(new GpioClearMappingsRequest());
         persistJsonApi(new GpioSetMappingRequest());
@@ -282,7 +283,7 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
 
         assertThat(upstreamEvents.size()).isGreaterThan(0);
         persistJsonApi(new InventoryEventNotification(upstreamEvents.get(0)));
-                
+
         readTimeOrig += 2000;
         tagRead01.last_read_on = readTimeOrig;
         tagRead02.last_read_on = readTimeOrig;
@@ -425,7 +426,7 @@ public class ApiTest  implements InventoryManager.UpstreamEventListener {
         req = new UpstreamGetMqttStatusRequest();
         persistJsonApi(req);
 
-        mqttStatus = gateway.getMockUpstreamManager().getMqttStatus();
+        mqttStatus = rspController.getMockUpstreamManager().getMqttStatus();
         rsp = new UpstreamGetMqttStatusResponse(
                 req.id,
                 mqttStatus);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Cluster Configuration</title>
+<title>Cluster Configuration</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,22 +14,22 @@
 <script type="text/javascript">
     var currentPage = "cluster_cfg";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
     
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("cluster_get_template");
+            socket.sendJsonRequest("cluster_get_template");
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         // get the template first before requesting the configuration
         switch (jsonReq.method) {
             case "cluster_get_template":
                 onClusterTemplate(jsonRsp.result);
-                gwSocket.sendJsonRequest("cluster_get_config");
+                socket.sendJsonRequest("cluster_get_config");
                 break;
             case "cluster_get_config":
             case "cluster_set_config":
@@ -399,7 +399,7 @@
         if(delIndex >= 0) {
             clusterCfg.clusters.splice(delIndex, 1);
         }
-        gwSocket.sendJsonRequest("cluster_set_config", clusterCfg);
+        socket.sendJsonRequest("cluster_set_config", clusterCfg);
     }
     
     function deleteClusterConfig() {
@@ -422,7 +422,7 @@
 
     function confirmDeleteClusterConfig() {
         closeInputModal();
-        gwSocket.sendJsonRequest("cluster_delete_config", clusterCfg);
+        socket.sendJsonRequest("cluster_delete_config", clusterCfg);
     }
 
     function findClusterIndex(clusterId) {
@@ -492,7 +492,7 @@
             fileReader.onload = function(fileLoadedEvent){
                 try {
                 var uploadedJSON = JSON.parse(fileLoadedEvent.target.result);
-                gwSocket.sendJsonRequest("cluster_set_config", uploadedJSON);
+                socket.sendJsonRequest("cluster_set_config", uploadedJSON);
                 } catch (err) {
                     showError(err.message);
                 }
@@ -501,7 +501,7 @@
     }
     
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
     function showInputModal(subject, prompt) {

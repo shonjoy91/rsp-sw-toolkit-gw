@@ -4,7 +4,7 @@
  */
 package com.intel.rfid.downstream;
 
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 
 import java.util.concurrent.Executors;
 
@@ -20,7 +20,7 @@ public class MockMqttDownstream extends MqttDownstream {
         log.info(getClass().getSimpleName() + " started");
     }
 
-    public void publish(String _topic, byte[] _msg, QOS _qos) throws GatewayException {
+    public void publish(String _topic, byte[] _msg, QOS _qos) throws RSPControllerException {
         // just log, but don't do anything
         log.info("{} not actually published", _topic);
     }

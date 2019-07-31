@@ -1,6 +1,6 @@
 ![Retail Use Case](./RetailUseCase.png)
 
-This use case demonstrates configuring the RSP Devkit Sensors and Gateway as deployed in 
+This use case demonstrates configuring the Intel&reg; RSP Devkit Sensors and Intel&reg; RSP Controller Application as deployed in 
 a typical retail envinronment.
 
 ## Goals  
@@ -14,7 +14,7 @@ By the end of the example, you will be able to track a tag as it arrives into th
 transitions to the SalesFloor, and then departs out the front door of the store.
   
 ## Prerequsites  
-1. It is assumed that the gateway is already running and the sensors are running and connected to the gateway.
+1. It is assumed that the controller is already running and the sensors are running and connected to the controller.
 
 2. The directory structure is consistent for source ($HOME/projects/rsp-sw)
 3. Edit [DevkitRetailCluster.json](./DevkitRetailCluster.json) sensor device ids in the sensor_groups 
@@ -28,9 +28,9 @@ and assigns appropriate behaviors for reading RFID tags.
 3. Hide the Tags  
 Make sure no tags are visible to the sensors in order to see a complete use case scenario.
 
-## Configure / Control the Gateway
+## Configure / Control the Intel&reg; RSP Controller Application
 After ther prerequisites have been met, choose one of the following methods to configure and 
-control the gateway. Each method accomplishes the same configuration tasks.
+control the application. Each method accomplishes the same configuration tasks.
 - Using the Web Admin
 - Using the Command Line Interface (CLI)
 - Using the MQTT Messaging API
@@ -47,11 +47,11 @@ or [sensors](http://localhost:8080/web-admin/sensors-main.html) pages.
 stop the sensors from reading by selecting the INACTIVE run state.
 
 3. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
-button to upload all of the use case behaviors to the gateway. The behavior files can be found at 
+button to upload all of the use case behaviors to the controller. The behavior files can be found at 
 ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/DevkitRetailBehavior*.json.  
 
-    These __MUST__ be loaded to the gateway __BEFORE__ the cluster configuration because the cluster
-    file references those behavior ids, and the behaviors must already be known by the gateway. Otherwise
+    These __MUST__ be loaded to the controller __BEFORE__ the cluster configuration because the cluster
+    file references those behavior ids, and the behaviors must already be known by the controller. Otherwise
     the loading of the cluster configuration file will fail validation.
 
 4. Upload the __edited__  (see Prerequistes) cluster configuration file using the 
@@ -73,42 +73,42 @@ ___
   
 ### USING THE CLI
 1. Open a terminal window
-2. Copy the use case behaviors to the deployed gateway so they are available for use
+2. Copy the use case behaviors to the deployed controller so they are available for use
     ```bash
     cd ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/
     cp DevkitRetailBehavior*.json ~/deploy/rsp-sw-toolkit-gw/config/behaviors/
     ```
-3. Connect to the gateway's command line interface and execute the following series of commands.
+3. Connect to the controller's command line interface and execute the following series of commands.
     ```bash
-    ssh -p5222 gwconsole@localhost
-    password: gwconsole
+    ssh -p5222 console@localhost
+    password: console
         
     #-- stop the scheduler
-    rfid-gw> scheduler set.run.state INACTIVE 
+    cli> scheduler set.run.state INACTIVE 
     ------------------------------------------
     completed
     ------------------------------------------
     
     #-- unload the current inventory
-    rfid-gw> inventory unload 
+    cli> inventory unload 
     ------------------------------------------
     unload complete
     ------------------------------------------
     
     #-- load the cluster configuration
-    rfid-gw> clusters load.file ../../projects/rsp-sw-toolkit-gw/examples/use-cases/retail/DevkitRetailCluster.json
+    cli> clusters load.file ../../projects/rsp-sw-toolkit-gw/examples/use-cases/retail/DevkitRetailCluster.json
     ------------------------------------------
     completed
     ------------------------------------------
     
     #-- activate the scheduler in custom configuration mode
-    rfid-gw> scheduler set.run.state FROM_CONFIG 
+    cli> scheduler set.run.state FROM_CONFIG 
     ------------------------------------------
     completed
     ------------------------------------------
 
     #-- confirm the configuration is active 
-    rfid-gw> scheduler show 
+    cli> scheduler show 
     ------------------------------------------
     runState: FROM_CONFIG
     ------------------------------------------
@@ -137,34 +137,34 @@ ___
 1. Edit [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) 
 replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the DevkitRetailCluster.json file. 
 
-2. Open a terminal window and subscribe to the gateway command response topic in order to monitor the command responses
+2. Open a terminal window and subscribe to the controller command response topic in order to monitor the command responses
     ```bash
     #-- monitor the rpc command responses
-    mosquitto_sub -t rfid/gw/response
+    mosquitto_sub -t rfid/controller/response
     ```
-3. Open a terminal to send JsonRPC commands over MQTT to configure and control the gateway.
+3. Open a terminal to send JsonRPC commands over MQTT to configure and control the controller.
     ```bash
     #-- change directory to the examples folder 
     #-- so the example commands work correctly
     cd ~/projects/rsp-sw-toolkit-gw/examples
     
     #-- stop the scheduler
-    mosquitto_pub -t rfid/gw/command -f api/upstream/scheduler_set_run_state_request_INACTIVE.json
+    mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_INACTIVE.json
     
     #-- unload the current inventory
-    mosquitto_pub -t rfid/gw/command -f api/upstream/inventory_unload_request.json
+    mosquitto_pub -t rfid/controller/command -f api/upstream/inventory_unload_request.json
     
     #-- load behaviors specific to this exercise
     #-- (lowered power levels as sensors are likely interferring)
-    mosquitto_pub -t rfid/gw/command -f use-cases/retail/behavior_put_request_DeepScan.json
-    mosquitto_pub -t rfid/gw/command -f use-cases/retail/behavior_put_request_Exit.json
-    mosquitto_pub -t rfid/gw/command -f use-cases/retail/behavior_put_request_Mobility.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/retail/behavior_put_request_DeepScan.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/retail/behavior_put_request_Exit.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/retail/behavior_put_request_Mobility.json
     
     #-- load (set) the cluster configuration
-    mosquitto_pub -t rfid/gw/command -f use-cases/retail/cluster_set_config_request_use_case_retail.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/retail/cluster_set_config_request_use_case_retail.json
     
     #-- activate the scheduler in custom configuration mode
-    mosquitto_pub -t rfid/gw/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
+    mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
     ```
 
 Continue to Observe Tag Events Section
@@ -174,17 +174,17 @@ ___
 Check that the sensors are not pointed in conflicting directions as much as possible. 
 (The H3000 and H4000 antennae are directional).
 
-Open a terminal window and subscribe to the gateway events topic in order to monitor 
-tag events as produced by the gateway.
+Open a terminal window and subscribe to the controller events topic in order to monitor 
+tag events as produced by the controller.
 
 ```bash
 #-- monitor the upstream events topic
-mosquitto_sub -t rfid/gw/events
+mosquitto_sub -t rfid/controller/events
 ```
 
 1. ##### Tag arrival in BackStock
     At this point, remove a tag from hiding and place it nearby the BackStock sensor. 
-    When the tag is read initially an arrival event will be generated on the rfid/gw/events topic.
+    When the tag is read initially an arrival event will be generated on the rfid/controller/events topic.
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now PRESENT
     and the location is at the BackStock sensor.  
@@ -195,7 +195,7 @@ mosquitto_sub -t rfid/gw/events
       "method": "inventory_event",
       "params": {
         "sent_on": 1559867406651,
-        "gateway_id": "intel-acetest",
+        "device_id": "intel-acetest",
         "data": [
           {
             "facility_id": "BackStock",
@@ -224,7 +224,7 @@ mosquitto_sub -t rfid/gw/events
       "method": "inventory_event",
       "params": {
         "sent_on": 1559867429368,
-        "gateway_id": "intel-acetest",
+        "device_id": "intel-acetest",
         "data": [
           {
             "facility_id": "BackStock",
@@ -261,7 +261,7 @@ mosquitto_sub -t rfid/gw/events
       "method": "inventory_event",
       "params": {
         "sent_on": 1559867488229,
-        "gateway_id": "intel-acetest",
+        "device_id": "intel-acetest",
         "data": [
           {
             "facility_id": "SalesFloor",
@@ -287,7 +287,7 @@ mosquitto_sub -t rfid/gw/events
       "method": "inventory_event",
       "params": {
         "sent_on": 1559867527713,
-        "gateway_id": "intel-acetest",
+        "device_id": "intel-acetest",
         "data": [
           {
             "facility_id": "SalesFloor",

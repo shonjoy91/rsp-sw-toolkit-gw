@@ -16,15 +16,15 @@ import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.api.sensor.ConnectResponse;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
-import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
+import com.intel.rfid.controller.ConfigManager;
+import com.intel.rfid.controller.Env;
+import com.intel.rfid.controller.RSPControllerStatus;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ExpiredTokenException;
-import com.intel.rfid.exception.GatewayException;
 import com.intel.rfid.exception.InvalidTokenException;
-import com.intel.rfid.gateway.ConfigManager;
-import com.intel.rfid.gateway.Env;
-import com.intel.rfid.gateway.GatewayStatus;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
@@ -288,10 +288,10 @@ public class SensorManager {
     }
 
     public void sendConnectResponse(String _responseId, String _deviceId, String _facilityId)
-            throws IOException, GatewayException {
+            throws IOException, RSPControllerException {
 
         if (downstreamMgr == null) {
-            throw new GatewayException("missing sensor manager reference");
+            throw new RSPControllerException("missing sensor manager reference");
         }
         ConfigManager cm = ConfigManager.instance;
 
@@ -306,10 +306,10 @@ public class SensorManager {
     }
 
     public void sendSensorCommand(String _deviceId, JsonRequest _req)
-            throws IOException, GatewayException {
+            throws IOException, RSPControllerException {
 
         if (downstreamMgr == null) {
-            throw new GatewayException("missing sensor manager reference");
+            throw new RSPControllerException("missing sensor manager reference");
         }
         downstreamMgr.sendCommand(_deviceId, _req);
     }
@@ -319,8 +319,9 @@ public class SensorManager {
     // provision token configuration change requiring sensors to re-authenticate 
     public void disconnectAll() {
         if (downstreamMgr != null) {
-            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(ConfigManager.instance.getGatewayDeviceId(),
-                                                                                      GatewayStatus.GATEWAY_SHUTTING_DOWN);
+            RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(ConfigManager.instance
+                                                                                                          .getRSPControllerDeviceId(),
+                                                                                                  RSPControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN);
             downstreamMgr.send(gsu);
         }
 

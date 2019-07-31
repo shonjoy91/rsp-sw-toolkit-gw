@@ -4,7 +4,7 @@ import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.api.sensor.TagRead;
-import com.intel.rfid.gateway.MockGateway;
+import com.intel.rfid.controller.MockRSPController;
 import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.sensor.MockSensorPlatform;
 
@@ -26,7 +26,7 @@ public class TestStore {
 
     public int rssiMin() { return minRSSI; }
 
-    public MockGateway gateway;
+    public MockRSPController rspController;
     public MockSensorPlatform sensorFront01;
     public MockSensorPlatform sensorFront02;
     public MockSensorPlatform sensorFront03;
@@ -59,7 +59,7 @@ public class TestStore {
     public long time_m00;
 
     public TestStore() {
-        gateway = new MockGateway();
+        rspController = new MockRSPController();
 
         sensorFront01 = establish("RSP-150000", Facility.SalesFloor);
         sensorFront02 = establish("RSP-150001", Facility.SalesFloor);
@@ -104,7 +104,7 @@ public class TestStore {
     }
 
     public MockSensorPlatform establish(String _sensorId, Facility _facility, Personality _personality) {
-        MockSensorManager msm = gateway.getMockSensorManager();
+        MockSensorManager msm = rspController.getMockSensorManager();
         MockSensorPlatform msp = msm.establishRSP(_sensorId);
 
         msp.setFacilityId(_facility.toString());

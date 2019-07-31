@@ -12,17 +12,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GatewayDeviceAlertNotification extends JsonNotification {
+public class RSPControllerDeviceAlertNotification extends JsonNotification {
 
     public static final String METHOD_NAME = "device_alert";
 
     public Params params = new Params();
 
-    public GatewayDeviceAlertNotification() {
+    public RSPControllerDeviceAlertNotification() {
         method = METHOD_NAME;
     }
 
-    public GatewayDeviceAlertNotification(DeviceAlertNotification _deviceAlert) {
+    public RSPControllerDeviceAlertNotification(DeviceAlertNotification _deviceAlert) {
         this();
         params.sent_on = _deviceAlert.params.sent_on;
         params.device_id = _deviceAlert.params.device_id;
@@ -40,7 +40,7 @@ public class GatewayDeviceAlertNotification extends JsonNotification {
     public static class Params {
         public long sent_on;
         public String device_id;
-        public String gateway_id;
+        public String controller_id;
         public List<String> facilities = new ArrayList<>();
         public int alert_number;
         public String alert_description;

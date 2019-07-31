@@ -2,7 +2,7 @@ package com.intel.rfid.inventory;
 
 import com.intel.rfid.api.data.InventoryEventItem;
 import com.intel.rfid.api.sensor.TagRead;
-import com.intel.rfid.gateway.MockGateway;
+import com.intel.rfid.controller.MockRSPController;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.TestStore;
 import com.intel.rfid.tag.Tag;
@@ -36,14 +36,14 @@ public class TagEventsTest implements InventoryManager.UpstreamEventListener {
     }
 
     TestStore store;
-    MockGateway gateway;
+    MockRSPController rspController;
     MockInventoryManager invMgr;
 
 
     public TagEventsTest() {
         store = new TestStore();
-        gateway = new MockGateway();
-        invMgr = gateway.getMockInventoryManager();
+        rspController = new MockRSPController();
+        invMgr = rspController.getMockInventoryManager();
         invMgr.unload();
         invMgr.addUpstreamEventListener(this);
     }

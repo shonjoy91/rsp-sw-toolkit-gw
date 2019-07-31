@@ -5,8 +5,8 @@
 #
 
 MQTT_BROKER="127.0.0.1"
-COMMAND_TOPIC="rfid/gw/command"
-RESPONSE_TOPIC="rfid/gw/response"
+COMMAND_TOPIC="rfid/controller/command"
+RESPONSE_TOPIC="rfid/controller/response"
 ID="1"
 
 ID=$(($ID + 1))

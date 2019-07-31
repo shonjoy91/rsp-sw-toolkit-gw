@@ -5,7 +5,7 @@
 package com.intel.rfid.inventory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.gateway.Env;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.sensor.SensorPlatform;

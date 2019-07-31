@@ -23,7 +23,7 @@ function wsGetUrl() {
 // that wraps the actual web socket with
 // additional configuration and management
 // capabilities
-function GatewayWebSocket() {
+function ControllerWebSocket() {
 
     var self = this;
     self.socket = null;

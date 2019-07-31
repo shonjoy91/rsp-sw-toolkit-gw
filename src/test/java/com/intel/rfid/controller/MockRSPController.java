@@ -1,4 +1,4 @@
-package com.intel.rfid.gateway;
+package com.intel.rfid.controller;
 
 import com.intel.rfid.cluster.MockClusterManager;
 import com.intel.rfid.downstream.MockDownstreamManager;
@@ -8,12 +8,12 @@ import com.intel.rfid.schedule.MockScheduleManager;
 import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.upstream.MockUpstreamManager;
 
-public class MockGateway extends Gateway {
+public class MockRSPController extends RSPController {
 
     // prevent default super constructor
     // from instantiating objects before
     // mock objects are substituted
-    public MockGateway() {
+    public MockRSPController() {
         // almost every test needs these mocked out
         // for now, they mostly just extend the
         // actual implementation

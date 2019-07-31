@@ -6,10 +6,10 @@ package com.intel.rfid.upstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.MqttStatus;
-import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
-import com.intel.rfid.exception.GatewayException;
-import com.intel.rfid.gateway.ConfigManager;
-import com.intel.rfid.gateway.GatewayStatus;
+import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.controller.ConfigManager;
+import com.intel.rfid.controller.RSPControllerStatus;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.mqtt.Mqtt;
@@ -22,7 +22,7 @@ public class MqttUpstream extends Mqtt {
     protected Dispatch dispatch;
     protected static final ObjectMapper mapper = Jackson.getMapper();
 
-    public static final String TOPIC_PREFIX = "rfid/gw";
+    public static final String TOPIC_PREFIX = "rfid/controller";
     public static final String ALERTS_TOPIC = TOPIC_PREFIX + "/alerts";
     public static final String EVENTS_TOPIC = TOPIC_PREFIX + "/events";
     public static final String COMMAND_TOPIC = TOPIC_PREFIX + "/command";
@@ -50,13 +50,13 @@ public class MqttUpstream extends Mqtt {
     protected void onConnect() {
         super.onConnect();
         try {
-            String deviceId = ConfigManager.instance.getGatewayDeviceId();
-            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(deviceId,
-                                                                                      GatewayStatus.GATEWAY_STARTED);
+            String deviceId = ConfigManager.instance.getRSPControllerDeviceId();
+            RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(deviceId,
+                                                                                                  RSPControllerStatus.RSP_CONTROLLER_STARTED);
             publishAlert(mapper.writeValueAsBytes(gsu));
-            log.info("Published {}", GatewayStatus.GATEWAY_STARTED);
+            log.info("Published {}", RSPControllerStatus.RSP_CONTROLLER_STARTED);
         } catch (Exception e) {
-            log.warn("Error publishing {}", GatewayStatus.GATEWAY_STARTED.label, e);
+            log.warn("Error publishing {}", RSPControllerStatus.RSP_CONTROLLER_STARTED.label, e);
         }
     }
 
@@ -95,7 +95,7 @@ public class MqttUpstream extends Mqtt {
     private void publish(String _topic, Object _msg) {
         try {
             publish(_topic, mapper.writeValueAsBytes(_msg), DEFAULT_QOS);
-        } catch (IOException | GatewayException _e) {
+        } catch (IOException | RSPControllerException _e) {
             log.error("error {}", _e.getMessage());
         }
 

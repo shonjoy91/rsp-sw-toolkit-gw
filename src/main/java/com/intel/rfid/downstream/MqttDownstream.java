@@ -6,10 +6,10 @@ package com.intel.rfid.downstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.MqttStatus;
-import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
-import com.intel.rfid.exception.GatewayException;
-import com.intel.rfid.gateway.ConfigManager;
-import com.intel.rfid.gateway.GatewayStatus;
+import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.controller.ConfigManager;
+import com.intel.rfid.controller.RSPControllerStatus;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.mqtt.Mqtt;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -22,7 +22,6 @@ public class MqttDownstream extends Mqtt {
     public static final String COMMAND_TOPIC = TOPIC_PREFIX + "/command";
     public static final String CONNECT_TOPIC = TOPIC_PREFIX + "/connect";
     public static final String DATA_TOPIC = TOPIC_PREFIX + "/data";
-    public static final String GW_STATUS_TOPIC = TOPIC_PREFIX + "/gw_status";
     public static final String RESPONSE_TOPIC = TOPIC_PREFIX + "/response";
     public static final String RSP_STATUS_TOPIC = TOPIC_PREFIX + "/rsp_status";
 
@@ -57,13 +56,13 @@ public class MqttDownstream extends Mqtt {
     protected void onConnect() {
         super.onConnect();
         try {
-            String deviceId = ConfigManager.instance.getGatewayDeviceId();
-            GatewayStatusUpdateNotification gsu = new GatewayStatusUpdateNotification(deviceId,
-                                                                                      GatewayStatus.GATEWAY_STARTED);
-            publishGWStatus(mapper.writeValueAsBytes(gsu));
-            log.info("Published {}", GatewayStatus.GATEWAY_STARTED);
+            String deviceId = ConfigManager.instance.getRSPControllerDeviceId();
+            RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(deviceId,
+                                                                                                  RSPControllerStatus.RSP_CONTROLLER_STARTED);
+            publishControllerStatus(mapper.writeValueAsBytes(gsu));
+            log.info("Published {}", RSPControllerStatus.RSP_CONTROLLER_STARTED);
         } catch (Exception e) {
-            log.warn("Error publishing {}", GatewayStatus.GATEWAY_STARTED.label, e);
+            log.warn("Error publishing {}", RSPControllerStatus.RSP_CONTROLLER_STARTED.label, e);
         }
     }
 
@@ -86,26 +85,26 @@ public class MqttDownstream extends Mqtt {
         dispatch.onMessage(_topic, _msg);
     }
 
-    public void publishConnectResponse(String _deviceId, byte[] _msg) throws GatewayException {
+    public void publishConnectResponse(String _deviceId, byte[] _msg) throws RSPControllerException {
         String topic = CONNECT_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
 
-    public void publishCommand(String _deviceId, byte[] _msg) throws GatewayException {
+    public void publishCommand(String _deviceId, byte[] _msg) throws RSPControllerException {
         String topic = COMMAND_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
 
-    public void publishGWStatus(byte[] _msg) throws GatewayException {
-        publish(GW_STATUS_TOPIC, _msg, DEFAULT_QOS);
+    public void publishControllerStatus(byte[] _msg) throws RSPControllerException {
+        publish(COMMAND_TOPIC, _msg, DEFAULT_QOS);
     }
 
-    public void publishGPIOConnectResponse(String _deviceId, byte[] _msg) throws GatewayException {
+    public void publishGPIOConnectResponse(String _deviceId, byte[] _msg) throws RSPControllerException {
         String topic = GPIO_CONNECT_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
 
-    public void publishGPIOCommand(String _deviceId, byte[] _msg) throws GatewayException {
+    public void publishGPIOCommand(String _deviceId, byte[] _msg) throws RSPControllerException {
         String topic = GPIO_COMMAND_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
@@ -113,8 +112,6 @@ public class MqttDownstream extends Mqtt {
     public MqttStatus getSummary() {
         MqttStatus summary = super.getSummary();
         summary.publishes.add(COMMAND_TOPIC);
-        summary.publishes.add(GW_STATUS_TOPIC);
-        
         return summary;
     }
 

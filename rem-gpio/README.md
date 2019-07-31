@@ -1,12 +1,12 @@
 # rem-gpio (Remote GPIO)
 A tool that exercises the Intel® RSP Software Toolkit Remote GPIO functionality
 
-This tool is intended to aid the Gateway developer by providing simulated messaging from a Remote GPIO Device in order to demonstrate the API for that functionality.  This script can be modified to operate on any Linux platform.  When running on a platform that supports real GPIO (i.e. Intel® UP, BeagleBone or RaspberryPi), this script can be configured to access and control GPIO pins through their file descriptors. 
+This tool is intended to aid the developer by providing simulated messaging from a Remote GPIO Device in order to demonstrate the API for that functionality.  This script can be modified to operate on any Linux platform.  When running on a platform that supports real GPIO (i.e. Intel® UP, BeagleBone or RaspberryPi), this script can be configured to access and control GPIO pins through their file descriptors. 
 
 
-## Install the Intel® RSP Software Toolkit - Gateway
+## Install the Intel® RSP Software Toolkit - RSP Controller Application
 
-Follow the instructions here (https://github.com/intel/rsp-sw-toolkit-gw/) to install and run the Gateway.
+Follow the instructions here (https://github.com/intel/rsp-sw-toolkit-gw/) to install and run the Intel&reg; RSP Controller Application.
 
 
 ## Configure the Remote GPIO script
@@ -36,11 +36,11 @@ GPIO[2]="26"
 GPIO[3]="20"
 GPIO[4]="21"
 ```
-DEVICE_ID          : The name used to identify the GPIO device to the Gateway.
-IFACE              : The name of the network interface used to connect to the Gateway.
+DEVICE_ID          : The name used to identify the GPIO device to the Intel&reg; RSP Controller Application.
+IFACE              : The name of the network interface used to connect to the Intel&reg; RSP Controller Application.
 GPIO_PATH_SIM      : The path to the simulated GPIO file descriptors. 
-GPIO_COUNT         : The number of GPIO pins enumerated to the Gateway.
-GPIO_INPUT_COUNT=2 : The number of GPIO input pins enumerated to the Gateway.
+GPIO_COUNT         : The number of GPIO pins enumerated to the Intel&reg; RSP Controller Application.
+GPIO_INPUT_COUNT=2 : The number of GPIO input pins enumerated to the Intel&reg; RSP Controller Application.
 GPIO[x]            : The GPIO number for the specific hardware platform.
                    : The GPIO number array must list the inputs first.
 
@@ -61,17 +61,17 @@ To simulate the presence of remote GPIO devices, execute the "rem-gpio.sh" scrip
 :~$ ./rem-gpio.sh 
 
 This script is used to simulate the messaging of a remote GPIO device
-that is used in conjunction with the Intel RSP SW Toolkit - Gateway.
+that is used in conjunction with the Intel® RSP SW Toolkit - RSP Controller Application.
 When using this script on a platform with actual GPIO pins, you must
 edit the platform specific variables first to access the GPIO pins.
 
 Usage: rsp-sim.sh <address>
-where <address> is IP address or FQDN of the Gateway.
+where <address> is IP address or FQDN of the computer running the Intel® RSP Controller Application.
 
 This script depends on the mosquitto-clients package being installed.
 Run 'sudo apt install mosquitto-clients' to install.
 
-NOTE: The Intel RSP SW Toolkit - Gateway must be running BEFORE
+NOTE: The Intel® RSP SW Toolkit - RSP Controller must be running BEFORE
       attempting to execute this script.
 
 :~$ ./rem-gpio.sh 127.0.0.1
@@ -87,34 +87,34 @@ Press CTRL-C to disconnect.
 ```
 
 
-## Use the Gateway Command Line Interface (CLI)
+## Use the Command Line Interface (CLI)
 
-Use the Gateway CLI to map the GPIO device pins to a specific function on the sensor.  Input functionalities (i.e. START_READING, STOP_READING) can only be mapped to GPIO input pins and output functionalities (i.e. SENSOR_CONNECTED, SENSOR_DISCONNECTED, SENSOR_READING_TAGS, SENSOR_TRANSMITTING) can only be mapped to GPIO output pins.
+Use the CLI to map the GPIO device pins to a specific function on the sensor.  Input functionalities (i.e. START_READING, STOP_READING) can only be mapped to GPIO input pins and output functionalities (i.e. SENSOR_CONNECTED, SENSOR_DISCONNECTED, SENSOR_READING_TAGS, SENSOR_TRANSMITTING) can only be mapped to GPIO output pins.
 
 ```
-:~$ ssh -p5222 gwconsole@localhost
+:~$ ssh -p5222 console@localhost
 Password authentication
-Password: gwconsole
+Password: console
 
-RFID Gateway console session
+RSP Controller console session
 
 <tab> to view available commands
 'clear' to clear the screen/console
 'quit' to end
 
-rfid-gw> sensor show
+cli> sensor show
 --------------------------------------------------------------------------------------------
 device     connect      reading    behavior                  facility           personality  aliases
 
 RSP-150000 CONNECTED    STOPPED    Default                   DEFAULT_FACILITY                [RSP-150000-0, RSP-150000-1, RSP-150000-2, RSP-150000-3]
 --------------------------------------------------------------------------------------------
-rfid-gw> gpio show.devices
+cli> gpio show.devices
 --------------------------------------------------------------------------------------------
 device       state        inputs       outputs     
 
 remote-gpio  CONNECTED    2            3           
 --------------------------------------------------------------------------------------------
-rfid-gw> gpio show.device.info remote-gpio 
+cli> gpio show.device.info remote-gpio 
 --------------------------------------------------------------------------------------------
 index        name         state        direction   
 
@@ -124,22 +124,21 @@ index        name         state        direction
 3            gpio20       DEASSERTED   OUTPUT      
 4            gpio21       DEASSERTED   OUTPUT      
 --------------------------------------------------------------------------------------------
-rfid-gw> gpio map.gpio RSP-150000 remote-gpio 0 START_READING 
+cli> gpio map.gpio RSP-150000 remote-gpio 0 START_READING 
 --------------------------------------------------------------------------------------------
 OK
 --------------------------------------------------------------------------------------------
-rfid-gw> gpio map.gpio RSP-150000 remote-gpio 2 SENSOR_TRANSMITTING 
+cli> gpio map.gpio RSP-150000 remote-gpio 2 SENSOR_TRANSMITTING 
 --------------------------------------------------------------------------------------------
 OK
 --------------------------------------------------------------------------------------------
-rfid-gw> gpio show.mapping 
+cli> gpio show.mapping 
 --------------------------------------------------------------------------------------------
 sensor id    gpio id      gpio index   pin function            
 
 RSP-150000   remote-gpio  0            START_READING           
 RSP-150000   remote-gpio  2            SENSOR_TRANSMITTING     
 --------------------------------------------------------------------------------------------
-rfid-gw> 
 ```
 
 

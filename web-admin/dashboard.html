@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Dashboard</title>
+<title>Dashboard</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,9 +14,9 @@
 <script type="text/javascript">
     var currentPage = "dashboard";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
-    gwSocket.topics = [
+    socket.topics = [
         "sensor_state_summary",
         "inventory_summary",
         "upstream_mqtt_status",
@@ -26,13 +26,13 @@
 
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("scheduler_get_run_state");
+            socket.sendJsonRequest("scheduler_get_run_state");
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "scheduler_get_run_state":
             case "scheduler_set_run_state":
@@ -41,7 +41,7 @@
         }
     };
 
-    gwSocket.inboundNotification = function (jsonNot) {
+    socket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
             case 'sensor_state_summary':
                 onSensorSummary(jsonNot.params);
@@ -145,13 +145,13 @@
     function setScheduleRunState(newState) {
         var e = document.getElementById("scheduler_selected_" + newState);
         e.innerHTML = '<i class="fas fa-spinner fa-pulse">';
-        gwSocket.sendJsonRequest("scheduler_set_run_state", {
+        socket.sendJsonRequest("scheduler_set_run_state", {
             run_state: newState
         });
     }
 
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
 </script>
@@ -248,22 +248,22 @@
     <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
         <div class="w3-bar w3-xxlarge">
             <div class="w3-bar-item"><i class="fa fa-cloud-upload-alt"></i></div>
-            <div class="w3-bar-item w3-right">Upstream</div>
+            <div class="w3-bar-item w3-right">Upstream MQTT</div>
         </div>
         <div class="w3-bar">
             <div class="w3-bar-item">Connection State</div>
             <div class="w3-bar-item w3-right" id="upstream_connection_state"></div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Broker</div>
+            <div class="w3-bar-item">Broker URI</div>
             <div class="w3-bar-item w3-right" id="upstream_broker_uri"></div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Subscribes</div>
+            <div class="w3-bar-item">Subscribe Topics</div>
             <div class="w3-bar-item w3-right" id="upstream_subscribes"></div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Publishes</div>
+            <div class="w3-bar-item">Publish Topics</div>
             <div class="w3-bar-item w3-right" id="upstream_publishes"></div>
         </div>
     </div>
@@ -271,22 +271,22 @@
     <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
         <div class="w3-bar w3-xxlarge">
             <div class="w3-bar-item"><i class="fa fa-download"></i></div>
-            <div class="w3-bar-item w3-right">Downstream</div>
+            <div class="w3-bar-item w3-right">Downstream MQTT</div>
         </div>
         <div class="w3-bar">
             <div class="w3-bar-item">Connection State</div>
             <div class="w3-bar-item w3-right" id="downstream_connection_state"></div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Broker</div>
+            <div class="w3-bar-item">Broker URI</div>
             <div class="w3-bar-item w3-right" id="downstream_broker_uri"></div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Subscribes</div>
+            <div class="w3-bar-item">Subscribe Topics</div>
             <div class="w3-bar-item w3-right" id="downstream_subscribes"></div>
         </div>
         <div class="w3-bar">
-            <div class="w3-bar-item">Publishes</div>
+            <div class="w3-bar-item">Publish Topics</div>
             <div class="w3-bar-item w3-right" id="downstream_publishes"></div>
         </div>
     </div>

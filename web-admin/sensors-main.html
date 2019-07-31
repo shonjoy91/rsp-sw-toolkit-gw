@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Sensors</title>
+<title>Sensors</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,9 +14,9 @@
 <script type="text/javascript">
     var currentPage = "sensors";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
-    gwSocket.topics = [
+    socket.topics = [
         "sensor_alerts",
         "sensor_connection_state_notification",
         "sensor_read_state_notification",
@@ -25,13 +25,13 @@
 
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("sensor_get_device_ids");
+            socket.sendJsonRequest("sensor_get_device_ids");
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "sensor_get_device_ids":
                 onGetAllSensorIds(jsonRsp.result);
@@ -48,7 +48,7 @@
         }
     };
 
-    gwSocket.inboundNotification = function (jsonNot) {
+    socket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
             case "sensor_connection_state_notification":
                 onSensorConnectionState(jsonNot.params);
@@ -157,12 +157,12 @@
     function onGetAllSensorIds(sensorIds) {
         for (var i = 0; i < sensorIds.length; i++) {
             establishSensorRow(sensorIds[i]);
-            // gwSocket.sendJsonRequest("sensor_get_basic_info", {device_id: sensorIds[i]});
+            // socket.sendJsonRequest("sensor_get_basic_info", {device_id: sensorIds[i]});
         }
         // loop twice so there's no chance of needing to handle responses from the basic info 
         // request while establishing the rows
         for (i = 0; i < sensorIds.length; i++) {
-            gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
+            socket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
         }
     }
 
@@ -177,7 +177,7 @@
     function onSensorConnectionState(params) {
         handleConnectionState(params.device_id, params.connection_state);
         if(params.connection_state === "CONNECTED") {
-            gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: params.device_id });
+            socket.sendJsonRequest("sensor_get_basic_info", { device_id: params.device_id });
         }
     }
 
@@ -355,7 +355,7 @@
     function doSimpleGet(command) {
         setupResults(selectedSensorId, command);
         showResultsModal();
-        gwSocket.sendJsonRequest("sensor_" + command, {
+        socket.sendJsonRequest("sensor_" + command, {
             device_id: selectedSensorId
         });
     }
@@ -363,11 +363,11 @@
     function forceDisconnect() {
         setupResults("", "Force All Disconnect");
         showResultsModal();
-        gwSocket.sendJsonRequest("sensor_force_all_disconnect", null);
+        socket.sendJsonRequest("sensor_force_all_disconnect", null);
     }
 
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
 </script>

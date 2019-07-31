@@ -5,21 +5,19 @@
 package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonNotification;
-import com.intel.rfid.gateway.GatewayStatus;
+import com.intel.rfid.controller.RSPControllerStatus;
 
-import java.util.Date;
+public class RSPControllerStatusUpdateNotification extends JsonNotification {
 
-public class GatewayStatusUpdateNotification extends JsonNotification {
-
-    public static final String METHOD_NAME = "gw_status_update";
+    public static final String METHOD_NAME = "rsp_controller_status_update";
 
     public Params params = new Params();
 
-    public GatewayStatusUpdateNotification() {
+    public RSPControllerStatusUpdateNotification() {
         method = METHOD_NAME;
     }
 
-    public GatewayStatusUpdateNotification(String _deviceId, GatewayStatus _status) {
+    public RSPControllerStatusUpdateNotification(String _deviceId, RSPControllerStatus _status) {
         this();
         params.device_id = _deviceId;
         params.status = _status.label;

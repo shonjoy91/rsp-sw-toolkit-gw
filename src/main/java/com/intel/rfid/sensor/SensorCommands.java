@@ -19,7 +19,7 @@ import com.intel.rfid.console.BetterEnumCompleter;
 import com.intel.rfid.console.BooleanCompleter;
 import com.intel.rfid.console.CLICommander;
 import com.intel.rfid.console.SyntaxException;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
@@ -239,11 +239,12 @@ public class SensorCommands implements CLICommander.Support {
         _out.indent(0, "> " + CMD_ID + " " + SHOW + " [ regex ]");
         _out.indent(1, "Displays a list of all known sensors");
         _out.indent(1, "Optional regex will match against the sensor id");
-        _out.indent(1, "A sensor is known to the gateway by the following:");
+        _out.indent(1, "A sensor is known to the controller by the following:");
         _out.indent(2, "Listed in facility group configuration");
         _out.indent(2, "Listed in personality group configuration");
         _out.indent(2, "Listed in schedule group configuration");
-        _out.indent(2, "Actively connects to the gateway regardless of facility, personality, or schedule inclusion");
+        _out.indent(2,
+                    "Actively connects to the controller regardless of facility, personality, or schedule inclusion");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + START_READING + " <device_id>...");
         _out.indent(1, "Start reading using the currently configured behavior(s)");
@@ -252,7 +253,7 @@ public class SensorCommands implements CLICommander.Support {
         _out.indent(1, "Stop reading");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + FORCE_ALL_DISCONNECT);
-        _out.indent(1, "forces a disconnect of ALL sensors (sends gateway shutting down message)");
+        _out.indent(1, "forces a disconnect of ALL sensors (sends controller shutting down message)");
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + RESET + " <device_id>...");
         _out.indent(1, "Command device to perform a reset");
@@ -339,7 +340,7 @@ public class SensorCommands implements CLICommander.Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
 
         long timeoutMillis = ResponseHandler.DEFAULT_WAIT_TIMEOUT_MILLIS;
         RSPCommandCallback rcc = null;
@@ -610,7 +611,7 @@ public class SensorCommands implements CLICommander.Support {
 
     }
 
-    public void doSetAlias(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+    public void doSetAlias(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
 
         String alias = _argIter.next();
         AntennaPort port = AntennaPort.valueOf(_argIter.next());
@@ -654,7 +655,7 @@ public class SensorCommands implements CLICommander.Support {
         }
     }
 
-    public void doShow(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+    public void doShow(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
 
         TreeSet<SensorPlatform> sensors = new TreeSet<>(getRSPs(_argIter, _out));
         if (sensors.isEmpty()) { return; }
@@ -666,7 +667,7 @@ public class SensorCommands implements CLICommander.Support {
         }
     }
 
-    public void doStats(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+    public void doStats(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
 
         Collection<SensorPlatform> rsps = getRSPs(_argIter, _out);
         if (rsps.isEmpty()) { return; }
@@ -721,7 +722,7 @@ public class SensorCommands implements CLICommander.Support {
         _out.line(sb.toString());
     }
 
-    public void doTokens(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+    public void doTokens(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
 
         TreeSet<SensorPlatform> sensors = new TreeSet<>(getRSPs(_argIter, _out));
         if (sensors.isEmpty()) { return; }
@@ -742,7 +743,7 @@ public class SensorCommands implements CLICommander.Support {
         _out.line(_rsp.toString());
     }
 
-    public void doRemove(ArgumentIterator _argIter, PrettyPrinter _out) throws GatewayException {
+    public void doRemove(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
         for (SensorPlatform rsp : getRSPs(_argIter, _out)) {
             SensorManager.RemoveResult result = sensorMgr.remove(rsp);
             _out.line("Removing " + rsp.getDeviceId() + ": " + result.message);

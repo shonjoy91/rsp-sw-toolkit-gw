@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Behaviors</title>
+<title>Mobility Profile</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,17 +14,17 @@
 <script type="text/javascript">
     var currentPage = "mobility_profile";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
     
     function onSocketState(state) {
         if (state === "open") {
-            gwSocket.sendJsonRequest("mobility_profile_get");
+            socket.sendJsonRequest("mobility_profile_get");
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "mobility_profile_get":
             case "mobility_profile_set":
@@ -51,7 +51,7 @@
 
     
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
     function showInputModal(subject, prompt) {

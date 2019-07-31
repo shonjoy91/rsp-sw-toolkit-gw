@@ -34,7 +34,7 @@ ADDITIONAL_OPTS="-server"
 
 # all the jars in the lib diretory go into the classpath
 CLASSPATH="-classpath ${home_dir}/lib/*:${home_dir}/config"
-MAIN_CLASS="com.intel.rfid.gateway.Main"
+MAIN_CLASS="com.intel.rfid.controller.Main"
 
 pushd ${home_dir}
 

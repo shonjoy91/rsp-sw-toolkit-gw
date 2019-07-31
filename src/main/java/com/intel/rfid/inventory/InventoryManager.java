@@ -11,9 +11,9 @@ import com.intel.rfid.api.data.TagInfo;
 import com.intel.rfid.api.data.TagStatsInfo;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.TagRead;
+import com.intel.rfid.controller.ConfigManager;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.downstream.DownstreamManager;
-import com.intel.rfid.gateway.ConfigManager;
-import com.intel.rfid.gateway.Env;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.StringHelper;
@@ -603,12 +603,12 @@ public class InventoryManager
 
         String nl = System.getProperty("line.separator");
         String timestamp = sdf.format(new Date());
-        Path snapPath = Env.resolveSnapshotPath("gw_inventory_" + timestamp + ".zip");
+        Path snapPath = Env.resolveSnapshotPath("controller_inventory_" + timestamp + ".zip");
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(snapPath))) {
 
             for (String facilityId : cache.inventory.keySet()) {
 
-                zos.putNextEntry(new ZipEntry("gw_inventory_" + facilityId + "_" + timestamp + ".csv"));
+                zos.putNextEntry(new ZipEntry("controller_inventory_" + facilityId + "_" + timestamp + ".csv"));
 
                 String s = "Facility,Epc,State,Last Seen,Location" + nl;
 

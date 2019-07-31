@@ -5,7 +5,7 @@
 package com.intel.rfid.cluster;
 
 import com.intel.rfid.console.ArgumentIterator;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
@@ -86,7 +86,7 @@ public class ClusterManagerCommands implements Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-            throws IOException, GatewayException {
+            throws IOException, RSPControllerException {
 
         switch (_action) {
 
@@ -108,7 +108,7 @@ public class ClusterManagerCommands implements Support {
     }
 
     private void doLoadFile(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws IOException, GatewayException {
+            throws IOException, RSPControllerException {
 
 
         Path p = Paths.get(new File(_argIter.next()).getCanonicalPath());

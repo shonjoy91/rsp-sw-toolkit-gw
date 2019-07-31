@@ -6,9 +6,9 @@ package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonResponseOK;
 
-public class GatewayGetAllGeoRegionsResponse extends JsonResponseOK {
+public class RSPControllerGetAllGeoRegionsResponse extends JsonResponseOK {
 
-    public GatewayGetAllGeoRegionsResponse(String _id, String[] _regions) {
+    public RSPControllerGetAllGeoRegionsResponse(String _id, String[] _regions) {
         super(_id, Boolean.TRUE);
         result = _regions;
     }

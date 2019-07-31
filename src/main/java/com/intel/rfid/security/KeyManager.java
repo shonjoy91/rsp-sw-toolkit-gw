@@ -4,9 +4,9 @@
  */
 package com.intel.rfid.security;
 
+import com.intel.rfid.controller.ConfigManager;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.exception.ConfigException;
-import com.intel.rfid.gateway.ConfigManager;
-import com.intel.rfid.gateway.Env;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

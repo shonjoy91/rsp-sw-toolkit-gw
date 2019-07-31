@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Configuration</title>
+<title>Configuration</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -15,9 +15,9 @@
 
     var currentPage = "scheduler";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
-    gwSocket.topics = ["scheduler_run_state"];
+    socket.topics = ["scheduler_run_state"];
 
     function onSocketState(state) {
         if (state === "open") {
@@ -26,9 +26,9 @@
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "scheduler_get_run_state":
             case "scheduler_set_run_state":
@@ -37,7 +37,7 @@
         }
     };
 
-    gwSocket.inboundNotification = function (jsonNot) {
+    socket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
             case "scheduler_run_state":
                 onSchedulerSummary(jsonNot.params);
@@ -47,7 +47,7 @@
 
 
     function reqeustSummary() {
-        gwSocket.sendJsonRequest("scheduler_get_run_state");
+        socket.sendJsonRequest("scheduler_get_run_state");
     }
 
     function onSchedulerSummary(scheduler_summary) {
@@ -103,11 +103,11 @@
     function setScheduleRunState(newState) {
         var e = document.getElementById("scheduler_selected_" + newState);
         e.innerHTML = '<i class="fas fa-spinner fa-pulse">';
-        gwSocket.sendJsonRequest("scheduler_set_run_state", {run_state: newState});
+        socket.sendJsonRequest("scheduler_set_run_state", {run_state: newState});
     }
 
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 </script>
 

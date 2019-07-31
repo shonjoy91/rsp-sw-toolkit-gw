@@ -2,7 +2,7 @@
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package com.intel.rfid.gateway;
+package com.intel.rfid.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +15,11 @@ import java.nio.file.Paths;
 public class Env {
 
     // support configuration via environment variable
-    public static final String ENV_VAR_GW_HOME = "RSP_GATEWAY_HOME";
+    public static final String ENV_VAR_HOME = "RSP_CONTROLLER_HOME";
 
     // support configuration via command line changes
     // (overrides environment variables)
-    public static final String SYS_PROP_GW_HOME = "rsp.gateway.home";
+    public static final String SYS_PROP_HOME = "rsp.controller.home";
 
     protected static final Logger log = LoggerFactory.getLogger(Env.class);
     private static Path homePath;
@@ -38,10 +38,9 @@ public class Env {
     static {
         String s;
 
-        // GATEWAY PATHS
-        s = System.getProperty(SYS_PROP_GW_HOME);
+        s = System.getProperty(SYS_PROP_HOME);
         if (s == null) {
-            s = System.getenv(ENV_VAR_GW_HOME);
+            s = System.getenv(ENV_VAR_HOME);
         }
         if (s == null) {
             s = System.getProperty("user.dir");

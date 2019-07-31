@@ -13,7 +13,7 @@ import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.cluster.ClusterRunner;
-import com.intel.rfid.gateway.Env;
+import com.intel.rfid.controller.Env;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.Publisher;
@@ -122,7 +122,7 @@ public class ScheduleManager
 
     public synchronized boolean stop() {
         // save the state before stopping so it will be able to restart
-        // correctly if gateway is going down (and back up)
+        // correctly if controller is going down (and back up)
         persistState();
         changeRunState(INACTIVE);
         runStatePublisher.clearSubscribers();

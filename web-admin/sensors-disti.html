@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Sensors</title>
+<title>Sensors</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -14,23 +14,23 @@
 <script type="text/javascript">
     var currentPage = "disti_cfg";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
-    gwSocket.topics = ["sensor_connection_state_notification", "oem_cfg_update_status"];
+    socket.topics = ["sensor_connection_state_notification", "oem_cfg_update_status"];
 
     function onSocketState(state) {
         if (state === "open") {
             clearAllData();
-            gwSocket.sendJsonRequest("scheduler_set_run_state", {run_state: "INACTIVE"});
-            gwSocket.sendJsonRequest("gateway_get_sensor_sw_repo_versions");
-            gwSocket.sendJsonRequest("gateway_get_all_geo_regions");
-            gwSocket.sendJsonRequest("sensor_get_device_ids");
+            socket.sendJsonRequest("scheduler_set_run_state", {run_state: "INACTIVE"});
+            socket.sendJsonRequest("controller_get_sensor_sw_repo_versions");
+            socket.sendJsonRequest("controller_get_all_geo_regions");
+            socket.sendJsonRequest("sensor_get_device_ids");
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         if (jsonRsp.result === 'undefined') {
             console.log("jsonRsp error: " + JSON.stringify(jsonRsp));
             return;
@@ -44,10 +44,10 @@
             case "sensor_get_basic_info":
                 onSensorBasicInfo(jsonRsp.result);
                 break;
-            case "gateway_get_all_geo_regions":
+            case "controller_get_all_geo_regions":
                 onAllGeoRegions(jsonRsp.result);
                 break;
-            case "gateway_get_sensor_sw_repo_versions":
+            case "controller_get_sensor_sw_repo_versions":
                 onRepoVersions(jsonRsp.result);
                 break;
             case "sensor_get_geo_region":
@@ -65,7 +65,7 @@
         }
     };
 
-    gwSocket.inboundNotification = function (jsonNot) {
+    socket.inboundNotification = function (jsonNot) {
         switch (jsonNot.method) {
             case "sensor_connection_state_notification":
                 onSensorConnectionState(jsonNot.params);
@@ -78,12 +78,12 @@
 
     function onGetAllSensorIds(sensorIds) {
         for (var i = 0; i < sensorIds.length; i++) {
-            gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
+            socket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
         }
         // loop twice so there's no chance of needing to handle responses from the basic info 
         // request while establishing the rows
         // for (i = 0; i < sensorIds.length; i++) {
-        //     gwSocket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
+        //     socket.sendJsonRequest("sensor_get_basic_info", { device_id: sensorIds[i] });
         // }
     }
     
@@ -178,13 +178,13 @@
     }
 
     function sendSensorRequest(deviceId, method) {
-        var reqId = gwSocket.sendJsonRequest(method, {device_id: deviceId});
-        gwSocket.pendingRequests[reqId].deviceId = deviceId;
+        var reqId = socket.sendJsonRequest(method, {device_id: deviceId});
+        socket.pendingRequests[reqId].deviceId = deviceId;
     }
 
     function mapPendingSensor(id) {
-        if (typeof gwSocket.pendingRequests[id].deviceId !== 'undefined') {
-            return gwSocket.pendingRequests[id].deviceId;
+        if (typeof socket.pendingRequests[id].deviceId !== 'undefined') {
+            return socket.pendingRequests[id].deviceId;
         } else {
             return null;
         }
@@ -253,11 +253,11 @@
         } else {
             // send change region command
             e.innerHTML = "Changing region";
-            var reqId = gwSocket.sendJsonRequest("sensor_set_geo_region", {
+            var reqId = socket.sendJsonRequest("sensor_set_geo_region", {
                 device_id: deviceId,
                 region: selectedRegion
             });
-            gwSocket.pendingRequests[reqId].deviceId = deviceId;
+            socket.pendingRequests[reqId].deviceId = deviceId;
             document.getElementById(deviceId + ".region").innerHTML = "&nbsp;";
         }
 
@@ -347,7 +347,7 @@
 
 
     function init() {
-        gwSocket.init();
+        socket.init();
     }
 
 </script>

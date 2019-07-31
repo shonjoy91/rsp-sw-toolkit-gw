@@ -50,7 +50,7 @@ STATE="Arizona"
 LOCALITY="Chandler"
 ORGANIZATION="Ace Point Inc."
 # make sure this matches the server hostname that will be used 
-# for the gateway REST functionality. By default, it will be
+# for the REST functionality. By default, it will be
 # the MDNS name of the server
 SERVER_FQDN="${HOSTNAME}.local"
 

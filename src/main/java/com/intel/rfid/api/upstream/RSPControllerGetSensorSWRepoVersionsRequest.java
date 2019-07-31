@@ -6,9 +6,9 @@ package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonRequest;
 
-public class GatewayGetVersionsRequest extends JsonRequest {
+public class RSPControllerGetSensorSWRepoVersionsRequest extends JsonRequest {
 
-    public static final String METHOD_NAME = "gateway_get_versions";
+    public static final String METHOD_NAME = "controller_get_sensor_sw_repo_versions";
 
     public class Params {
         public String device_id;
@@ -16,7 +16,7 @@ public class GatewayGetVersionsRequest extends JsonRequest {
 
     public Params params = new Params();
 
-    public GatewayGetVersionsRequest() {
+    public RSPControllerGetSensorSWRepoVersionsRequest() {
         method = METHOD_NAME;
     }
 

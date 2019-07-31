@@ -10,7 +10,7 @@ import com.intel.rfid.tag.Tag;
 import com.intel.rfid.tag.TagEvent;
 
 /**
- * a convenience class to add Tag details without exposing 
+ * a convenience class to add Tag details without exposing
  * the Tag class in the API
  */
 public class UpstreamInventoryEventInfo extends InventoryEventInfo {

@@ -6,7 +6,6 @@ package com.intel.rfid.downstream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.api.JsonNotification;
 import com.intel.rfid.api.JsonRequest;
 import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.api.gpio.GPIOConnectRequest;
@@ -14,8 +13,8 @@ import com.intel.rfid.api.gpio.GPIOConnectResponse;
 import com.intel.rfid.api.sensor.ConnectRequest;
 import com.intel.rfid.api.sensor.ConnectResponse;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
-import com.intel.rfid.api.upstream.GatewayStatusUpdateNotification;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.gpio.GPIODevice;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
@@ -97,7 +96,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     }
 
     public void sendCommand(String _deviceId, JsonRequest _req)
-            throws JsonProcessingException, GatewayException {
+            throws JsonProcessingException, RSPControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_req);
         mqttDownstream.publishCommand(_deviceId, bytes);
@@ -107,7 +106,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     }
 
     public void sendConnectRsp(String _deviceId, ConnectResponse _rsp)
-            throws JsonProcessingException, GatewayException {
+            throws JsonProcessingException, RSPControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_rsp);
         mqttDownstream.publishConnectResponse(_deviceId, bytes);
@@ -116,18 +115,18 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
                  mapper.writeValueAsString(_rsp.result));
     }
 
-    public void send(GatewayStatusUpdateNotification _not) {
+    public void send(RSPControllerStatusUpdateNotification _not) {
         try {
-            mqttDownstream.publishGWStatus(mapper.writeValueAsBytes(_not));
-            log.info("Published GatewayStatusUpdate {}", _not);
-        } catch (GatewayException | JsonProcessingException _e) {
-            log.error("failed to send gateway status update {} {}",
+            mqttDownstream.publishControllerStatus(mapper.writeValueAsBytes(_not));
+            log.info("Published {}", _not);
+        } catch (RSPControllerException | JsonProcessingException _e) {
+            log.error("failed to send controller status update {} {}",
                       _not.params.status, _e.getMessage());
         }
     }
 
     public void sendGPIOCommand(String _deviceId, JsonRequest _req)
-            throws JsonProcessingException, GatewayException {
+            throws JsonProcessingException, RSPControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_req);
         mqttDownstream.publishGPIOCommand(_deviceId, bytes);
@@ -137,7 +136,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     }
 
     public void sendGPIODevceConnectRsp(String _deviceId, GPIOConnectResponse _rsp)
-            throws JsonProcessingException, GatewayException {
+            throws JsonProcessingException, RSPControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_rsp);
         mqttDownstream.publishGPIOConnectResponse(_deviceId, bytes);

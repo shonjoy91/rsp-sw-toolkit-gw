@@ -7,7 +7,7 @@ package com.intel.rfid.inventory;
 import com.intel.rfid.console.ArgumentIterator;
 import com.intel.rfid.console.SyntaxException;
 import com.intel.rfid.exception.ConfigException;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
@@ -136,7 +136,7 @@ public class InventoryCommands implements Support {
         _out.blank();
         _out.indent(0, "> " + CMD_ID + " " + UNLOAD);
         _out.indent(1, "!! WARNING !! WARNING !! WARNING !! WARNING !! WARNING !! WARNING !! WARNING !! ");
-        _out.indent(1, "Clears all tag reads from the gateway including the cached file. No recovery available");
+        _out.indent(1, "Clears all tag reads from the controller including the cached file. No recovery available");
         _out.indent(1, "This will cause new arrival events to be generated for all tags");
         _out.blank();
         usageStats(_out);
@@ -192,7 +192,7 @@ public class InventoryCommands implements Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
 
         switch (_action) {
             case SUMMARY:
@@ -227,7 +227,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doStats(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
 
         if (!_argIter.hasNext()) {
             usageStats(_out);
@@ -264,7 +264,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobility(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
         if (!_argIter.hasNext()) {
             usageMobility(_out);
             return;
@@ -292,7 +292,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobilitySet(ArgumentIterator _argIter, RssiAdjuster adj)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
         String id = _argIter.next();
         MobilityProfile mp = MobilityProfileConfig.getProfile(id);
         if (mp == null) {
@@ -302,7 +302,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobilityShow(PrettyPrinter _out, RssiAdjuster adj)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
         _out.line("ACTIVE:");
         adj.showMobilityProfile(_out);
         _out.blank();
@@ -315,7 +315,7 @@ public class InventoryCommands implements Support {
 
 
     private void doWaypoints(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws GatewayException, IOException {
+            throws RSPControllerException, IOException {
 
         if (!_argIter.hasNext()) {
             usageWaypoints(_out);

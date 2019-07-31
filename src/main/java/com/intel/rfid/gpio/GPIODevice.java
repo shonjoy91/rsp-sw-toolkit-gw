@@ -17,7 +17,7 @@ import com.intel.rfid.api.gpio.GPIOInfo;
 import com.intel.rfid.api.gpio.GPIOInputNotification;
 import com.intel.rfid.api.gpio.GPIOSetStateRequest;
 import com.intel.rfid.api.sensor.SensorHeartbeatNotification;
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.schedule.AtomicTimeMillis;
 import com.intel.rfid.sensor.ResponseHandler;
@@ -207,7 +207,7 @@ public class GPIODevice {
         setGPIODeviceInfo(_msg.params);
         try {
             manager.sendGPIOConnectResponse(_msg.getId(), deviceInfo.device_id);
-        } catch (IOException | GatewayException _e) {
+        } catch (IOException | RSPControllerException _e) {
             logGPIO.error("error sending connect response", _e);
         }
     }
@@ -226,7 +226,7 @@ public class GPIODevice {
             manager.handleGPIOInput(deviceInfo.device_id, _notification);
             GPIOInfo info = _notification.params.gpio_info;
             deviceInfo.gpio_info.set(info.index, info);
-        } catch (IOException | GatewayException _e) {
+        } catch (IOException | RSPControllerException _e) {
             logGPIO.error("error handling GPIO Input", _e);
         }
     }

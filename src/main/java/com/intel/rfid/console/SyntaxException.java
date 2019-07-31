@@ -4,10 +4,10 @@
  */
 package com.intel.rfid.console;
 
-import com.intel.rfid.exception.GatewayException;
+import com.intel.rfid.exception.RSPControllerException;
 
 @SuppressWarnings({"serial"})
-public class SyntaxException extends GatewayException {
+public class SyntaxException extends RSPControllerException {
 
     public SyntaxException(String _s) { super(_s); }
 

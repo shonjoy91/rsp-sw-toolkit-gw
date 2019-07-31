@@ -5,7 +5,7 @@
 package com.intel.rfid.jmdns;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.rfid.gateway.ConfigManager;
+import com.intel.rfid.controller.ConfigManager;
 import com.intel.rfid.helpers.Jackson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ public class JmDNSService {
     private static ObjectMapper mapper = Jackson.getMapper();
 
     private static String REGISTER_TYPE = "_rfid._tcp.local.";
-    private static String REGISTER_NAME_PREFIX = "RFID-Gateway";
+    private static String REGISTER_NAME_PREFIX = "RSP-Controller";
     private ServiceAnnouncement serviceAnnouncement;
 
     private boolean started = false;
@@ -50,7 +50,7 @@ public class JmDNSService {
         REGISTER_TYPE = ConfigManager.instance.getOptString(
                 "jmdns.register.type", "_rfid._tcp.local.");
         REGISTER_NAME_PREFIX = ConfigManager.instance.getOptString(
-                "jmdns.register.name.prefix", "RFID-Gateway");
+                "jmdns.register.name.prefix", "RSP-Controller");
 
         serviceAnnouncement = new ServiceAnnouncement();
         serviceAnnouncement.update();
@@ -132,7 +132,7 @@ public class JmDNSService {
 
     private synchronized void registerService(JmDNS jmdns) {
         try {
-            String fullName = REGISTER_NAME_PREFIX + "-" + ConfigManager.instance.getGatewayDeviceId();
+            String fullName = REGISTER_NAME_PREFIX + "-" + ConfigManager.instance.getRSPControllerDeviceId();
 
             log.info("attempting to register mdns: {} on {} ({})...",
                      fullName,

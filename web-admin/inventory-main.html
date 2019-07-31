@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<title>RSP Gateway Inventory</title>
+<title>Inventory</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="/web-admin/w3.css">
@@ -15,7 +15,7 @@
 
     var currentPage = "inventory";
 
-    var gwSocket = new GatewayWebSocket();
+    var socket = new ControllerWebSocket();
 
     function onSocketState(state) {
         if (state === "open") {
@@ -24,9 +24,9 @@
         }
     }
 
-    gwSocket.addStateListener(onSocketState);
+    socket.addStateListener(onSocketState);
 
-    gwSocket.inboundResponse = function (jsonRsp, jsonReq) {
+    socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
             case "inventory_get_tag_info":
                 onTagInfo(jsonRsp.result);
@@ -58,7 +58,7 @@
 
     function requestInventoryTagInfo() {
         var pattern = document.getElementById("epc_filter_pattern").value;
-        gwSocket.sendJsonRequest("inventory_get_tag_info", {filter_pattern: pattern});
+        socket.sendJsonRequest("inventory_get_tag_info", {filter_pattern: pattern});
     }
 
     function sendEpcFilterPattern() {
@@ -127,12 +127,12 @@
     }
     
     function unload() {
-        gwSocket.sendJsonRequest("inventory_unload", null);
+        socket.sendJsonRequest("inventory_unload", null);
     }
 
     function init() {
         initEpcFilterInput();
-        gwSocket.init();
+        socket.init();
     }
 
 </script>
