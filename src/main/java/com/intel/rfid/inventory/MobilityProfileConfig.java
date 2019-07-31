@@ -7,75 +7,86 @@ package com.intel.rfid.inventory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.controller.Env;
 import com.intel.rfid.helpers.Jackson;
-import jline.console.completer.Completer;
-import jline.console.completer.StringsCompleter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.List;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class MobilityProfileConfig implements Completer {
+public class MobilityProfileConfig {
 
     protected static final Logger log = LoggerFactory.getLogger(MobilityProfileConfig.class);
     protected static ObjectMapper mapper = Jackson.getMapper();
+    public static final Path BASE_DIR_PATH = Env.getConfigPath().resolve("mobility");
 
-    public static MobilityProfile getProfile(String _id) throws IOException {
-        return available().get(_id);
-    }
-
-    public static Map<String, MobilityProfile> available() throws IOException {
-
-        // look for any mobility profiles under the conffiguration mobiliity directory
-        File dirFile = Env.resolveConfig("mobility").toFile();
-
-        if (!dirFile.exists()) {
-            throw new FileNotFoundException("missing mobility dir: " + dirFile.getAbsolutePath());
-        }
-
-        if (!dirFile.isDirectory()) {
-            throw new FileNotFoundException("mobility dir location is not a directory: " + dirFile.getAbsolutePath());
-        }
-
-        File[] files = dirFile.listFiles();
-        if (files == null || files.length == 0) {
-            throw new FileNotFoundException("mobility dir is empty: " + dirFile.getAbsolutePath());
-        }
-
+    public static Map<String, MobilityProfile> available() {
         Map<String, MobilityProfile> map = new TreeMap<>();
+        MobilityProfile defaultMobilityProfile = new MobilityProfile();
+        map.put(defaultMobilityProfile.getId(), defaultMobilityProfile);
+        File[] files = BASE_DIR_PATH.toFile().listFiles();
+
+        if (files == null || files.length == 0) {
+            return map;
+        }
 
         for (File f : files) {
+
+            String fileName = f.toPath().getFileName().toString();
+            // get rid of the .json extension (or any extension)
+            int i = fileName.lastIndexOf(".json");
+            if (i > 0) {
+                fileName = fileName.substring(0, i);
+            }
+
             try {
-                MobilityProfile mp = mapper.readValue(f, MobilityProfile.class);
-                if (map.containsKey(mp.getId())) {
-                    log.error("mobiility profile id map duplicate: {} in file {}",
-                              mp.getId(), f.getAbsolutePath());
-                } else {
-                    map.put(mp.getId(), mp);
+                MobilityProfile b = mapper.readValue(f, MobilityProfile.class);
+                if (map.containsKey(b.getId())) {
+                    log.warn("mobility profile file {} has duplicate id: {}", f.getAbsoluteFile(), b.getId());
                 }
-            } catch (Exception e) {
-                log.error("error getting mobility profile from file: {}", f.getAbsolutePath());
+                map.put(fileName, b);
+            } catch (IOException e) {
+                log.error("error processing mobility profile: {}", f.getAbsolutePath());
             }
         }
         return map;
     }
 
-    public int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
-
-        StringsCompleter sc = new StringsCompleter();
-        try {
-            Map<String, MobilityProfile> map = available();
-            if (!map.isEmpty()) {
-                sc.getStrings().addAll(map.keySet());
-            }
+    public static void put(MobilityProfile _mobilityProfile) throws IOException {
+        Path p = BASE_DIR_PATH.resolve(_mobilityProfile.getId() + ".json");
+        try (OutputStream os = Files.newOutputStream(p)) {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(os, _mobilityProfile);
+            log.info("wrote {}", p);
         } catch (IOException e) {
-            log.error("error:", e);
+            log.error("failed persisting {}", e.getMessage());
+            throw e;
         }
-        return sc.complete(buffer, cursor, candidates);
+
+
     }
 
+    public static MobilityProfile deleteMobilityProfile(String _mobilityProfileId) throws IOException {
+        MobilityProfile mobilityProfile = getMobilityProfile(_mobilityProfileId);
+        Path p = BASE_DIR_PATH.resolve(_mobilityProfileId + ".json");
+        if (Files.deleteIfExists(p)) {
+            return mobilityProfile;
+        } else {
+            throw new IOException("mobilityProfile " + _mobilityProfileId + " not found on disk");
+        }
+    }
+
+    public static MobilityProfile getMobilityProfile(String _mobilityProfileId) throws IOException {
+        Map<String, MobilityProfile> avail = available();
+        for (MobilityProfile b : avail.values()) {
+            if (b.getId().equals(_mobilityProfileId)) {
+                return b;
+            }
+        }
+        throw new IOException("unable to locate " + _mobilityProfileId);
+    }
+    
 }

@@ -5,6 +5,7 @@
 package com.intel.rfid.sensor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.api.data.DeviceAlertType;
 import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.api.sensor.AlertSeverity;
@@ -19,7 +20,7 @@ import com.intel.rfid.console.BetterEnumCompleter;
 import com.intel.rfid.console.BooleanCompleter;
 import com.intel.rfid.console.CLICommander;
 import com.intel.rfid.console.SyntaxException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
@@ -340,10 +341,10 @@ public class SensorCommands implements CLICommander.Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-            throws RSPControllerException, IOException {
+            throws RspControllerException, IOException {
 
         long timeoutMillis = ResponseHandler.DEFAULT_WAIT_TIMEOUT_MILLIS;
-        RSPCommandCallback rcc = null;
+        RspCommandCallback rcc = null;
 
         switch (_action) {
 
@@ -369,7 +370,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case START_READING:
-                rcc = new RSPCommandCallback(START_READING) {
+                rcc = new RspCommandCallback(START_READING) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.startReading();
                     }
@@ -377,7 +378,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case STOP_READING:
-                rcc = new RSPCommandCallback(STOP_READING) {
+                rcc = new RspCommandCallback(STOP_READING) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.stopReading();
                     }
@@ -392,7 +393,7 @@ public class SensorCommands implements CLICommander.Support {
             case RESET:
                 // Give reset command extra time to respond
                 timeoutMillis = ResponseHandler.SENSOR_RESET_TIMEOUT_MILLIS;
-                rcc = new RSPCommandCallback(RESET) {
+                rcc = new RspCommandCallback(RESET) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.reset();
                     }
@@ -400,7 +401,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case REBOOT:
-                rcc = new RSPCommandCallback(REBOOT) {
+                rcc = new RspCommandCallback(REBOOT) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.reboot();
                     }
@@ -408,7 +409,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case SHUTDOWN:
-                rcc = new RSPCommandCallback(SHUTDOWN) {
+                rcc = new RspCommandCallback(SHUTDOWN) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.shutdown();
                     }
@@ -424,7 +425,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case GET_BIST:
-                rcc = new RSPCommandCallback(GET_BIST) {
+                rcc = new RspCommandCallback(GET_BIST) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.getBISTResults();
                     }
@@ -432,7 +433,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case GET_STATE:
-                rcc = new RSPCommandCallback(GET_STATE) {
+                rcc = new RspCommandCallback(GET_STATE) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.getState();
                     }
@@ -440,7 +441,7 @@ public class SensorCommands implements CLICommander.Support {
                 break;
 
             case GET_SW_VERS:
-                rcc = new RSPCommandCallback(GET_SW_VERS) {
+                rcc = new RspCommandCallback(GET_SW_VERS) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.getSoftwareVersion();
                     }
@@ -449,7 +450,7 @@ public class SensorCommands implements CLICommander.Support {
 
             case SET_LED:
                 final LEDState state = LEDState.valueOf(_argIter.next());
-                rcc = new RSPCommandCallback(SET_LED) {
+                rcc = new RspCommandCallback(SET_LED) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.setLED(state);
                     }
@@ -465,7 +466,7 @@ public class SensorCommands implements CLICommander.Support {
                 } catch (ParseException pe) {
                     throw new SyntaxException(pe.getMessage());
                 }
-                rcc = new RSPCommandCallback(SET_ALERT_THRESHOLD) {
+                rcc = new RspCommandCallback(SET_ALERT_THRESHOLD) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.setAlertThreshold(t1.id, severity, threshold);
                     }
@@ -474,7 +475,7 @@ public class SensorCommands implements CLICommander.Support {
             case ACK_ALERT:
                 final DeviceAlertType t2 = DeviceAlertType.valueOf(_argIter.next());
                 final boolean ack = Boolean.parseBoolean(_argIter.next());
-                rcc = new RSPCommandCallback(ACK_ALERT) {
+                rcc = new RspCommandCallback(ACK_ALERT) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.acknowledgeAlert(t2.id, ack);
                     }
@@ -483,7 +484,7 @@ public class SensorCommands implements CLICommander.Support {
             case MUTE_ALERT:
                 final DeviceAlertType t3 = DeviceAlertType.valueOf(_argIter.next());
                 final boolean mute = Boolean.parseBoolean(_argIter.next());
-                rcc = new RSPCommandCallback(MUTE_ALERT) {
+                rcc = new RspCommandCallback(MUTE_ALERT) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.muteAlert(t3.id, mute);
                     }
@@ -497,7 +498,7 @@ public class SensorCommands implements CLICommander.Support {
                 if (CAPTURE_IMG.equals(_argIter.next())) { b = Boolean.parseBoolean(_argIter.next()); }
                 final boolean captureImages = b;
 
-                rcc = new RSPCommandCallback(SET_MOTION_EVENT) {
+                rcc = new RspCommandCallback(SET_MOTION_EVENT) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.setMotion(sendEvents, captureImages);
                     }
@@ -519,7 +520,7 @@ public class SensorCommands implements CLICommander.Support {
 
             case SET_FACILITY: {
                 final String facilityId = _argIter.next();
-                rcc = new RSPCommandCallback(SET_FACILITY) {
+                rcc = new RspCommandCallback(SET_FACILITY) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.setFacilityId(facilityId);
                     }
@@ -611,7 +612,7 @@ public class SensorCommands implements CLICommander.Support {
 
     }
 
-    public void doSetAlias(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doSetAlias(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         String alias = _argIter.next();
         AntennaPort port = AntennaPort.valueOf(_argIter.next());
@@ -655,7 +656,7 @@ public class SensorCommands implements CLICommander.Support {
         }
     }
 
-    public void doShow(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doShow(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         TreeSet<SensorPlatform> sensors = new TreeSet<>(getRSPs(_argIter, _out));
         if (sensors.isEmpty()) { return; }
@@ -667,7 +668,7 @@ public class SensorCommands implements CLICommander.Support {
         }
     }
 
-    public void doStats(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doStats(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         Collection<SensorPlatform> rsps = getRSPs(_argIter, _out);
         if (rsps.isEmpty()) { return; }
@@ -722,7 +723,7 @@ public class SensorCommands implements CLICommander.Support {
         _out.line(sb.toString());
     }
 
-    public void doTokens(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doTokens(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         TreeSet<SensorPlatform> sensors = new TreeSet<>(getRSPs(_argIter, _out));
         if (sensors.isEmpty()) { return; }
@@ -743,9 +744,9 @@ public class SensorCommands implements CLICommander.Support {
         _out.line(_rsp.toString());
     }
 
-    public void doRemove(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doRemove(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
         for (SensorPlatform rsp : getRSPs(_argIter, _out)) {
-            SensorManager.RemoveResult result = sensorMgr.remove(rsp);
+            BooleanResult result = sensorMgr.remove(rsp);
             _out.line("Removing " + rsp.getDeviceId() + ": " + result.message);
         }
     }
@@ -797,18 +798,18 @@ public class SensorCommands implements CLICommander.Support {
         return rsps;
     }
 
-    private abstract class RSPCommandCallback {
+    private abstract class RspCommandCallback {
 
         public final String commandLabel;
 
-        public RSPCommandCallback(String _commandLabel) {
+        public RspCommandCallback(String _commandLabel) {
             commandLabel = _commandLabel;
         }
 
         public abstract ResponseHandler callCommand(SensorPlatform _rsp);
     }
 
-    private void doRSPCommand(ArgumentIterator _argIter, RSPCommandCallback _callback, PrettyPrinter _out,
+    private void doRSPCommand(ArgumentIterator _argIter, RspCommandCallback _callback, PrettyPrinter _out,
                               long _timeoutMillis)
             throws SyntaxException {
 

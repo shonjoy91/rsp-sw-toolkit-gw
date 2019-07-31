@@ -13,6 +13,7 @@ import com.intel.rfid.api.JsonResponse;
 import com.intel.rfid.api.JsonResponseErr;
 import com.intel.rfid.api.JsonResponseOK;
 import com.intel.rfid.api.JsonRpcError;
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.api.data.InventorySummary;
 import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.data.SensorConfigInfo;
@@ -25,7 +26,7 @@ import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
-import com.intel.rfid.api.sensor.RSPControllerVersions;
+import com.intel.rfid.api.sensor.RspControllerVersions;
 import com.intel.rfid.api.upstream.BehaviorDeleteRequest;
 import com.intel.rfid.api.upstream.BehaviorGetAllRequest;
 import com.intel.rfid.api.upstream.BehaviorGetRequest;
@@ -42,18 +43,26 @@ import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
+import com.intel.rfid.api.upstream.InventoryActivateMobilityProfileRequest;
+import com.intel.rfid.api.upstream.InventoryGetActiveMobilityProfileIdRequest;
+import com.intel.rfid.api.upstream.InventoryGetActiveMobilityProfileIdResponse;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoResponse;
 import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoResponse;
 import com.intel.rfid.api.upstream.InventorySummaryNotification;
 import com.intel.rfid.api.upstream.InventoryUnloadRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsResponse;
-import com.intel.rfid.api.upstream.RSPControllerGetSensorSWRepoVersionsRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetSensorSwRepoVersionsResponse;
-import com.intel.rfid.api.upstream.RSPControllerGetVersionsRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetVersionsResponse;
+import com.intel.rfid.api.upstream.MobilityProfileDeleteRequest;
+import com.intel.rfid.api.upstream.MobilityProfileGetAllRequest;
+import com.intel.rfid.api.upstream.MobilityProfileGetRequest;
+import com.intel.rfid.api.upstream.MobilityProfilePutRequest;
+import com.intel.rfid.api.upstream.MobilityProfileResponse;
+import com.intel.rfid.api.upstream.RspControllerGetAllGeoRegionsRequest;
+import com.intel.rfid.api.upstream.RspControllerGetAllGeoRegionsResponse;
+import com.intel.rfid.api.upstream.RspControllerGetSensorSWRepoVersionsRequest;
+import com.intel.rfid.api.upstream.RspControllerGetSensorSwRepoVersionsResponse;
+import com.intel.rfid.api.upstream.RspControllerGetVersionsRequest;
+import com.intel.rfid.api.upstream.RspControllerGetVersionsResponse;
 import com.intel.rfid.api.upstream.SchedulerGetRunStateRequest;
 import com.intel.rfid.api.upstream.SchedulerRunStateNotification;
 import com.intel.rfid.api.upstream.SchedulerRunStateResponse;
@@ -88,6 +97,8 @@ import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.inventory.InventoryManager;
+import com.intel.rfid.inventory.MobilityProfile;
+import com.intel.rfid.inventory.MobilityProfileConfig;
 import com.intel.rfid.schedule.ScheduleManager;
 import com.intel.rfid.schedule.SchedulerSummary;
 import com.intel.rfid.sensor.ReadStateEvent;
@@ -315,10 +326,10 @@ public class JsonRpcController
             switch (reqMethod) {
 
 
-                case RSPControllerGetAllGeoRegionsRequest.METHOD_NAME:
-                case RSPControllerGetSensorSWRepoVersionsRequest.METHOD_NAME:
-                case RSPControllerGetVersionsRequest.METHOD_NAME:
-                    handleRSPControllerCommand(reqId, reqMethod);
+                case RspControllerGetAllGeoRegionsRequest.METHOD_NAME:
+                case RspControllerGetSensorSWRepoVersionsRequest.METHOD_NAME:
+                case RspControllerGetVersionsRequest.METHOD_NAME:
+                    handleRspControllerCommand(reqId, reqMethod);
                     break;
 
                 case BehaviorGetRequest.METHOD_NAME:
@@ -343,6 +354,8 @@ public class JsonRpcController
                 case InventoryGetTagStatsInfoRequest.METHOD_NAME:
                 case InventoryGetTagInfoRequest.METHOD_NAME:
                 case InventoryUnloadRequest.METHOD_NAME:
+                case InventoryGetActiveMobilityProfileIdRequest.METHOD_NAME:
+                case InventoryActivateMobilityProfileRequest.METHOD_NAME:
                     handleInventoryCommand(rootNode, reqId, reqMethod);
                     break;
 
@@ -354,6 +367,14 @@ public class JsonRpcController
                     sendResponse(new UpstreamGetMqttStatusResponse(reqId, upstreamMgr.getMqttStatus()));
                     break;
                 }
+
+                case MobilityProfileGetRequest.METHOD_NAME:
+                case MobilityProfileGetAllRequest.METHOD_NAME:
+                case MobilityProfilePutRequest.METHOD_NAME:
+                case MobilityProfileDeleteRequest.METHOD_NAME:
+                    handleMobilityProfileCommand(rootNode, reqId, reqMethod);
+                    break;
+
 
                 case SchedulerGetRunStateRequest.METHOD_NAME:
                     sendResponse(new SchedulerRunStateResponse(reqId, scheduleMgr.getSummary()));
@@ -465,24 +486,24 @@ public class JsonRpcController
         }
     }
 
-    protected void handleRSPControllerCommand(String _reqId, String _reqMethod) {
+    protected void handleRspControllerCommand(String _reqId, String _reqMethod) {
 
         switch (_reqMethod) {
-            case RSPControllerGetAllGeoRegionsRequest.METHOD_NAME: {
-                sendResponse(new RSPControllerGetAllGeoRegionsResponse(_reqId, GeoRegion.asStrings()));
+            case RspControllerGetAllGeoRegionsRequest.METHOD_NAME: {
+                sendResponse(new RspControllerGetAllGeoRegionsResponse(_reqId, GeoRegion.asStrings()));
                 break;
             }
-            case RSPControllerGetSensorSWRepoVersionsRequest.METHOD_NAME: {
+            case RspControllerGetSensorSWRepoVersionsRequest.METHOD_NAME: {
                 List<String> archs = new ArrayList<>();
                 SensorSoftwareRepoVersions versions = new SensorSoftwareRepoVersions();
                 ConfigManager.instance.getRepoInfo(archs, versions);
-                sendResponse(new RSPControllerGetSensorSwRepoVersionsResponse(_reqId, versions));
+                sendResponse(new RspControllerGetSensorSwRepoVersionsResponse(_reqId, versions));
                 break;
             }
-            case RSPControllerGetVersionsRequest.METHOD_NAME: {
-                RSPControllerVersions versions = new RSPControllerVersions();
+            case RspControllerGetVersionsRequest.METHOD_NAME: {
+                RspControllerVersions versions = new RspControllerVersions();
                 versions.software_version = Version.asString();
-                sendResponse(new RSPControllerGetVersionsResponse(_reqId, versions));
+                sendResponse(new RspControllerGetVersionsResponse(_reqId, versions));
                 break;
             }
         }
@@ -536,10 +557,71 @@ public class JsonRpcController
             case InventoryUnloadRequest.METHOD_NAME: {
                 inventoryMgr.unload();
                 sendResponse(new JsonResponseOK(_reqId, null));
+                break;
+            }
+            case InventoryGetActiveMobilityProfileIdRequest.METHOD_NAME: {
+                sendResponse(new InventoryGetActiveMobilityProfileIdResponse(_reqId, 
+                                                                             inventoryMgr.getActiveMobilityProfileId()));
+                break;
+            }
+            case InventoryActivateMobilityProfileRequest.METHOD_NAME: {
+                InventoryActivateMobilityProfileRequest req = mapper.treeToValue(_rootNode, InventoryActivateMobilityProfileRequest.class);
+                BooleanResult br = inventoryMgr.activateMobilityProfile(req.params.mobility_profile_id);
+                if(br.success) {
+                    sendOK(_reqId, req.params.mobility_profile_id);
+                } else {
+                    sendErr(_reqId, JsonRpcError.Type.INVALID_PARAMETER, br);
+                }
             }
         }
 
     }
+
+    protected void handleMobilityProfileCommand(JsonNode _rootNode, String _reqId, String _reqMethod)
+            throws IOException {
+
+        BooleanResult boolResult;
+        List<MobilityProfile> profiles = new ArrayList<>();
+
+        switch (_reqMethod) {
+            case MobilityProfilePutRequest.METHOD_NAME: {
+                MobilityProfilePutRequest req = mapper.treeToValue(_rootNode, MobilityProfilePutRequest.class);
+                MobilityProfileConfig.put(req.params);
+                profiles.add(MobilityProfileConfig.getMobilityProfile(req.params.getId()));
+                if(inventoryMgr.getActiveMobilityProfileId().equals(req.params.getId())) {
+                    boolResult = inventoryMgr.activateMobilityProfile(req.params.getId());
+                    if(!boolResult.success) {
+                        log.error("error activating {} mobility profile {}", req.params.getId(), boolResult.message);
+                    }
+                }
+                break;
+            }
+            case MobilityProfileDeleteRequest.METHOD_NAME: {
+                MobilityProfileDeleteRequest req = mapper.treeToValue(_rootNode, MobilityProfileDeleteRequest.class);
+                profiles.add(MobilityProfileConfig.deleteMobilityProfile(req.params.mobility_profile_id));
+                if(inventoryMgr.getActiveMobilityProfileId().equals(req.params.mobility_profile_id)) {
+                    boolResult = inventoryMgr.activateMobilityProfile(MobilityProfile.DEFAULT_ID);
+                    if(!boolResult.success) {
+                        log.error("error activating default mobility profile {}", boolResult.message);
+                    }
+                }
+                break;
+            }
+            case MobilityProfileGetRequest.METHOD_NAME: {
+                MobilityProfileGetRequest req = mapper.treeToValue(_rootNode, MobilityProfileGetRequest.class);
+                profiles.add(MobilityProfileConfig.getMobilityProfile(req.params.mobility_profile_id));
+                break;
+            }
+            case MobilityProfileGetAllRequest.METHOD_NAME: {
+                profiles.addAll(MobilityProfileConfig.available().values());
+                break;
+            }
+        }
+        // error conditions must throw exception to generate an actual error response
+        sendResponse(new MobilityProfileResponse(_reqId, profiles));
+    }
+
+
 
     protected void handleSensorLocalCommand(JsonNode _rootNode, String _reqId, String _reqMethod) {
 
@@ -562,7 +644,7 @@ public class JsonRpcController
                 break;
             }
             case SensorRemoveRequest.METHOD_NAME: {
-                SensorManager.RemoveResult result = sensorMgr.remove(sensor);
+                BooleanResult result = sensorMgr.remove(sensor);
                 if (!result.success) {
                     sendErr(_reqId, JsonRpcError.Type.WRONG_STATE, result.message);
                 }

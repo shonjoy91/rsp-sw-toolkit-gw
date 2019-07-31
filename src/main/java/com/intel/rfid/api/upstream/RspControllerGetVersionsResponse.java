@@ -5,11 +5,11 @@
 package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonResponseOK;
-import com.intel.rfid.api.sensor.RSPControllerVersions;
+import com.intel.rfid.api.sensor.RspControllerVersions;
 
-public class RSPControllerGetVersionsResponse extends JsonResponseOK {
+public class RspControllerGetVersionsResponse extends JsonResponseOK {
 
-    public RSPControllerGetVersionsResponse(String _id, RSPControllerVersions _versions) {
+    public RspControllerGetVersionsResponse(String _id, RspControllerVersions _versions) {
         super(_id, Boolean.TRUE);
         result = _versions;
     }

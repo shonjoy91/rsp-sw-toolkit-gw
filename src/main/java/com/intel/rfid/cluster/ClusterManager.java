@@ -17,7 +17,7 @@ import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.exception.ExpiredTokenException;
 import com.intel.rfid.exception.InvalidTokenException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.schedule.ScheduleManager;
@@ -59,7 +59,7 @@ public class ClusterManager {
     public void start() {
         try {
             restore();
-        } catch (IOException | RSPControllerException _e) {
+        } catch (IOException | RspControllerException _e) {
             log.warn("failed restoring {} {}", CACHE_PATH, _e.getMessage());
         }
         log.info("started");

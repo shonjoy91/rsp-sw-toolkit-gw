@@ -5,7 +5,7 @@
 package com.intel.rfid.exception;
 
 @SuppressWarnings({"serial"})
-public class NotConnectedException extends RSPControllerException {
+public class NotConnectedException extends RspControllerException {
 
     public NotConnectedException(String _connectionId) {
         super(_connectionId);

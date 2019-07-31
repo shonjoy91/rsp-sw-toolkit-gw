@@ -5,7 +5,7 @@
 
 package com.intel.rfid.api.sensor;
 
-public class RSPInfo {
+public class RspInfo {
 
     public static final String UNKNOWN = "unknown";
     public String hostname = UNKNOWN;

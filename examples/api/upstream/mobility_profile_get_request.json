@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "20",
+  "method" : "mobility_profile_get",
+  "params" : {
+    "mobility_profile_id" : "ExampleMobilityProfileID"
+  }
+}

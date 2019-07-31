@@ -14,7 +14,7 @@ import com.intel.rfid.api.gpio.GPIOInputNotification;
 import com.intel.rfid.api.gpio.GPIOMapping;
 import com.intel.rfid.controller.Env;
 import com.intel.rfid.downstream.DownstreamManager;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.Publisher;
@@ -172,10 +172,10 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     }
 
     public void sendGPIOConnectResponse(String _responseId, String _deviceId)
-            throws IOException, RSPControllerException {
+            throws IOException, RspControllerException {
 
         if (downstreamMgr == null) {
-            throw new RSPControllerException("missing gpio manager reference");
+            throw new RspControllerException("missing gpio manager reference");
         }
 
         GPIOConnectResponse rsp = new GPIOConnectResponse(_responseId, System.currentTimeMillis());
@@ -184,16 +184,16 @@ public class GPIOManager implements SensorManager.ReadStateListener {
     }
 
     public void sendGPIOCommand(String _deviceId, JsonRequest _req)
-            throws IOException, RSPControllerException {
+            throws IOException, RspControllerException {
 
         if (downstreamMgr == null) {
-            throw new RSPControllerException("missing gpio manager reference");
+            throw new RspControllerException("missing gpio manager reference");
         }
         downstreamMgr.sendGPIOCommand(_deviceId, _req);
     }
 
     public void handleGPIOInput(String _deviceId, GPIOInputNotification _gin)
-            throws IOException, RSPControllerException {
+            throws IOException, RspControllerException {
 
         log.info("handleGPIOInput from {} and index {}", _deviceId, _gin.params.gpio_info.index);
         // Loop through the mappings to see if there is anything assigned

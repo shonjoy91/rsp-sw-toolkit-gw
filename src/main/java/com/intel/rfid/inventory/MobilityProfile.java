@@ -8,8 +8,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class MobilityProfile {
 
+    public static String DEFAULT_ID = "default";
 
-    private String id = "asset_tracking_default";
+    private String id = DEFAULT_ID;
 
     /*
       "id": "asset_tracking_default",
@@ -24,41 +25,41 @@ public class MobilityProfile {
      */
     // using general slope forumla y = m(x) + b
     // where m is slope in dBm per millisecond
-    private double M = -.008;
+    private double slope = -.008;
 
     // dBm change threshold
-    private double T = 6.0;
+    private double threshold = 6.0;
     // milliseconds of holdoff
-    private double A = 0;
+    private double holdoff = 0;
     // find b such that at 60 seconds, y = 3.0
     // b = y - (m*x)
-    private double B = T - (M * A);
+    private double y_intercept = threshold - (slope * holdoff);
 
-    public double getM() { return M; }
+    public double getSlope() { return slope; }
 
-    public double getT() { return T; }
+    public double getThreshold() { return threshold; }
 
-    public double getA() { return A; }
+    public double getHoldoff() { return holdoff; }
 
     @JsonIgnore
-    public double getB() { return B; }
+    public double getY_intercept() { return y_intercept; }
 
     public String getId() {
         return id;
     }
 
-    public void setM(double _d) {
-        M = _d;
+    public void setSlope(double _d) {
+        slope = _d;
         calcB();
     }
 
-    public void setT(double _d) {
-        T = _d;
+    public void setThreshold(double _d) {
+        threshold = _d;
         calcB();
     }
 
-    public void setA(double _d) {
-        A = _d;
+    public void setHoldoff(double _d) {
+        holdoff = _d;
         calcB();
     }
 
@@ -67,15 +68,15 @@ public class MobilityProfile {
     }
 
     private void calcB() {
-        B = T - (M * A);
+        y_intercept = threshold - (slope * holdoff);
     }
 
     @Override
     public String toString() {
         return id + ": " +
-                ", M=" + M +
-                ", T=" + T +
-                ", A=" + A +
-                ", B=" + B;
+                ", slope=" + slope +
+                ", threshold=" + threshold +
+                ", holdoff=" + holdoff +
+                ", y_intercept=" + y_intercept;
     }
 }

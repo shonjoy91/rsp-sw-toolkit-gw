@@ -1,5 +1,5 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "22",
+  "id" : "28",
   "method" : "sensor_get_device_ids"
 }

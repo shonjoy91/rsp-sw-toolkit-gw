@@ -5,6 +5,7 @@
 package com.intel.rfid.inventory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.api.data.InventorySummary;
 import com.intel.rfid.api.data.ScheduleRunState;
 import com.intel.rfid.api.data.TagInfo;
@@ -408,11 +409,14 @@ public class InventoryManager
         scheduleRunState = _current;
     }
 
-
     private final RssiAdjuster rssiAdjuster = new RssiAdjuster();
+    
+    public String getActiveMobilityProfileId() {
+        return rssiAdjuster.getActiveMobilityProfileId();
+    }
 
-    public RssiAdjuster getRssiAdjuster() {
-        return rssiAdjuster;
+    public BooleanResult activateMobilityProfile(String _mobilityProfileId) {
+        return rssiAdjuster.activateMobilityProfile(_mobilityProfileId);
     }
 
     public static final String CFG_KEY_AGEOUT = "inventory.ageout.hours";

@@ -5,7 +5,7 @@
 
 package com.intel.rfid.api.sensor;
 
-public class RSPControllerVersions {
+public class RspControllerVersions {
 
     public String software_version;
 

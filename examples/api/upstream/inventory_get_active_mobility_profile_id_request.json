@@ -1,0 +1,5 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "18",
+  "method" : "inventory_get_active_mobility_profile_id"
+}

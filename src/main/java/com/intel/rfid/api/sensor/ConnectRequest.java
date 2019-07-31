@@ -12,13 +12,13 @@ public class ConnectRequest extends JsonRequest {
 
     public static final String METHOD_NAME = "connect";
 
-    public RSPInfo params = new RSPInfo();
+    public RspInfo params = new RspInfo();
 
     public ConnectRequest() {
         method = METHOD_NAME;
     }
 
-    public ConnectRequest(RSPInfo _info) {
+    public ConnectRequest(RspInfo _info) {
         this();
         params = _info;
     }

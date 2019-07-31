@@ -4,6 +4,7 @@
  */
 package com.intel.rfid.sensor;
 
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
@@ -206,7 +207,7 @@ public class SensorManagerTest {
         assertThat(rsp01.isConnected()).isTrue();
         assertThat(downstreamMgr.handlerExistsFor(rsp01)).isTrue();
 
-        SensorManager.RemoveResult removeResult = sensorMgr.remove(rsp01);
+        BooleanResult removeResult = sensorMgr.remove(rsp01);
         assertThat(removeResult.success).isFalse();
         System.out.println(removeResult.message);
 

@@ -11,7 +11,7 @@ import com.intel.rfid.console.AnyStringCompleter;
 import com.intel.rfid.console.ArgumentIterator;
 import com.intel.rfid.console.BetterEnumCompleter;
 import com.intel.rfid.console.SyntaxException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.sensor.SensorIdCompleter;
 import com.intel.rfid.sensor.SensorManager;
@@ -119,7 +119,7 @@ public class GPIOCommands implements Support {
 
     @Override
     public void doAction(String action, ArgumentIterator _argIter, PrettyPrinter _out)
-            throws SyntaxException, RSPControllerException, IOException {
+            throws SyntaxException, RspControllerException, IOException {
 
         switch (action) {
             case SHOW_DEVICES:
@@ -145,7 +145,7 @@ public class GPIOCommands implements Support {
         }
     }
 
-    public void doShowDevices(PrettyPrinter _out) throws RSPControllerException {
+    public void doShowDevices(PrettyPrinter _out) throws RspControllerException {
 
         if (gpioMgr.gpioDevices.isEmpty()) {
             _out.println("No GPIO Devices Connected");
@@ -160,7 +160,7 @@ public class GPIOCommands implements Support {
         }
     }
 
-    public void doShowMapping(PrettyPrinter _out) throws RSPControllerException {
+    public void doShowMapping(PrettyPrinter _out) throws RspControllerException {
 
         _out.println(GPIOMapping.HDR);
         _out.println();
@@ -169,13 +169,13 @@ public class GPIOCommands implements Support {
         }
     }
 
-    public void doClearMapping(PrettyPrinter _out) throws RSPControllerException {
+    public void doClearMapping(PrettyPrinter _out) throws RspControllerException {
 
         gpioMgr.clearMappings();
         _out.println("OK");
     }
 
-    public void doShowDeviceInfo(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doShowDeviceInfo(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         if (gpioMgr.gpioDevices.isEmpty()) {
             _out.println("No GPIO Devices Connected");
@@ -192,7 +192,7 @@ public class GPIOCommands implements Support {
         }
     }
 
-    public void doMapGPIO(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doMapGPIO(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         try {
             GPIOMapping mapping = new GPIOMapping();
@@ -245,7 +245,7 @@ public class GPIOCommands implements Support {
         }
     }
 
-    public void doSetState(ArgumentIterator _argIter, PrettyPrinter _out) throws RSPControllerException {
+    public void doSetState(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
 
         if (gpioMgr.gpioDevices.isEmpty()) {
             _out.println("No GPIO Devices Connected");

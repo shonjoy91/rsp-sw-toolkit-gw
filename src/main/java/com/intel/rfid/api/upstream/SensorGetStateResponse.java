@@ -6,10 +6,10 @@
 package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.sensor.GetStateResponse;
-import com.intel.rfid.api.sensor.RSPInfo;
+import com.intel.rfid.api.sensor.RspInfo;
 
 public class SensorGetStateResponse extends GetStateResponse {
-    public SensorGetStateResponse(String _id, RSPInfo _info) {
+    public SensorGetStateResponse(String _id, RspInfo _info) {
         super(_id, _info);
     }
 }

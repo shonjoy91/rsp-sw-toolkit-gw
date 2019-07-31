@@ -2,8 +2,8 @@
   "jsonrpc" : "2.0",
   "method" : "device_alert",
   "params" : {
-    "sent_on" : 1562969407680,
-    "device_id" : "some.gw.deviceid",
+    "sent_on" : 1564612355096,
+    "device_id" : "some.controller.deviceid",
     "controller_id" : null,
     "facilities" : [ ],
     "alert_number" : 104,

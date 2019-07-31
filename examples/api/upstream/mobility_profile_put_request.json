@@ -1,0 +1,11 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "22",
+  "method" : "mobility_profile_put",
+  "params" : {
+    "id" : "default",
+    "slope" : -0.008,
+    "threshold" : 6.0,
+    "holdoff" : 0.0
+  }
+}

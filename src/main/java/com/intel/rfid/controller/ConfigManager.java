@@ -128,7 +128,7 @@ public class ConfigManager {
 
     private String controllerDeviceId = null;
 
-    public String getRSPControllerDeviceId() {
+    public String getRspControllerDeviceId() {
         if (controllerDeviceId == null) {
             try {
                 controllerDeviceId = (String) properties.get("controller.device_id");

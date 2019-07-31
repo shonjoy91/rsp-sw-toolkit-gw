@@ -4,7 +4,7 @@
  */
 package com.intel.rfid.controller;
 
-public enum RSPControllerStatus {
+public enum RspControllerStatus {
 
     UNKNOWN(0, "unknown"),
     OK(1, "ok"), // included so this enum can return status from method calls
@@ -26,7 +26,7 @@ public enum RSPControllerStatus {
     public final int id;
     public final String label;
 
-    RSPControllerStatus(int _id, String _label) {
+    RspControllerStatus(int _id, String _label) {
         id = _id;
         label = _label;
     }

@@ -4,8 +4,8 @@
  */
 package com.intel.rfid.controller;
 
-import com.intel.rfid.api.upstream.RSPControllerHeartbeatNotification;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RspControllerHeartbeatNotification;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.console.CLICommandBuilder;
 import com.intel.rfid.console.CLICommander;
@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class RSPController implements CLICommandBuilder {
+public class RspController implements CLICommandBuilder {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
@@ -32,8 +32,8 @@ public class RSPController implements CLICommandBuilder {
     // project, this reather elaborate construction scheme is in
     // place to support unit testing by swapping in effective test
     // objects i.e. a SensorManager that uses simulated sensor software
-    public static RSPController build() {
-        RSPController rspController = new RSPController();
+    public static RspController build() {
+        RspController rspController = new RspController();
         rspController.init();
         return rspController;
     }
@@ -47,7 +47,7 @@ public class RSPController implements CLICommandBuilder {
     protected UpstreamManager upstreamMgr;
     protected EndPointManager endPointMgr;
 
-    protected RSPController() { }
+    protected RspController() { }
 
     protected void init() {
         log.info("RSP Controller {} software initializing", Version.asString());
@@ -151,8 +151,8 @@ public class RSPController implements CLICommandBuilder {
             Thread.currentThread().interrupt();
         }
 
-        RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(ConfigManager.instance.getRSPControllerDeviceId(),
-                                                                                              RSPControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN);
+        RspControllerStatusUpdateNotification gsu = new RspControllerStatusUpdateNotification(ConfigManager.instance.getRspControllerDeviceId(),
+                                                                                              RspControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN);
         downstreamMgr.send(gsu);
         upstreamMgr.send(gsu);
 
@@ -192,7 +192,7 @@ public class RSPController implements CLICommandBuilder {
 
 
     private void heartbeatTask() {
-        RSPControllerHeartbeatNotification hb = new RSPControllerHeartbeatNotification(ConfigManager.instance.getRSPControllerDeviceId());
+        RspControllerHeartbeatNotification hb = new RspControllerHeartbeatNotification(ConfigManager.instance.getRspControllerDeviceId());
         upstreamMgr.send(hb);
     }
 

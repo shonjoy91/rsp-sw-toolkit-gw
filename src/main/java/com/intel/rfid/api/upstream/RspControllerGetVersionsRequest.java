@@ -6,7 +6,7 @@ package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonRequest;
 
-public class RSPControllerGetVersionsRequest extends JsonRequest {
+public class RspControllerGetVersionsRequest extends JsonRequest {
 
     public static final String METHOD_NAME = "controller_get_versions";
 
@@ -16,7 +16,7 @@ public class RSPControllerGetVersionsRequest extends JsonRequest {
 
     public Params params = new Params();
 
-    public RSPControllerGetVersionsRequest() {
+    public RspControllerGetVersionsRequest() {
         method = METHOD_NAME;
     }
 

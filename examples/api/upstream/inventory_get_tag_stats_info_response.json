@@ -6,7 +6,7 @@
       "EPC000001" : [ {
         "source_alias" : "RSP-150000-0",
         "is_location" : false,
-        "last_read" : 1562969409712,
+        "last_read" : 1564612357133,
         "n" : 2,
         "mean" : -95.0,
         "std_dev" : "-Infinity",
@@ -15,7 +15,7 @@
       }, {
         "source_alias" : "RSP-150005-0",
         "is_location" : true,
-        "last_read" : 1562969407712,
+        "last_read" : 1564612355133,
         "n" : 1,
         "mean" : -95.0,
         "std_dev" : "-Infinity",
@@ -25,7 +25,7 @@
       "EPC000003" : [ {
         "source_alias" : "RSP-150000-0",
         "is_location" : false,
-        "last_read" : 1562969409712,
+        "last_read" : 1564612357133,
         "n" : 2,
         "mean" : -95.0,
         "std_dev" : "-Infinity",
@@ -34,7 +34,7 @@
       }, {
         "source_alias" : "RSP-150005-0",
         "is_location" : true,
-        "last_read" : 1562969407712,
+        "last_read" : 1564612355133,
         "n" : 1,
         "mean" : -95.0,
         "std_dev" : "-Infinity",
@@ -44,7 +44,7 @@
       "EPC000002" : [ {
         "source_alias" : "RSP-150000-0",
         "is_location" : false,
-        "last_read" : 1562969409712,
+        "last_read" : 1564612357133,
         "n" : 2,
         "mean" : -95.0,
         "std_dev" : "-Infinity",
@@ -53,7 +53,7 @@
       }, {
         "source_alias" : "RSP-150005-0",
         "is_location" : true,
-        "last_read" : 1562969407712,
+        "last_read" : 1564612355133,
         "n" : 1,
         "mean" : -95.0,
         "std_dev" : "-Infinity",

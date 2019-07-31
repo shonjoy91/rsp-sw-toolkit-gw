@@ -7,6 +7,7 @@ package com.intel.rfid.sensor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.alerts.ConnectionStateEvent;
 import com.intel.rfid.api.JsonRequest;
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.api.data.Connection;
 import com.intel.rfid.api.data.Personality;
@@ -16,15 +17,15 @@ import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.api.sensor.ConnectResponse;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.controller.ConfigManager;
 import com.intel.rfid.controller.Env;
-import com.intel.rfid.controller.RSPControllerStatus;
+import com.intel.rfid.controller.RspControllerStatus;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.exception.ExpiredTokenException;
 import com.intel.rfid.exception.InvalidTokenException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
@@ -288,10 +289,10 @@ public class SensorManager {
     }
 
     public void sendConnectResponse(String _responseId, String _deviceId, String _facilityId)
-            throws IOException, RSPControllerException {
+            throws IOException, RspControllerException {
 
         if (downstreamMgr == null) {
-            throw new RSPControllerException("missing sensor manager reference");
+            throw new RspControllerException("missing sensor manager reference");
         }
         ConfigManager cm = ConfigManager.instance;
 
@@ -306,10 +307,10 @@ public class SensorManager {
     }
 
     public void sendSensorCommand(String _deviceId, JsonRequest _req)
-            throws IOException, RSPControllerException {
+            throws IOException, RspControllerException {
 
         if (downstreamMgr == null) {
-            throw new RSPControllerException("missing sensor manager reference");
+            throw new RspControllerException("missing sensor manager reference");
         }
         downstreamMgr.sendCommand(_deviceId, _req);
     }
@@ -319,9 +320,9 @@ public class SensorManager {
     // provision token configuration change requiring sensors to re-authenticate 
     public void disconnectAll() {
         if (downstreamMgr != null) {
-            RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(ConfigManager.instance
-                                                                                                          .getRSPControllerDeviceId(),
-                                                                                                  RSPControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN);
+            RspControllerStatusUpdateNotification gsu = new RspControllerStatusUpdateNotification(ConfigManager.instance
+                                                                                                          .getRspControllerDeviceId(),
+                                                                                                  RspControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN);
             downstreamMgr.send(gsu);
         }
 
@@ -338,27 +339,17 @@ public class SensorManager {
         }
     }
 
-    public class RemoveResult {
-        public final boolean success;
-        public final String message;
-
-        public RemoveResult(boolean _success, String _message) {
-            success = _success;
-            message = _message;
-        }
-    }
-
-    public RemoveResult remove(SensorPlatform _rsp) {
+    public BooleanResult remove(SensorPlatform _rsp) {
         if (_rsp.connectionState != Connection.State.DISCONNECTED) {
-            return new RemoveResult(false,
-                                    "refusing to remove sensor " + _rsp.getDeviceId() + " until it is disconnected");
+            return new BooleanResult(false,
+                                     "refusing to remove sensor " + _rsp.getDeviceId() + " until it is disconnected");
         }
 
         if (clusterMgr != null) {
             Cluster cluster = clusterMgr.findClusterByDeviceId(_rsp.getDeviceId());
             if (clusterMgr.findClusterByDeviceId(_rsp.getDeviceId()) != null) {
-                return new RemoveResult(false,
-                                        "refusing to remove sensor " + _rsp.getDeviceId() + " used in cluster " + cluster.id);
+                return new BooleanResult(false,
+                                         "refusing to remove sensor " + _rsp.getDeviceId() + " used in cluster " + cluster.id);
             }
         }
 
@@ -373,7 +364,7 @@ public class SensorManager {
                                         Connection.State.DISCONNECTED,
                                         Connection.Cause.REMOVED);
         }
-        return new RemoveResult(true, "OK");
+        return new BooleanResult(true, "OK");
     }
 
     public void addConnectionStateListener(ConnectionStateListener _listener) {

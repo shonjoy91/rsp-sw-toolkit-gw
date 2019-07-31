@@ -1,0 +1,8 @@
+{
+  "jsonrpc" : "2.0",
+  "id" : "19",
+  "method" : "mobility_profile_delete",
+  "params" : {
+    "mobility_profile_id" : "ExampleMobilityProfileID"
+  }
+}

@@ -6,10 +6,10 @@ package com.intel.rfid.downstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.MqttStatus;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.controller.ConfigManager;
-import com.intel.rfid.controller.RSPControllerStatus;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.controller.RspControllerStatus;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.mqtt.Mqtt;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -56,13 +56,13 @@ public class MqttDownstream extends Mqtt {
     protected void onConnect() {
         super.onConnect();
         try {
-            String deviceId = ConfigManager.instance.getRSPControllerDeviceId();
-            RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(deviceId,
-                                                                                                  RSPControllerStatus.RSP_CONTROLLER_STARTED);
+            String deviceId = ConfigManager.instance.getRspControllerDeviceId();
+            RspControllerStatusUpdateNotification gsu = new RspControllerStatusUpdateNotification(deviceId,
+                                                                                                  RspControllerStatus.RSP_CONTROLLER_STARTED);
             publishControllerStatus(mapper.writeValueAsBytes(gsu));
-            log.info("Published {}", RSPControllerStatus.RSP_CONTROLLER_STARTED);
+            log.info("Published {}", RspControllerStatus.RSP_CONTROLLER_STARTED);
         } catch (Exception e) {
-            log.warn("Error publishing {}", RSPControllerStatus.RSP_CONTROLLER_STARTED.label, e);
+            log.warn("Error publishing {}", RspControllerStatus.RSP_CONTROLLER_STARTED.label, e);
         }
     }
 
@@ -85,26 +85,26 @@ public class MqttDownstream extends Mqtt {
         dispatch.onMessage(_topic, _msg);
     }
 
-    public void publishConnectResponse(String _deviceId, byte[] _msg) throws RSPControllerException {
+    public void publishConnectResponse(String _deviceId, byte[] _msg) throws RspControllerException {
         String topic = CONNECT_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
 
-    public void publishCommand(String _deviceId, byte[] _msg) throws RSPControllerException {
+    public void publishCommand(String _deviceId, byte[] _msg) throws RspControllerException {
         String topic = COMMAND_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
 
-    public void publishControllerStatus(byte[] _msg) throws RSPControllerException {
+    public void publishControllerStatus(byte[] _msg) throws RspControllerException {
         publish(COMMAND_TOPIC, _msg, DEFAULT_QOS);
     }
 
-    public void publishGPIOConnectResponse(String _deviceId, byte[] _msg) throws RSPControllerException {
+    public void publishGPIOConnectResponse(String _deviceId, byte[] _msg) throws RspControllerException {
         String topic = GPIO_CONNECT_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }
 
-    public void publishGPIOCommand(String _deviceId, byte[] _msg) throws RSPControllerException {
+    public void publishGPIOCommand(String _deviceId, byte[] _msg) throws RspControllerException {
         String topic = GPIO_COMMAND_TOPIC + "/" + _deviceId;
         publish(topic, _msg, DEFAULT_QOS);
     }

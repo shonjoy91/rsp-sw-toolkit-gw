@@ -5,9 +5,9 @@
 package com.intel.rfid.inventory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.controller.Env;
 import com.intel.rfid.helpers.Jackson;
-import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +34,15 @@ public class RssiAdjuster {
 
     public double getWeight(long _lastReadMillis, SensorPlatform _rsp) {
 
+        // TODO: this should  be re-examined for desired action
         if (_rsp.isInDeepScan()) {
-            return mobilityProfile.getT();
+            return mobilityProfile.getThreshold();
         }
 
         double w;
-        double T = mobilityProfile.getT();
-        double M = mobilityProfile.getM();
-        double B = mobilityProfile.getB();
+        double T = mobilityProfile.getThreshold();
+        double M = mobilityProfile.getSlope();
+        double B = mobilityProfile.getY_intercept();
 
         w = (M * (System.currentTimeMillis() - _lastReadMillis)) + B;
 
@@ -51,8 +52,18 @@ public class RssiAdjuster {
         return w;
     }
 
-    public void showMobilityProfile(PrettyPrinter _out) {
-        _out.line(mobilityProfile.toString());
+    public String getActiveMobilityProfileId() {
+        return mobilityProfile.getId();
+    }
+
+    public BooleanResult activateMobilityProfile(String _profileId) {
+        try {
+            mobilityProfile = MobilityProfileConfig.getMobilityProfile(_profileId);
+            persistMobilityProfile();
+            return BooleanResult.True();
+        } catch (IOException _e) {
+            return new BooleanResult(false, _e.getMessage());
+        }
     }
 
     // need to match up the cache and the configuration

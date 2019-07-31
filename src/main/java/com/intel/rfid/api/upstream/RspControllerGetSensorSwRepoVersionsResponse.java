@@ -7,9 +7,9 @@ package com.intel.rfid.api.upstream;
 import com.intel.rfid.api.JsonResponseOK;
 import com.intel.rfid.api.data.SensorSoftwareRepoVersions;
 
-public class RSPControllerGetSensorSwRepoVersionsResponse extends JsonResponseOK {
+public class RspControllerGetSensorSwRepoVersionsResponse extends JsonResponseOK {
 
-    public RSPControllerGetSensorSwRepoVersionsResponse(String _id, SensorSoftwareRepoVersions _versions) {
+    public RspControllerGetSensorSwRepoVersionsResponse(String _id, SensorSoftwareRepoVersions _versions) {
         super(_id, Boolean.TRUE);
         result = _versions;
     }

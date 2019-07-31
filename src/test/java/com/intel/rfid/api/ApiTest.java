@@ -21,8 +21,8 @@ import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
-import com.intel.rfid.api.sensor.RSPControllerVersions;
-import com.intel.rfid.api.sensor.RSPInfo;
+import com.intel.rfid.api.sensor.RspControllerVersions;
+import com.intel.rfid.api.sensor.RspInfo;
 import com.intel.rfid.api.sensor.RfPortStatus;
 import com.intel.rfid.api.sensor.SensorSoftwareVersions;
 import com.intel.rfid.api.sensor.TagRead;
@@ -42,7 +42,10 @@ import com.intel.rfid.api.upstream.DownstreamGetMqttStatusResponse;
 import com.intel.rfid.api.upstream.DownstreamMqttStatusNotification;
 import com.intel.rfid.api.upstream.GpioClearMappingsRequest;
 import com.intel.rfid.api.upstream.GpioSetMappingRequest;
+import com.intel.rfid.api.upstream.InventoryActivateMobilityProfileRequest;
 import com.intel.rfid.api.upstream.InventoryEventNotification;
+import com.intel.rfid.api.upstream.InventoryGetActiveMobilityProfileIdRequest;
+import com.intel.rfid.api.upstream.InventoryGetActiveMobilityProfileIdResponse;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoRequest;
 import com.intel.rfid.api.upstream.InventoryGetTagInfoResponse;
 import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoRequest;
@@ -50,15 +53,20 @@ import com.intel.rfid.api.upstream.InventoryGetTagStatsInfoResponse;
 import com.intel.rfid.api.upstream.InventoryReadRateNotification;
 import com.intel.rfid.api.upstream.InventorySummaryNotification;
 import com.intel.rfid.api.upstream.InventoryUnloadRequest;
-import com.intel.rfid.api.upstream.RSPControllerDeviceAlertNotification;
-import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetAllGeoRegionsResponse;
-import com.intel.rfid.api.upstream.RSPControllerGetSensorSWRepoVersionsRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetSensorSwRepoVersionsResponse;
-import com.intel.rfid.api.upstream.RSPControllerGetVersionsRequest;
-import com.intel.rfid.api.upstream.RSPControllerGetVersionsResponse;
-import com.intel.rfid.api.upstream.RSPControllerHeartbeatNotification;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.api.upstream.MobilityProfileDeleteRequest;
+import com.intel.rfid.api.upstream.MobilityProfileGetAllRequest;
+import com.intel.rfid.api.upstream.MobilityProfileGetRequest;
+import com.intel.rfid.api.upstream.MobilityProfilePutRequest;
+import com.intel.rfid.api.upstream.MobilityProfileResponse;
+import com.intel.rfid.api.upstream.RspControllerDeviceAlertNotification;
+import com.intel.rfid.api.upstream.RspControllerGetAllGeoRegionsRequest;
+import com.intel.rfid.api.upstream.RspControllerGetAllGeoRegionsResponse;
+import com.intel.rfid.api.upstream.RspControllerGetSensorSWRepoVersionsRequest;
+import com.intel.rfid.api.upstream.RspControllerGetSensorSwRepoVersionsResponse;
+import com.intel.rfid.api.upstream.RspControllerGetVersionsRequest;
+import com.intel.rfid.api.upstream.RspControllerGetVersionsResponse;
+import com.intel.rfid.api.upstream.RspControllerHeartbeatNotification;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.api.upstream.SchedulerGetRunStateRequest;
 import com.intel.rfid.api.upstream.SchedulerRunStateNotification;
 import com.intel.rfid.api.upstream.SchedulerRunStateResponse;
@@ -92,13 +100,15 @@ import com.intel.rfid.api.upstream.UpstreamMqttStatusNotification;
 import com.intel.rfid.behavior.BehaviorConfig;
 import com.intel.rfid.cluster.MockClusterManager;
 import com.intel.rfid.controller.Env;
-import com.intel.rfid.controller.MockRSPController;
-import com.intel.rfid.controller.RSPControllerStatus;
+import com.intel.rfid.controller.MockRspController;
+import com.intel.rfid.controller.RspControllerStatus;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.TestStore;
 import com.intel.rfid.inventory.InventoryManager;
+import com.intel.rfid.inventory.MobilityProfile;
+import com.intel.rfid.inventory.MobilityProfileConfig;
 import com.intel.rfid.inventory.MockInventoryManager;
 import com.intel.rfid.schedule.MockScheduleManager;
 import com.intel.rfid.sensor.MockSensorManager;
@@ -140,7 +150,7 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
     Path outDir;
 
     TestStore testStore;
-    MockRSPController rspController;
+    MockRspController rspController;
     MockInventoryManager invMgr;
     MockScheduleManager schedMgr;
     MockClusterManager clusterMgr;
@@ -154,7 +164,7 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         theSensor = testStore.sensorFront01;
         retailUseCaseClusterCfg = testStore.getRetailUseCaseClusterConfig();
 
-        rspController = new MockRSPController();
+        rspController = new MockRspController();
         invMgr = rspController.getMockInventoryManager();
         invMgr.addUpstreamEventListener(this);
         invMgr.unload();
@@ -227,19 +237,19 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         not = new DownstreamMqttStatusNotification(mqttStatus);
         persistJsonApi(not);
 
-        // RSPController
+        // RspController
         DeviceAlertNotification alertNot = new DeviceAlertNotification();
         alertNot.params.device_id = "some.controller.deviceid";
         alertNot.params.alert_description = DeviceAlertType.HighMemoryUsage.toString();
         alertNot.params.alert_number = DeviceAlertType.HighMemoryUsage.id;
         alertNot.params.sent_on = System.currentTimeMillis();
-        persistJsonApi(new RSPControllerDeviceAlertNotification(alertNot));
+        persistJsonApi(new RspControllerDeviceAlertNotification(alertNot));
 
-        req = new RSPControllerGetAllGeoRegionsRequest();
+        req = new RspControllerGetAllGeoRegionsRequest();
         persistJsonApi(req);
-        persistJsonApi(new RSPControllerGetAllGeoRegionsResponse(req.id, GeoRegion.asStrings()));
+        persistJsonApi(new RspControllerGetAllGeoRegionsResponse(req.id, GeoRegion.asStrings()));
 
-        req = new RSPControllerGetSensorSWRepoVersionsRequest();
+        req = new RspControllerGetSensorSWRepoVersionsRequest();
         persistJsonApi(req);
         SensorSoftwareRepoVersions ssrv = new SensorSoftwareRepoVersions();
         ssrv.app_version = "19.3.7.11";
@@ -247,17 +257,17 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         ssrv.pkg_manifest_version = "19.3.8.11";
         ssrv.uboot_version = "2018.11.3";
         ssrv.linux_version = "linux-5.1";
-        persistJsonApi(new RSPControllerGetSensorSwRepoVersionsResponse(req.id, ssrv));
+        persistJsonApi(new RspControllerGetSensorSwRepoVersionsResponse(req.id, ssrv));
 
-        req = new RSPControllerGetVersionsRequest();
+        req = new RspControllerGetVersionsRequest();
         persistJsonApi(req);
-        RSPControllerVersions controllerVersions = new RSPControllerVersions();
+        RspControllerVersions controllerVersions = new RspControllerVersions();
         controllerVersions.software_version = "19.3.7.14";
-        persistJsonApi(req.id, new RSPControllerGetVersionsResponse(req.id, controllerVersions));
+        persistJsonApi(new RspControllerGetVersionsResponse(req.id, controllerVersions));
 
-        persistJsonApi(new RSPControllerHeartbeatNotification("device.host.name"));
-        persistJsonApi(new RSPControllerStatusUpdateNotification("device.host.name",
-                                                                 RSPControllerStatus.RSP_CONTROLLER_STARTED));
+        persistJsonApi(new RspControllerHeartbeatNotification("device.host.name"));
+        persistJsonApi(new RspControllerStatusUpdateNotification("device.host.name",
+                                                                 RspControllerStatus.RSP_CONTROLLER_STARTED));
 
         // Gpio
         persistJsonApi(new GpioClearMappingsRequest());
@@ -319,9 +329,23 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         invMgr.getSummary(invSummary);
         persistJsonApi(new InventorySummaryNotification(invSummary));
 
-        InventoryUnloadRequest invUnloadReq = new InventoryUnloadRequest();
-        persistJsonApi(invUnloadReq);
+        persistJsonApi(new InventoryUnloadRequest());
 
+        persistJsonApi(new InventoryActivateMobilityProfileRequest());
+        req = new InventoryGetActiveMobilityProfileIdRequest();
+        persistJsonApi(req);
+        persistJsonApi(new InventoryGetActiveMobilityProfileIdResponse(req.id, MobilityProfile.DEFAULT_ID));
+        
+        // Mobility Profile
+        // Behavior
+        persistJsonApi(new MobilityProfileDeleteRequest("ExampleMobilityProfileID"));
+        persistJsonApi(new MobilityProfileGetRequest("ExampleMobilityProfileID"));
+        req = new MobilityProfileGetAllRequest();
+        persistJsonApi(req);
+        rsp = new MobilityProfileResponse(req.id, new ArrayList<>(MobilityProfileConfig.available().values()));
+        persistJsonApi(rsp);
+        persistJsonApi(new MobilityProfilePutRequest(new MobilityProfile()));
+        
 
         // Scheduler
         persistJsonApi(new SchedulerGetRunStateRequest());
@@ -376,7 +400,7 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
 
         SensorGetStateRequest sensorGetStateReq = new SensorGetStateRequest();
         persistJsonApi(sensorGetStateReq);
-        RSPInfo rspInfo = new RSPInfo();
+        RspInfo rspInfo = new RspInfo();
         rspInfo.hostname = theSensor.getDeviceId();
         rspInfo.app_version = "19.2.5.14";
         rspInfo.module_version = "3.9";

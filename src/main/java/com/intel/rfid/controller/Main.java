@@ -20,7 +20,7 @@ import static org.apache.sshd.common.config.keys.KeyUtils.RSA_ALGORITHM;
 
 public class Main {
 
-    protected static final Logger log = LoggerFactory.getLogger(RSPController.class);
+    protected static final Logger log = LoggerFactory.getLogger(RspController.class);
 
     static volatile boolean keepGoing = true;
 
@@ -39,7 +39,7 @@ public class Main {
         System.out.print("-- Starting controller services");
         TimeIndicator ti = new TimeIndicator();
         ti.start();
-        RSPController rspController = RSPController.build();
+        RspController rspController = RspController.build();
         rspController.start();
         ti.stop();
         System.out.println("--");

@@ -14,13 +14,13 @@ import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.api.sensor.AlertSeverity;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
 import com.intel.rfid.api.upstream.InventoryEventNotification;
-import com.intel.rfid.api.upstream.RSPControllerDeviceAlertNotification;
-import com.intel.rfid.api.upstream.RSPControllerHeartbeatNotification;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RspControllerDeviceAlertNotification;
+import com.intel.rfid.api.upstream.RspControllerHeartbeatNotification;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.controller.ConfigManager;
 import com.intel.rfid.controller.JsonRpcController;
-import com.intel.rfid.controller.RSPControllerStatus;
+import com.intel.rfid.controller.RspControllerStatus;
 import com.intel.rfid.downstream.DownstreamManager;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
@@ -34,11 +34,11 @@ import org.slf4j.LoggerFactory;
 
 import static com.intel.rfid.api.sensor.AlertSeverity.info;
 import static com.intel.rfid.api.sensor.AlertSeverity.warning;
-import static com.intel.rfid.controller.RSPControllerStatus.RSP_CONNECTED;
-import static com.intel.rfid.controller.RSPControllerStatus.RSP_CONTROLLER_TRIGGERED_RSP_DISCONNECT;
-import static com.intel.rfid.controller.RSPControllerStatus.RSP_LAST_WILL_AND_TESTAMENT;
-import static com.intel.rfid.controller.RSPControllerStatus.RSP_LOST_HEARTBEAT;
-import static com.intel.rfid.controller.RSPControllerStatus.RSP_SHUTTING_DOWN;
+import static com.intel.rfid.controller.RspControllerStatus.RSP_CONNECTED;
+import static com.intel.rfid.controller.RspControllerStatus.RSP_CONTROLLER_TRIGGERED_RSP_DISCONNECT;
+import static com.intel.rfid.controller.RspControllerStatus.RSP_LAST_WILL_AND_TESTAMENT;
+import static com.intel.rfid.controller.RspControllerStatus.RSP_LOST_HEARTBEAT;
+import static com.intel.rfid.controller.RspControllerStatus.RSP_SHUTTING_DOWN;
 
 public class UpstreamManager
         implements InventoryManager.UpstreamEventListener,
@@ -76,7 +76,7 @@ public class UpstreamManager
         downstreamMgr = _downstreamMgr;
 
         ConfigManager cm = ConfigManager.instance;
-        deviceId = cm.getRSPControllerDeviceId();
+        deviceId = cm.getRspControllerDeviceId();
         mqttUpstream = new MqttUpstream(this);
 
         rpcController = new JsonRpcController(this,
@@ -115,15 +115,15 @@ public class UpstreamManager
         mqttUpstream.publishEvent(new InventoryEventNotification(_uie));
     }
 
-    public void send(RSPControllerDeviceAlertNotification _alert) {
+    public void send(RspControllerDeviceAlertNotification _alert) {
         mqttUpstream.publishAlert(_alert);
     }
 
-    public void send(RSPControllerHeartbeatNotification _hb) {
+    public void send(RspControllerHeartbeatNotification _hb) {
         mqttUpstream.publishEvent(_hb);
     }
 
-    public void send(RSPControllerStatusUpdateNotification _not) {
+    public void send(RspControllerStatusUpdateNotification _not) {
         mqttUpstream.publishAlert(_not);
     }
 
@@ -141,7 +141,7 @@ public class UpstreamManager
     public void onConnectionStateChange(ConnectionStateEvent _cse) {
 
         // map to the correct status and severity
-        RSPControllerStatus status = null;
+        RspControllerStatus status = null;
         AlertSeverity severity = null;
 
         if (_cse.current == Connection.State.CONNECTED &&
@@ -178,7 +178,7 @@ public class UpstreamManager
 
     @Override
     public void onSensorDeviceAlert(DeviceAlertNotification _alert) {
-        send(new RSPControllerDeviceAlertNotification(_alert));
+        send(new RspControllerDeviceAlertNotification(_alert));
     }
 
     public MqttStatus getMqttStatus() {

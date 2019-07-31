@@ -8,7 +8,7 @@ import com.intel.rfid.api.data.InventoryEventItem;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.TagRead;
 import com.intel.rfid.controller.ConfigManager;
-import com.intel.rfid.controller.MockRSPController;
+import com.intel.rfid.controller.MockRspController;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.helpers.EpcHelper;
 import com.intel.rfid.helpers.PrettyPrinter;
@@ -55,13 +55,13 @@ public class InventoryManagerTest implements InventoryManager.UpstreamEventListe
     }
 
     TestStore store;
-    MockRSPController rspController;
+    MockRspController rspController;
     MockInventoryManager invMgr;
 
 
     public InventoryManagerTest() {
         store = new TestStore();
-        rspController = new MockRSPController();
+        rspController = new MockRspController();
         invMgr = rspController.getMockInventoryManager();
         invMgr.unload();
         invMgr.addUpstreamEventListener(this);
@@ -492,8 +492,8 @@ public class InventoryManagerTest implements InventoryManager.UpstreamEventListe
     public void testAdjuster() {
         // check that default is asset trackingx`
         MobilityProfile mp = new MobilityProfile();
-        assertTrue(mp.getM() < 0.0);
-        assertThat(mp.getT()).isEqualTo(mp.getB());
+        assertTrue(mp.getSlope() < 0.0);
+        assertThat(mp.getThreshold()).isEqualTo(mp.getY_intercept());
     }
 
     @Test

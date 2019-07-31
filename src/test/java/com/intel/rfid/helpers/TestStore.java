@@ -4,7 +4,7 @@ import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.api.sensor.TagRead;
-import com.intel.rfid.controller.MockRSPController;
+import com.intel.rfid.controller.MockRspController;
 import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.sensor.MockSensorPlatform;
 
@@ -26,7 +26,7 @@ public class TestStore {
 
     public int rssiMin() { return minRSSI; }
 
-    public MockRSPController rspController;
+    public MockRspController rspController;
     public MockSensorPlatform sensorFront01;
     public MockSensorPlatform sensorFront02;
     public MockSensorPlatform sensorFront03;
@@ -59,7 +59,7 @@ public class TestStore {
     public long time_m00;
 
     public TestStore() {
-        rspController = new MockRSPController();
+        rspController = new MockRspController();
 
         sensorFront01 = establish("RSP-150000", Facility.SalesFloor);
         sensorFront02 = establish("RSP-150001", Facility.SalesFloor);

@@ -5,7 +5,7 @@
 package com.intel.rfid.exception;
 
 @SuppressWarnings({"serial"})
-public class ConfigException extends RSPControllerException {
+public class ConfigException extends RspControllerException {
 
     public ConfigException(String _msg) {
         super(_msg);

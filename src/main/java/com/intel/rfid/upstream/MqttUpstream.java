@@ -6,10 +6,10 @@ package com.intel.rfid.upstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.MqttStatus;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.controller.ConfigManager;
-import com.intel.rfid.controller.RSPControllerStatus;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.controller.RspControllerStatus;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.mqtt.Mqtt;
@@ -50,13 +50,13 @@ public class MqttUpstream extends Mqtt {
     protected void onConnect() {
         super.onConnect();
         try {
-            String deviceId = ConfigManager.instance.getRSPControllerDeviceId();
-            RSPControllerStatusUpdateNotification gsu = new RSPControllerStatusUpdateNotification(deviceId,
-                                                                                                  RSPControllerStatus.RSP_CONTROLLER_STARTED);
+            String deviceId = ConfigManager.instance.getRspControllerDeviceId();
+            RspControllerStatusUpdateNotification gsu = new RspControllerStatusUpdateNotification(deviceId,
+                                                                                                  RspControllerStatus.RSP_CONTROLLER_STARTED);
             publishAlert(mapper.writeValueAsBytes(gsu));
-            log.info("Published {}", RSPControllerStatus.RSP_CONTROLLER_STARTED);
+            log.info("Published {}", RspControllerStatus.RSP_CONTROLLER_STARTED);
         } catch (Exception e) {
-            log.warn("Error publishing {}", RSPControllerStatus.RSP_CONTROLLER_STARTED.label, e);
+            log.warn("Error publishing {}", RspControllerStatus.RSP_CONTROLLER_STARTED.label, e);
         }
     }
 
@@ -95,7 +95,7 @@ public class MqttUpstream extends Mqtt {
     private void publish(String _topic, Object _msg) {
         try {
             publish(_topic, mapper.writeValueAsBytes(_msg), DEFAULT_QOS);
-        } catch (IOException | RSPControllerException _e) {
+        } catch (IOException | RspControllerException _e) {
             log.error("error {}", _e.getMessage());
         }
 

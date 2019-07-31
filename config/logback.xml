@@ -38,7 +38,7 @@
     <logger name="rsp.inventory" level="INFO"/>
 
     <!-- Set this to INFO to know when the service starts and stops -->
-    <logger name="com.intel.rfid.controller.RSPController" level="INFO"/>
+    <logger name="com.intel.rfid.controller.RspController" level="INFO"/>
 
     <!-- To enable or disable raw json logging, set level to ALL or OFF -->
     <logger name="tag.read" level="OFF" additivity="false">

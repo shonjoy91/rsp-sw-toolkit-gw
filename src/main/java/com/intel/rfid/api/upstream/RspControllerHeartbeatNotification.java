@@ -6,15 +6,15 @@ package com.intel.rfid.api.upstream;
 
 import com.intel.rfid.api.JsonNotification;
 
-public class RSPControllerHeartbeatNotification extends JsonNotification {
+public class RspControllerHeartbeatNotification extends JsonNotification {
 
     public static final String METHOD_NAME = "controller_heartbeat";
 
-    public RSPControllerHeartbeatNotification() {
+    public RspControllerHeartbeatNotification() {
         method = METHOD_NAME;
     }
 
-    public RSPControllerHeartbeatNotification(String _deviceId) {
+    public RspControllerHeartbeatNotification(String _deviceId) {
         this();
         params.sent_on = System.currentTimeMillis();
         params.device_id = _deviceId;

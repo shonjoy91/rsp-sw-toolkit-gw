@@ -117,7 +117,7 @@
                             cell.classList.remove("w3-dark-grey");
                         }
                         cell.innerHTML = '<span ' +
-                            'class="w3-button w3-tiny w3-padding-small" onclick=\'showLegend();\' ' +
+                            'class="w3-button w3-tiny w3-padding-small" onclick=\'showInfo();\' ' +
                             'style="background-color:' +
                             getColor(stat.mean, now - stat.last_read) +
                             '"></span>&nbsp;' +
@@ -188,18 +188,18 @@
         }
     }
 
-    function showLegend() {
+    function showInfo() {
         document.getElementById("modal_overlay").style.display = 'block';
     }
 
-    function closeResultsModal() {
+    function hideInfo() {
         document.getElementById("modal_overlay").style.display = 'none';
     }
 
-    function showLegendOnce() {
+    function showInfoOnce() {
         var val = getCookie("tag_stats_shown");
         if (val !== "true") {
-            showLegend();
+            showInfo();
             setCookie("tag_stats_shown", "true");
         }
     }
@@ -234,7 +234,7 @@
     function init() {
         initEpcFilterInput();
         createLegendColors();
-        showLegendOnce();
+        showInfoOnce();
         socket.init();
     }
 
@@ -248,7 +248,7 @@
 <div id="modal_overlay" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-white">
         <div class="w3-bar">
-            <div class="w3-bar-item w3-button w3-right" onclick='closeResultsModal();'>
+            <div class="w3-bar-item w3-button w3-right" onclick='hideInfo();'>
                 <i class="fa fa-times"></i>
             </div>
         </div>
@@ -346,7 +346,7 @@
             <input type="text" id="epc_filter_pattern"/>
             <button class="w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i></button>
         </div>
-        <div class="w3-bar-item w3-right w3-button" onclick="showLegend()">
+        <div class="w3-bar-item w3-right w3-button" onclick="showInfo()">
             <i class="fas fa-info-circle w3-xlarge"></i>
         </div>
     </div>

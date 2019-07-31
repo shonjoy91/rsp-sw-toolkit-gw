@@ -5,7 +5,7 @@
 package com.intel.rfid.exception;
 
 @SuppressWarnings({"serial"})
-public class ExpiredTokenException extends RSPControllerException {
+public class ExpiredTokenException extends RspControllerException {
 
     public ExpiredTokenException(String _connectionId) {
         super(_connectionId);

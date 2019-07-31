@@ -18,7 +18,8 @@
     
     function onSocketState(state) {
         if (state === "open") {
-            socket.sendJsonRequest("mobility_profile_get");
+            socket.sendJsonRequest("mobility_profile_get_all");
+            socket.sendJsonRequest("inventory_get_active_mobility_profile_id")
         }
     }
 
@@ -26,32 +27,458 @@
 
     socket.inboundResponse = function (jsonRsp, jsonReq) {
         switch (jsonReq.method) {
-            case "mobility_profile_get":
-            case "mobility_profile_set":
-                handleMobilityProfile(jsonRsp.result);
+            case "mobility_profile_get_all":
+            case "mobility_profile_put":
+                handleMobilityProfileList(jsonRsp.result);
+                break;
+            case "mobility_profile_delete":
+                onDelete(jsonRsp.result);
+                break;
+            case "inventory_get_active_mobility_profile_id":
+            case "inventory_activate_mobility_profile":
+                onInventoryGetActiveMobilityProfile(jsonRsp.result);
                 break;
         }
     };
 
-    function handleMobilityProfile(behaviorList) {
+    var allTheMobilityProfiles = {};
 
-        // for (var i = 0; i < behaviorList.length; i++) {
-        //     var behavior = behaviorList[i];
-        //     allTheBehaviors[behavior.id] = behavior;
-        //     var containerId = behavior.id + "_container";
-        //     var containter = document.getElementById(containerId);
-        //     if (containter === null) {
-        //         containter = createBehaviorContainer(behavior, containerId);
-        //     } else {
-        //         align(behavior);
-        //     }
-        // }
+    function handleMobilityProfileList(mobilityProfileList) {
+
+        for (var i = 0; i < mobilityProfileList.length; i++) {
+            var mobilityProfile = mobilityProfileList[i];
+            allTheMobilityProfiles[mobilityProfile.id] = mobilityProfile;
+            var containerId = mobilityProfile.id + "_container";
+            var containter = document.getElementById(containerId);
+            if (containter === null) {
+                containter = createMobilityProfileContainer(mobilityProfile, containerId);
+            } else {
+                align(mobilityProfile);
+            }
+        }
+    }
+
+    function align(mobilityProfile) {
+        var key;
+        for (key in mobilityProfile) {
+
+            var input = document.getElementById(mobilityProfile.id + "." +key);
+            if(input === null) { continue; }
+            if(input.tagName === "SELECT") {
+                for(var x = 0; x < input.options.length; x++) {
+                    if(input.options[x].text === mobilityProfile[key]) {
+                        input.selectedIndex = x;
+                    }
+                }
+            } else {
+                input.value = mobilityProfile[key];
+            }
+        }
+    }
+
+    function onDelete(mobilityProfileList) {
+        var mobilityProfileContainer = document.getElementById("mobility_profile_container");
+        for (var i = 0; i < mobilityProfileList.length; i++) {
+            var mobilityProfile = mobilityProfileList[i];
+
+            delete allTheMobilityProfiles[mobilityProfile.id];
+
+            var container = document.getElementById(mobilityProfile.id + "_container");
+            if (container !== null) {
+                mobilityProfileContainer.removeChild(container);
+            }
+        }
     }
     
+    function onInventoryGetActiveMobilityProfile(activeId) {
 
+        for (var mobilityProfile in allTheMobilityProfiles) {
+            if (allTheMobilityProfiles.hasOwnProperty(mobilityProfile)) {
+                var e = document.getElementById(mobilityProfile + ".is_active");
+                if (activeId === mobilityProfile) {
+                    e.innerHTML = '<i class="fas fa-check-circle"></i>';
+                    e.title = 'active mobility profile';
+                } else {
+                    e.innerHTML = '';
+                    e.title = '';
+                }
+            }
+        }
+    }
+
+    function createMobilityProfileContainer(mobilityProfile, containerId) {
+
+        var containerDiv = document.createElement('div');
+        containerDiv.classList.add("w3-container");
+        containerDiv.classList.add("w3-border-bottom");
+        containerDiv.id = containerId;
+
+        var headerDiv = document.createElement("div");
+        headerDiv.id = mobilityProfile.id + "_header";
+        headerDiv.classList.add("w3-bar");
+        containerDiv.appendChild(headerDiv);
+
+
+        var idDiv = document.createElement("div");
+        idDiv.id = mobilityProfile.id + "_id";
+        idDiv.classList.add("w3-bar-item");
+        idDiv.classList.add("w3-large");
+        idDiv.onclick = toggleMobilityProfileClosure(mobilityProfile.id);
+        idDiv.classList.add("w3-hover-white");
+        idDiv.style.cursor = "default";
+        idDiv.innerHTML = mobilityProfile.id;
+        headerDiv.appendChild(idDiv);
+
+        var idActiveDiv = document.createElement("div");
+        idActiveDiv.id = mobilityProfile.id + ".is_active";
+        idActiveDiv.classList.add("w3-bar-item");
+        idActiveDiv.classList.add("w3-large");
+        idActiveDiv.innerHTML = "&nbsp;";
+        headerDiv.appendChild(idActiveDiv);
+
+        var paramsDiv = document.createElement("div");
+        paramsDiv.id = mobilityProfile.id + ".params";
+        paramsDiv.classList.add("w3-row");
+        paramsDiv.classList.add("w3-margin-bottom");
+        paramsDiv.classList.add("w3-hide");
+        containerDiv.appendChild(paramsDiv);
+
+
+        var controlsDiv = document.createElement("div");
+        controlsDiv.classList.add("w3-col");
+        controlsDiv.classList.add("w3-bar-block");
+        controlsDiv.style.width = "50px";
+        paramsDiv.appendChild(controlsDiv);
+
+        var e;
+        e = newControlElement(controlsDiv, "<i class='fas fa-check-circle'></i>", "Activate");
+        e.onclick = activateMobilityProfileClosure(mobilityProfile.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-copy'></i>", "Copy");
+        e.onclick = copyMobilityProfileClosure(mobilityProfile.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-save'></i>", "Save");
+        e.onclick = saveMobilityProfileClosure(mobilityProfile.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-download'></i>", "Download");
+        e.onclick = downloadMobilityProfileClosure(mobilityProfile.id);
+        e = newControlElement(controlsDiv, "<i class='fas fa-trash'></i>", "Delete");
+        e.onclick = deleteMobilityProfileClosure(mobilityProfile.id);
+
+        e = document.createElement("div");
+        e.classList.add("w3-rest");
+        paramsDiv.appendChild(e);
+
+        var paramsDivForm = document.createElement("div");
+        paramsDivForm.classList.add("w3-row-padding");
+        e.appendChild(paramsDivForm);
+
+
+        var paramsCol;
+        paramsCol = newParamsCol(paramsDivForm);
+        paramsCol.appendChild(newNumberParam(mobilityProfile, "slope", "dBm per millisecond"));
+        paramsCol.appendChild(newNumberParam(mobilityProfile, "threshold", "dBm weight to apply at time delta 0"));
+        paramsCol.appendChild(newNumberParam(mobilityProfile, "holdoff", "milliseconds before the slope begins taking affect"));
+        
+        // insert the mobilityProfile in alphabetical order
+        var mobilityProfileContainer = document.getElementById("mobility_profile_container");
+        var mobilityProfileDivs = Array.prototype.slice.call(mobilityProfileContainer.children);
+        var before = mobilityProfileDivs.find(function(element) {
+            return (containerId.localeCompare(element.id) < 0);
+        });
+
+
+        mobilityProfileContainer.insertBefore(containerDiv, before);
+    }
+
+    var numbers = {
+        slope: { min: -1000, max: 1000, step: .0001 },
+        threshold: {min:-100, max:+100, step: .1},
+        holdoff: {min:0.0, max:1000000.0, step: 1},
+    };
+
+    function newNumberParam(mobilityProfile, elementId, title) {
+        var e = newParamWrapperElement(elementId);
+
+        var input = document.createElement("input");
+        input.id = mobilityProfile.id + "." + elementId;
+        input.type = "number";
+        input.min = numbers[elementId].min;
+        input.max = numbers[elementId].max;
+        input.step = numbers[elementId].step;
+        input.value = mobilityProfile[elementId];
+        input.title = title;
+
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+
+        e.appendChild(input);
+        return e;
+    }
     
-    function init() {
-        socket.init();
+    function newParamWrapperElement(label) {
+        var e = document.createElement("div");
+        // e.classList.add("w3-quarter");
+
+        var l = document.createElement("label");
+        l.innerHTML = label;
+        e.appendChild(l);
+
+        return e;
+    }
+
+    function newControlElement(parent, html, title) {
+        var e;
+        e = document.createElement("div");
+        e.classList.add("w3-button");
+        e.classList.add("w3-bar-item");
+        e.classList.add("w3-blue");
+        e.title = title;
+        e.innerHTML = html;
+        parent.appendChild(e);
+        return e;
+    }
+
+    function newParamsCol(parent) {
+        var e;
+        e = document.createElement("div");
+        // e.classList.add("w3-row-padding");
+        e.classList.add("w3-quarter");
+        parent.appendChild(e);
+        return e;
+    }
+
+    function toggleMobilityProfile(mobilityProfileId) {
+        var e = document.getElementById(mobilityProfileId + ".params");
+        if(e === null) { return; }
+        if (e.className.indexOf("w3-show") === -1) {
+            e.classList.add("w3-show");
+        } else {
+            e.className = e.className.replace(" w3-show", "");
+        }
+    }
+
+    function toggleMobilityProfileClosure(mobilityProfileId) {
+        return function () {
+            toggleMobilityProfile(mobilityProfileId);
+        }
+    }
+
+    function deleteMobilityProfileClosure(mobilityProfileId) {
+        return function () {
+            deleteMobilityProfile(mobilityProfileId);
+        }
+    }
+
+    var deleteMobilityProfileCurId;
+    function deleteMobilityProfile(mobilityProfileId) {
+        deleteMobilityProfileCurId = mobilityProfileId;
+
+        var wrapper = prepareModal();
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", confirmDelete);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Delete mobilityProfile: ", mobilityProfileId);
+    }
+
+    function confirmDelete() {
+        closeInputModal();
+        toggleMobilityProfile(deleteMobilityProfileCurId);
+        socket.sendJsonRequest("mobility_profile_delete", {mobility_profile_id : deleteMobilityProfileCurId})
+    }
+
+    function activateMobilityProfileClosure(mobilityProfileId) {
+        return function () {
+            activateMobilityProfile(mobilityProfileId);
+        }
+    }
+
+    function activateMobilityProfile(mobilityProfileId) {
+        socket.sendJsonRequest("inventory_activate_mobility_profile", {mobility_profile_id : mobilityProfileId})
+    }
+
+    function copyMobilityProfileClosure(mobilityProfileId) {
+        return function () {
+            copyMobilityProfile(mobilityProfileId);
+        }
+    }
+
+    var copyMobilityProfileCurId;
+
+    var copyInstructions = "" ;
+
+
+    function copyMobilityProfile(mobilityProfileId) {
+        copyMobilityProfileCurId = mobilityProfileId;
+
+        var wrapper = prepareModal();
+
+        var msg = document.createElement("div");
+        msg.innerHTML = copyInstructions;
+        msg.classList.add("w3-padding");
+        wrapper.appendChild(msg);
+
+        var l = document.createElement("label");
+        l.innerHTML = "New MobilityProfile Id";
+        wrapper.appendChild(l);
+
+        var input = document.createElement("input");
+        input.id = "copyMobilityProfileNewId";
+        input.type = "text";
+        input.value = mobilityProfileId;
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        // input.classList.add("w3-margin-top");
+        wrapper.appendChild(input);
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", confirmCopy);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Copy MobilityProfile", "Enter new mobility profile id");
+    }
+
+    function confirmCopy() {
+        closeInputModal();
+        var newId = document.getElementById("copyMobilityProfileNewId").value;
+        if(newId === copyMobilityProfileCurId) {
+            showError("Copy failed ... mobility profile id must be different");
+            return;
+        }
+        toggleMobilityProfile(copyMobilityProfileCurId);
+        var newMobilityProfile = JSON.parse(JSON.stringify(allTheMobilityProfiles[copyMobilityProfileCurId]));
+        newMobilityProfile.id = newId;
+        socket.sendJsonRequest("mobility_profile_put", newMobilityProfile);
+    }
+
+    function saveMobilityProfileClosure(mobilityProfileId) {
+        return function () {
+            saveMobilityProfile(mobilityProfileId);
+        }
+    }
+
+    function saveMobilityProfile(mobilityProfileId) {
+
+        var mobilityProfile = allTheMobilityProfiles[mobilityProfileId];
+        var key;
+        var changed = false;
+        for (key in mobilityProfile) {
+
+            var input = document.getElementById(mobilityProfileId + "." +key);
+            if(input === null) { continue; }
+            var val;
+            if(input.tagName === "SELECT") {
+                val = input.options[input.selectedIndex].text;
+            } else {
+                val = input.value;
+            }
+
+            switch (typeof(mobilityProfile[key])) {
+                case "string":
+                    if (mobilityProfile[key] !== val) {
+                        changed = true;
+                        mobilityProfile[key] = val;
+                    }
+                    break;
+                case "number":
+                    if (mobilityProfile[key] !== Number(val)) {
+                        changed = true;
+                        mobilityProfile[key] = Number(val);
+                    }
+                    break;
+                case "boolean":
+                    if((mobilityProfile[key] && val === "false") || (!mobilityProfile[key] && val === "true") ) {
+                        changed = true;
+                        mobilityProfile[key] = (val === "true");
+                    }
+                    break;
+                default:
+                    console.error("bad type in Json");
+                    return;
+            }
+
+        }
+        if(changed) {
+            socket.sendJsonRequest("mobility_profile_put", mobilityProfile);
+        }
+    }
+
+    function downloadMobilityProfileClosure(mobilityProfileId) {
+        return function () {
+            downloadMobilityProfile(mobilityProfileId);
+        }
+    }
+
+    function downloadMobilityProfile(mobilityProfileId) {
+        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allTheMobilityProfiles[mobilityProfileId], null, 2));
+        var anchor = document.createElement('a');
+        anchor.setAttribute("href", dataStr);
+        anchor.setAttribute("download", mobilityProfileId + ".json");
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    function initiateUpload() {
+        var wrapper = prepareModal();
+        var input = document.createElement("input");
+
+        input.id = "uploadMobilityProfileInput";
+        input.type = "file";
+
+        input.classList.add("w3-input");
+        input.classList.add("w3-border");
+        input.classList.add("w3-margin-top");
+
+        wrapper.appendChild(input);
+
+        var btnOK = document.createElement("button");
+        btnOK.classList.add("w3-button");
+        btnOK.innerHTML = "OK";
+        btnOK.addEventListener("click", uploadMobilityProfileFile);
+        wrapper.appendChild(btnOK);
+
+        var btnCancel = document.createElement("button");
+        btnCancel.classList.add("w3-button");
+        btnCancel.innerHTML = "Cancel";
+        btnCancel.addEventListener("click", closeInputModal);
+        wrapper.appendChild(btnCancel);
+
+        showInputModal("Upload MobilityProfile File", "");
+    }
+
+    function uploadMobilityProfileFile(){
+        closeInputModal();
+        var fileToLoad = document.getElementById("uploadMobilityProfileInput").files[0];
+        if(fileToLoad == null) {
+            showError("No file selected");
+            return;
+        }
+        var fileReader = new FileReader();
+        fileReader.onload = function(fileLoadedEvent){
+            try {
+                var uploadedMobilityProfile = JSON.parse(fileLoadedEvent.target.result);
+                socket.sendJsonRequest("mobility_profile_put", uploadedMobilityProfile);
+            } catch (err) {
+                showError(err.message);
+            }
+        };
+        fileReader.readAsText(fileToLoad, "UTF-8");
     }
 
     function showInputModal(subject, prompt) {
@@ -78,7 +505,7 @@
 
         return wrapper;
     }
-    
+
     function showError(msg) {
         var wrapper = prepareModal();
 
@@ -86,11 +513,33 @@
         div.innerHTML = msg;
         div.classList.add("w3-large");
         div.classList.add("w3-padding")
-        
+
         wrapper.appendChild(div);
 
         showInputModal("ERROR", "");
     }
+
+    function showInfo() {
+        document.getElementById("info_overlay").style.display = 'block';
+    }
+
+    function hideInfo() {
+        document.getElementById("info_overlay").style.display = 'none';
+    }
+
+    function showInfoOnce() {
+        var val = getCookie("mobilty_profile_info_shown");
+        if (val !== "true") {
+            showInfo();
+            setCookie("mobilty_profile_info_shown", "true");
+        }
+    }
+
+    function init() {
+        socket.init();
+        showInfoOnce();
+    }
+
 
 </script>
 
@@ -114,6 +563,9 @@
         <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
             <i class="fa fa-upload"> </i> Upload From File
         </div>
+        <div class="w3-bar-item w3-right w3-button" onclick="showInfo()">
+            <i class="fas fa-info-circle w3-xlarge"></i>
+        </div>
     </div>
 </div>
 
@@ -132,7 +584,63 @@
     </div>
 </div>
 
-<div id="content_container" class="fixed_content">
+<div id="info_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-white">
+        <div class="w3-bar">
+            <div class="w3-bar-item w3-button w3-right" onclick='hideInfo();'>
+                <i class="fa fa-times"></i>
+            </div>
+        </div>
+
+        <table class="w3-table w3-bordered">
+            <tr>
+                <th class="w3-center"><i class="fas fa-info-circle w3-xxxlarge"></i></th>
+                <td>
+                    The <b>Mobility Profile</b> defines the parameters of the weighted slope formula used in calculating a tag's location.
+                    Tag location is determined based on the quality of tag reads associated with a sensor/antenna averaged over time.
+                    For a tag to move from one location to another, the other location must be either a better signal or be more recent.
+                </td>
+            </tr>
+            <tr>
+                <th class="w3-center" style="vertical-align: baseline"><h4>Parameters</h4></th>
+                <td>
+                    <p>
+                        <strong>Slope</strong> <small>(dBm per millisecond)</small>:
+                        Used to determine the weight applied to older RSSI values
+                    </p>
+                    <p>
+                        <strong>Threshold</strong> <small>(dBm)</small> 
+                        RSSI threshold that must be exceeded for the tag to move from the previous sensor
+                    </p>
+                    <p>
+                        <strong>Holdoff</strong> <small>(milliseconds)</small>
+                            Amount of time in which the weight used is just the threshold, effectively the slope is not used
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th class="w3-center" style="vertical-align: baseline"><h4>Algorithm</h4></th>
+                <td>
+<!--                    y-intercept = threshold - (slope * holdoff);-->
+<!--                    <br>-->
+<!--                    // weight used in the RSSI comparison-->
+<!--                    <br>-->
+<!--                    weight = (slope * (System.currentTimeMillis() - _lastReadMillis)) + y-intercept;-->
+<!--                    <br>-->
+<!--                    // weight cannot be more than the absolute threshold-->
+<!--                    <br>-->
+<!--                    if (weight > threshold) { weight = threshold; }-->
+<!--                    <br>-->
+                    <img src="mobility-profile.png" width="604" height="482" alt="mobility profile equation">
+                </td>
+            </tr>
+        </table>
+
+    </div>
+</div>
+
+
+<div id="mobility_profile_container" class="fixed_content">
 </div>
 
 </body>

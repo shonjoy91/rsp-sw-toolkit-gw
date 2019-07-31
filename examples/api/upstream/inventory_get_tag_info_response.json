@@ -6,21 +6,21 @@
     "tid" : "TID000001",
     "state" : "PRESENT",
     "location" : "RSP-150005-0",
-    "last_read_on" : 1562969409712,
+    "last_read_on" : 1564612357133,
     "facility_id" : "BackStock"
   }, {
     "epc" : "EPC000002",
     "tid" : "TID000002",
     "state" : "PRESENT",
     "location" : "RSP-150005-0",
-    "last_read_on" : 1562969409712,
+    "last_read_on" : 1564612357133,
     "facility_id" : "BackStock"
   }, {
     "epc" : "EPC000003",
     "tid" : "TID000003",
     "state" : "PRESENT",
     "location" : "RSP-150005-0",
-    "last_read_on" : 1562969409712,
+    "last_read_on" : 1564612357133,
     "facility_id" : "BackStock"
   } ]
 }

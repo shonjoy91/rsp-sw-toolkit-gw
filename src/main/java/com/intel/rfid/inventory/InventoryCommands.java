@@ -4,10 +4,11 @@
  */
 package com.intel.rfid.inventory;
 
+import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.console.ArgumentIterator;
 import com.intel.rfid.console.SyntaxException;
 import com.intel.rfid.exception.ConfigException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.PrettyPrinter;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
@@ -18,8 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.intel.rfid.console.CLICommander.INFO;
 import static com.intel.rfid.console.CLICommander.SET;
@@ -98,7 +101,7 @@ public class InventoryCommands implements Support {
                                 new StringsCompleter(CMD_ID),
                                 new StringsCompleter(MOBILITY),
                                 new StringsCompleter(SET),
-                                new MobilityProfileConfig(),
+                                new MobilityProfileCompleter(),
                                 new NullCompleter()
                         )
                 )
@@ -192,7 +195,7 @@ public class InventoryCommands implements Support {
 
     @Override
     public void doAction(String _action, ArgumentIterator _argIter, PrettyPrinter _out)
-            throws RSPControllerException, IOException {
+            throws RspControllerException, IOException {
 
         switch (_action) {
             case SUMMARY:
@@ -227,7 +230,7 @@ public class InventoryCommands implements Support {
     }
 
     private void doStats(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws RSPControllerException, IOException {
+            throws RspControllerException, IOException {
 
         if (!_argIter.hasNext()) {
             usageStats(_out);
@@ -264,25 +267,20 @@ public class InventoryCommands implements Support {
     }
 
     private void doMobility(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws RSPControllerException, IOException {
+            throws RspControllerException {
         if (!_argIter.hasNext()) {
             usageMobility(_out);
             return;
         }
 
-        RssiAdjuster adj = mgr.getRssiAdjuster();
-        if (adj == null) {
-            throw new ConfigException("Internal error, no rssi adjuster available");
-        }
-
         String action = _argIter.next();
         switch (action) {
             case SET:
-                doMobilitySet(_argIter, adj);
-                doMobilityShow(_out, adj);
+                doMobilitySet(_argIter, _out);
+                doMobilityShow(_out);
                 break;
             case SHOW:
-                doMobilityShow(_out, adj);
+                doMobilityShow(_out);
                 break;
             default:
                 usageMobility(_out);
@@ -291,20 +289,15 @@ public class InventoryCommands implements Support {
 
     }
 
-    private void doMobilitySet(ArgumentIterator _argIter, RssiAdjuster adj)
-            throws RSPControllerException, IOException {
-        String id = _argIter.next();
-        MobilityProfile mp = MobilityProfileConfig.getProfile(id);
-        if (mp == null) {
-            throw new ConfigException("no mobility profile found for id " + id);
-        }
-        adj.set(mp);
+    private void doMobilitySet(ArgumentIterator _argIter, PrettyPrinter _out)
+            throws RspControllerException {
+        BooleanResult br = mgr.activateMobilityProfile(_argIter.next());
+        _out.println(br.toString());
     }
 
-    private void doMobilityShow(PrettyPrinter _out, RssiAdjuster adj)
-            throws RSPControllerException, IOException {
-        _out.line("ACTIVE:");
-        adj.showMobilityProfile(_out);
+    private void doMobilityShow(PrettyPrinter _out) {
+        
+        _out.line("ACTIVE: " + mgr.getActiveMobilityProfileId());
         _out.blank();
         _out.line("AVAILABLE:");
         Map<String, MobilityProfile> map = MobilityProfileConfig.available();
@@ -315,7 +308,7 @@ public class InventoryCommands implements Support {
 
 
     private void doWaypoints(ArgumentIterator _argIter, PrettyPrinter _out)
-            throws RSPControllerException, IOException {
+            throws RspControllerException {
 
         if (!_argIter.hasNext()) {
             usageWaypoints(_out);

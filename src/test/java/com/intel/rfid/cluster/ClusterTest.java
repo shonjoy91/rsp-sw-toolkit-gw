@@ -10,7 +10,7 @@ import com.intel.rfid.api.data.Personality;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.exception.ExpiredTokenException;
 import com.intel.rfid.exception.InvalidTokenException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.security.ProvisionToken;
 import com.intel.rfid.sensor.SensorManager;
@@ -94,7 +94,7 @@ public class ClusterTest {
         clusterMgr.tokens.put(pt2.token, pt2);
         try {
             clusterMgr.validateToken(pt2.token);
-        } catch (RSPControllerException _e) {
+        } catch (RspControllerException _e) {
             fail("unexpected token validation error {}", _e.getMessage());
         }
     }

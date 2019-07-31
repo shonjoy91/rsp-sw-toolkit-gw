@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "20",
+  "id" : "26",
   "method" : "sensor_get_basic_info",
   "params" : {
     "device_id" : "RSP-150000"

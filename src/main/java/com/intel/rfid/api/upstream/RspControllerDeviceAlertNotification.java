@@ -12,17 +12,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RSPControllerDeviceAlertNotification extends JsonNotification {
+public class RspControllerDeviceAlertNotification extends JsonNotification {
 
     public static final String METHOD_NAME = "device_alert";
 
     public Params params = new Params();
 
-    public RSPControllerDeviceAlertNotification() {
+    public RspControllerDeviceAlertNotification() {
         method = METHOD_NAME;
     }
 
-    public RSPControllerDeviceAlertNotification(DeviceAlertNotification _deviceAlert) {
+    public RspControllerDeviceAlertNotification(DeviceAlertNotification _deviceAlert) {
         this();
         params.sent_on = _deviceAlert.params.sent_on;
         params.device_id = _deviceAlert.params.device_id;

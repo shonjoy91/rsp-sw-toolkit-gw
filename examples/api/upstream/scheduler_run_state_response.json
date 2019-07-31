@@ -1,6 +1,6 @@
 {
   "jsonrpc" : "2.0",
-  "id" : "18",
+  "id" : "24",
   "result" : {
     "run_state" : "FROM_CONFIG",
     "available_states" : [ "INACTIVE", "ALL_ON", "ALL_SEQUENCED", "FROM_CONFIG" ],

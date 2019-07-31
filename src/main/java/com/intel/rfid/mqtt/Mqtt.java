@@ -9,7 +9,7 @@ import com.intel.rfid.api.data.MqttStatus;
 import com.intel.rfid.controller.ConfigManager;
 import com.intel.rfid.exception.FailedException;
 import com.intel.rfid.exception.NotConnectedException;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.security.SecurityContext;
@@ -257,7 +257,7 @@ public abstract class Mqtt implements MqttCallback {
 
     protected boolean loggedOnce = false;
 
-    public void publish(String _topic, byte[] _msg, QOS _qos) throws RSPControllerException {
+    public void publish(String _topic, byte[] _msg, QOS _qos) throws RspControllerException {
 
         if (connectionState != Connection.State.CONNECTED) {
             throw new NotConnectedException("mqtt " + clientId);

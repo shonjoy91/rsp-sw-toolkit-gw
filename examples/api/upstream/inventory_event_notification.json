@@ -2,15 +2,15 @@
   "jsonrpc" : "2.0",
   "method" : "inventory_event",
   "params" : {
-    "sent_on" : 1562969407713,
-    "gateway_id" : "tim-U18-VB",
+    "sent_on" : 1564612355134,
+    "device_id" : "tim-U18-VB",
     "data" : [ {
       "facility_id" : "BackStock",
       "epc_code" : "EPC000001",
       "tid" : "TID000001",
       "epc_encode_format" : "tbd",
       "event_type" : "arrival",
-      "timestamp" : 1562969407712,
+      "timestamp" : 1564612355133,
       "location" : "RSP-150005-0"
     }, {
       "facility_id" : "BackStock",
@@ -18,7 +18,7 @@
       "tid" : "TID000002",
       "epc_encode_format" : "tbd",
       "event_type" : "arrival",
-      "timestamp" : 1562969407712,
+      "timestamp" : 1564612355133,
       "location" : "RSP-150005-0"
     }, {
       "facility_id" : "BackStock",
@@ -26,7 +26,7 @@
       "tid" : "TID000003",
       "epc_encode_format" : "tbd",
       "event_type" : "arrival",
-      "timestamp" : 1562969407712,
+      "timestamp" : 1564612355133,
       "location" : "RSP-150005-0"
     } ]
   }

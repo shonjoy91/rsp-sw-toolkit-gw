@@ -8,12 +8,12 @@ import com.intel.rfid.schedule.MockScheduleManager;
 import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.upstream.MockUpstreamManager;
 
-public class MockRSPController extends RSPController {
+public class MockRspController extends RspController {
 
     // prevent default super constructor
     // from instantiating objects before
     // mock objects are substituted
-    public MockRSPController() {
+    public MockRspController() {
         // almost every test needs these mocked out
         // for now, they mostly just extend the
         // actual implementation

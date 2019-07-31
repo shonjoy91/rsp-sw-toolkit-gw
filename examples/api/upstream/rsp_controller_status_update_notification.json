@@ -1,0 +1,9 @@
+{
+  "jsonrpc" : "2.0",
+  "method" : "rsp_controller_status_update",
+  "params" : {
+    "sent_on" : 1564612355125,
+    "device_id" : "device.host.name",
+    "status" : "controller_ready"
+  }
+}

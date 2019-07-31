@@ -132,7 +132,7 @@ public class JmDNSService {
 
     private synchronized void registerService(JmDNS jmdns) {
         try {
-            String fullName = REGISTER_NAME_PREFIX + "-" + ConfigManager.instance.getRSPControllerDeviceId();
+            String fullName = REGISTER_NAME_PREFIX + "-" + ConfigManager.instance.getRspControllerDeviceId();
 
             log.info("attempting to register mdns: {} on {} ({})...",
                      fullName,

@@ -5,6 +5,6 @@
     "connection_state" : "DISCONNECTED",
     "broker_uri" : "tcp://tim-U18-VB.local:1883",
     "subscribes" : [ ],
-    "publishes" : [ "rfid/gw/alerts", "rfid/gw/events", "rfid/gw/response", "rfid/gw/notification" ]
+    "publishes" : [ "rfid/controller/alerts", "rfid/controller/events", "rfid/controller/response", "rfid/controller/notification" ]
   }
 }

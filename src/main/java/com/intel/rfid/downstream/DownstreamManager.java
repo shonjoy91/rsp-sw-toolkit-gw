@@ -13,8 +13,8 @@ import com.intel.rfid.api.gpio.GPIOConnectResponse;
 import com.intel.rfid.api.sensor.ConnectRequest;
 import com.intel.rfid.api.sensor.ConnectResponse;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
-import com.intel.rfid.api.upstream.RSPControllerStatusUpdateNotification;
-import com.intel.rfid.exception.RSPControllerException;
+import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
+import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.gpio.GPIODevice;
 import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
@@ -40,7 +40,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     protected GPIOManager gpioMgr;
 
     protected final DataMsgHandler dataMsgHandler;
-    protected final Map<String, RSPMsgHandler> rspMsgHandlers;
+    protected final Map<String, RspMsgHandler> rspMsgHandlers;
     protected final Map<String, GPIOMsgHandler> gpioMsgHandlers;
 
     protected ObjectMapper mapper = Jackson.getMapper();
@@ -76,7 +76,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
             gpioMsgHandlers.clear();
         }
         synchronized (rspMsgHandlers) {
-            for (RSPMsgHandler rmh : rspMsgHandlers.values()) {
+            for (RspMsgHandler rmh : rspMsgHandlers.values()) {
                 rmh.shutdown();
                 log.info("Stopped message handler {}", rmh.getDeviceId());
             }
@@ -96,7 +96,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     }
 
     public void sendCommand(String _deviceId, JsonRequest _req)
-            throws JsonProcessingException, RSPControllerException {
+            throws JsonProcessingException, RspControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_req);
         mqttDownstream.publishCommand(_deviceId, bytes);
@@ -106,7 +106,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     }
 
     public void sendConnectRsp(String _deviceId, ConnectResponse _rsp)
-            throws JsonProcessingException, RSPControllerException {
+            throws JsonProcessingException, RspControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_rsp);
         mqttDownstream.publishConnectResponse(_deviceId, bytes);
@@ -115,18 +115,18 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
                  mapper.writeValueAsString(_rsp.result));
     }
 
-    public void send(RSPControllerStatusUpdateNotification _not) {
+    public void send(RspControllerStatusUpdateNotification _not) {
         try {
             mqttDownstream.publishControllerStatus(mapper.writeValueAsBytes(_not));
             log.info("Published {}", _not);
-        } catch (RSPControllerException | JsonProcessingException _e) {
+        } catch (RspControllerException | JsonProcessingException _e) {
             log.error("failed to send controller status update {} {}",
                       _not.params.status, _e.getMessage());
         }
     }
 
     public void sendGPIOCommand(String _deviceId, JsonRequest _req)
-            throws JsonProcessingException, RSPControllerException {
+            throws JsonProcessingException, RspControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_req);
         mqttDownstream.publishGPIOCommand(_deviceId, bytes);
@@ -136,7 +136,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
     }
 
     public void sendGPIODevceConnectRsp(String _deviceId, GPIOConnectResponse _rsp)
-            throws JsonProcessingException, RSPControllerException {
+            throws JsonProcessingException, RspControllerException {
 
         byte[] bytes = mapper.writeValueAsBytes(_rsp);
         mqttDownstream.publishGPIOConnectResponse(_deviceId, bytes);
@@ -151,7 +151,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
 
     public void sensorRemoved(String _deviceId) {
         synchronized (rspMsgHandlers) {
-            RSPMsgHandler rmh = rspMsgHandlers.remove(_deviceId);
+            RspMsgHandler rmh = rspMsgHandlers.remove(_deviceId);
             if (rmh != null) {
                 rmh.shutdown();
             }
@@ -204,10 +204,10 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
                 }
             } else {
                 synchronized (rspMsgHandlers) {
-                    RSPMsgHandler rspMsgHandler = rspMsgHandlers.get(deviceId);
+                    RspMsgHandler rspMsgHandler = rspMsgHandlers.get(deviceId);
                     if (rspMsgHandler == null) {
                         SensorPlatform rsp = sensorMgr.establishRSP(deviceId);
-                        rspMsgHandler = new RSPMsgHandler(rsp);
+                        rspMsgHandler = new RspMsgHandler(rsp);
                         rspMsgHandlers.put(deviceId, rspMsgHandler);
                         rspMsgHandler.start();
                     }
@@ -278,11 +278,11 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
         }
     }
 
-    public static class RSPMsgHandler extends MqttMsgHandler {
+    public static class RspMsgHandler extends MqttMsgHandler {
 
         protected SensorPlatform rsp;
 
-        public RSPMsgHandler(SensorPlatform _rsp) {
+        public RspMsgHandler(SensorPlatform _rsp) {
             rsp = _rsp;
             setName("msg-handler " + rsp.getDeviceId());
         }
