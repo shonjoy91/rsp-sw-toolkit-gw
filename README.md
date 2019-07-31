@@ -6,14 +6,14 @@ by demonstrating the use of the API to collect and process RFID tag read informa
 
 ##### _THIS SOFTWARE IS NOT INTENDED TO BE A COMPLETE END-TO-END INVENTORY MANAGEMENT SOLUTION._  
 
-The Intel&reg; RSP Controller is a Java application built with Gradle. As such, it can run on any OS that supports 
+The Intel&reg; RSP Controller Application is a Java application built with Gradle. As such, it can run on any OS that supports 
 a Java Runtime Environment version 8 or greater. The following instructions will get you a copy 
 of the project up and running on your local machine for development and testing purposes.  
 
 #### Getting Started Windows
 
 Instructions for build and installation in a Windows environment can be found in the 
-[Installation & User's Guide](docs/338443-002_Intel-RSP-SW-Toolkit-Gateway.pdf)
+[Installation & User's Guide](docs/Intel-RSP-Controller-App_Installation_User_Guide.pdf)
 
 #### Getting Started Linux (recommended)
 The following instructions assume an Ubuntu 18.04 installation.
@@ -60,8 +60,8 @@ cd ~/deploy/rsp-sw-toolkit-gw
 ~/deploy/rsp-sw-toolkit-gw/run.sh
 ```
 Connect an Intel&reg; RFID Sensor Platform on the same network segment as the Intel&reg; RSP Controller Application. 
-The sensor will listen for the RSP Controller's mDNS announcement and initiate a connection. 
-As the senor's connect, the RSP Controller will schedule them to read RFID tags in sequence
+The sensor will listen for the RSP Controller Application's mDNS announcement and initiate a connection. 
+As the senor's connect, the RSP Controller Application will schedule them to read RFID tags in sequence
 (one at a time).
 
 ##### Monitor
@@ -79,11 +79,11 @@ To view available parameters or completion options, press the tab key.
 
 Connect to the CLI and explore as follows.
 ```bash
-ssh -p5222 gwconsole@localhost
-password: gwconsole
+ssh -p5222 console@localhost
+password: console
     
 #-- view sensor information 
-rfid-gw> sensor show
+cli> sensor show
 ------------------------------------------
 device     connect      reading    behavior  facility    personality  aliases
 
@@ -93,7 +93,7 @@ RSP-150005 CONNECTED    STOPPED    Default   BackStock                [RSP-15000
 ------------------------------------------
 
 #-- view inventory information
-rfid-gw> inventory summary 
+cli> inventory summary 
 ------------------------------------------
 - Total Tags: 26
 
@@ -111,7 +111,7 @@ tag events as produced by the Intel&reg; RSP Controller Application.
 
 ```bash
 #-- monitor the upstream events topic
-mosquitto_sub -t rfid/gw/events
+mosquitto_sub -t rfid/controller/events
 ```
 
 # Use Cases
