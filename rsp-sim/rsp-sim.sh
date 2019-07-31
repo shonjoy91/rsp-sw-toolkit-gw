@@ -5,18 +5,19 @@
 #
 
 # Set the number of RSPs to simulate
-if [ "$#" -ne 1 ]; then
+if [ "$#" -lt 1 ]; then
     echo
-    echo "This script simulates the API messages between the specified numbers of"
-    echo "Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - RSP Controller."
+    echo "This script simulates the API messages between the specified number of"
+    echo "Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - Gateway."
     echo
-    echo "Usage: rsp-sim.sh <count>"
+    echo "Usage: rsp-sim.sh <count> [read_percent]"
     echo "where <count> is the number of RSP's to simulate."
+    echo "where [read_percent] is the optional percent (1-100) of tag population to be read per inventory_data packet (500 ms). default: 100"
     echo
     echo "This script depends on the mosquitto-clients package being installed."
     echo "Run 'sudo apt install mosquitto-clients' to install."
     echo
-    echo "NOTE: The Intel RSP SW Toolkit - RSP Controller must be running BEFORE"
+    echo "NOTE: The Intel RSP SW Toolkit - Gateway must be running BEFORE"
     echo "      attempting to execute this script."
     echo
     exit 1
@@ -30,15 +31,26 @@ if [ $RSPS -gt $MAX_RSPS ]; then
     RSPS=5
 fi
 
-RSP_CONTROLLER_IP="127.0.0.1"
+READ_PERCENT=$2
+if [ -z $READ_PERCENT ] || [ $READ_PERCENT -gt 100 ]; then
+    echo "Setting READ_PERCENT to 100."
+    READ_PERCENT=100
+fi
+
+# Customizable options
+QUIET=${QUIET:-0}
+QOS=${QOS:-1}
+NO_COLOR=${NO_COLOR:-0}
+CONTROLLER_IP="${CONTROLLER_IP:-127.0.0.1}"
+
 DEVICE_ID_INDEX=0
 FACILITY_ID_INDEX=1
 READ_STATE_INDEX=2
 TOKEN_INDEX=3
 DEFAULT_TOKEN="D544DF3F42EA86BED3C3D15FC321B8E949D666C06B008C6357580BC3816E00DE"
-ROOT_CERT_URL="http://$RSP_CONTROLLER_IP:8080/provision/root-ca-cert"
-MQTT_CRED_URL="https://$RSP_CONTROLLER_IP:8443/provision/sensor-credentials"
-MQTT_BROKER=${RSP_CONTROLLER_IP}
+ROOT_CERT_URL="http://$CONTROLLER_IP:8080/provision/root-ca-cert"
+MQTT_CRED_URL="https://$CONTROLLER_IP:8443/provision/sensor-credentials"
+MQTT_BROKER=$CONTROLLER_IP
 HOST_BASE=150000
 RSP_FILE_BASE="rsp_"
 TAG_FILE_BASE="tags_in_view_of_rsp_"
@@ -56,6 +68,9 @@ HighCpuUsage=103
 HighMemoryUsage=104
 DeviceMoved=151
 
+# Create a lookup map of RSP colors for logging: map[device_id] = color
+declare -A RSP_COLORS
+
 
 #
 # Define all the functions up front
@@ -64,7 +79,8 @@ DeviceMoved=151
 # Function takes device_id and token as arguments
 get_mqtt_credentials () {
     TIME=$(($(date +%s%N)/1000000))
-    RAW=$(curl --insecure --header "Content-type: application/json" --request POST --data '{"username":"'$1'","token":"'$2'","generatedTimestamp":'$TIME',"expirationTimestamp":-1}' $MQTT_CRED_URL)
+    echo "$1 requesting mqtt credentials from $MQTT_CRED_URL"
+    RAW=$(curl --insecure --progress-bar --header "Content-type: application/json" --request POST --data '{"username":"'$1'","token":"'$2'","generatedTimestamp":'$TIME',"expirationTimestamp":-1}' $MQTT_CRED_URL)
     if [ "$RAW" = "" ]; then
         echo "Cannot access MQTT Credentials REST endpoint!"
         exit 1
@@ -75,59 +91,107 @@ get_mqtt_credentials () {
     MQTT_BROKER=${ARRAY[0]}
 }
 
+# Function takes device_id, jsonrpc id and jsonrpc method
+log_send_response () {
+    if [ $QUIET -ne 1 ]; then
+        if [ $NO_COLOR -eq 1 ]; then
+            printf "[$(date '+%x %X')] %s %-10.10s --->> %-20s // response\n" "$1" "id: $2" "$3"
+        else
+            printf "\e[2m[$(date '+%x %X')]\e[0m \e[${RSP_COLORS[$1]}m%s\e[0m %-10.10s \e[1m--->>\e[0m \e[4m%-20s\e[0m \e[2m// response\e[0m\n" "$1" "id: $2" "$3"
+        fi
+    fi
+}
+
+# Function takes device_id, jsonrpc method and optional extra message as arguments
+log_send_msg () {
+    if [ $QUIET -ne 1 ]; then
+        if [ $NO_COLOR -eq 1 ]; then
+            printf "[$(date '+%x %X')] %s %-10.10s --->> %-20s %s\n" "$1" " " "$2" "$3"
+        else
+            printf "\e[2m[$(date '+%x %X')]\e[0m \e[${RSP_COLORS[$1]}m%s\e[0m %-10.10s \e[2m--->>\e[0m \e[4m%-20s\e[0m \e[2m%s\e[0m\n" "$1" " " "$2" "$3"
+        fi
+    fi
+}
+
+# Function takes device_id, jsonrpc id and jsonrpc method as arguments
+log_receive_msg () {
+    if [ $QUIET -ne 1 ]; then
+        if [ $NO_COLOR -eq 1 ]; then
+            printf "[$(date '+%x %X')] %s <<--- %10.10s %-20s // request\n" "$1" "id: $2" "$3"
+        else
+            printf "\e[2m[$(date '+%x %X')]\e[0m \e[${RSP_COLORS[$1]}m%s\e[0m \e[1m<<---\e[0m %10.10s \e[4m%-20s\e[0m \e[2m// request\e[0m\n" "$1" "id: $2" "$3"
+        fi
+    fi
+}
+
 # Function takes device_id and rsp index as arguments
 send_connect_request () {
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/connect -m '{"jsonrpc":"2.0","id":"1","method":"connect","params":{"hostname":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.1.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"}}'
+    log_send_msg $1 "connect"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/connect -m '{"jsonrpc":"2.0","id":"1","method":"connect","params":{"hostname":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.7.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_status_indication () {
     TIME=$(($(date +%s%N)/1000000))
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","status":"ready"}}'
+    log_send_msg $1 "status_update"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","status":"ready"}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_heartbeat_indication () {
     TIME=$(($(date +%s%N)/1000000))
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"heartbeat","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","location":null,"video_url":null}}'
+    log_send_msg $1 "heartbeat"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"heartbeat","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","location":null,"video_url":null}}'
 }
 
 # Function takes device_id, facility_id, alert_number, alert_description, serverity and optional as arguments
 send_device_alert_indication () {
     TIME=$(($(date +%s%N)/1000000))
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"device_alert","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","alert_number":'$3',"alert_description":"'$4'","severity":"'$5'","optional":'$6'}}'
+    log_send_msg $1 "device_alert"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"device_alert","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","alert_number":'$3',"alert_description":"'$4'","severity":"'$5'","optional":'$6'}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_inventory_complete_indication () {
     TIME=$(($(date +%s%N)/1000000))
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"inventory_complete","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'"}}'
+    log_send_msg $1 "inventory_complete"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"inventory_complete","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'"}}'
 }
 
-# Function takes device_id, facility_id and EPC as arguments
+# Function takes device_id, facility_id, tag count and tagdata as arguments
+# tagdata is an array of json epc read objects without the beginning and ending [ ]
+# example: {"epc":"1234ABC","tid":null,"antenna_id":0,"last_read_on":"123456","rssi":-654,"phase":32,"frequency":915250},{...},{...}
 send_inventory_data_indication () {
     TIME=$(($(date +%s%N)/1000000))
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/data/$1 -m '{"jsonrpc":"2.0","method":"inventory_data","params":{"sent_on":'$TIME',"period":500,"device_id":"'$1'","facility_id":"'$2'","location":null,"motion_detected":true,"data":[{"epc":"'$3'","tid":null,"antenna_id":0,"last_read_on":'$TIME',"rssi":-654,"phase":32,"frequency":915250}]}}'
+    log_send_msg $1 "inventory_data" "// $3 tags"
+    # tag data may be too large to pass over command line and should be stored in a temp file
+    tmpfile="/tmp/inventory_data_$1"
+    echo -n '{"jsonrpc":"2.0","method":"inventory_data","params":{"sent_on":'$TIME',"period":500,"device_id":"'$1'","facility_id":"'$2'","location":null,"motion_detected":true,"data":['$4']}}' > $tmpfile
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/data/$1 -f $tmpfile
 }
 
-# Function takes device_id and "id":id as arguments
+# Function takes device_id, request id and request method as arguments
 send_command_response () {
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":true,'$2'}'
+    log_send_response $1 $2 $3
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":true,"id":"'$2'"}'
 }
 
-# Function takes device_id, uptime and "id":id as arguments
+# Function takes device_id, request id and request method as arguments
 send_bist_results_response () {
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"rf_module_error":false,"rf_status_code":0,"rf_module_temp":'$RFID_TEMP',"ambient_temp":'$AMBI_TEMP',"time_alive":'$2',"cpu_usage":'$CPU_USAGE',"mem_used_percent":'$MEM_USAGE',"mem_total_bytes":'$MEM_TOTAL',"camera_installed":false,"temp_sensor_installed":true,"accelerometer_installed":true,"region":"USA","rf_port_statuses":[{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true},{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true}],"device_moved":false},'$3'}'
+    log_send_response $1 $3 $4
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"rf_module_error":false,"rf_status_code":0,"rf_module_temp":'$RFID_TEMP',"ambient_temp":'$AMBI_TEMP',"time_alive":'$2',"cpu_usage":'$CPU_USAGE',"mem_used_percent":'$MEM_USAGE',"mem_total_bytes":'$MEM_TOTAL',"camera_installed":false,"temp_sensor_installed":true,"accelerometer_installed":true,"region":"USA","rf_port_statuses":[{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true},{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true}],"device_moved":false},"id":"'$3'"}'
 }
 
-# Function takes device_id, index and "id":id as arguments
+# Function takes device_id, request id and request method as arguments
 send_state_response () {
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"device_id":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.1.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"},'$3'}'
+    log_send_response $1 $3 $4
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"device_id":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.1.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"},"id":"'$3'"}'
 }
 
-# Function takes device_id and "id":id as arguments
+# Function takes device_id, request id and request method as arguments
 send_sw_version_response () {
-    mosquitto_pub -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"app_version":"19.1.sim","module_version":"none"},'$2'}'
+    log_send_response $1 $2 $3
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"app_version":"19.1.sim","module_version":"none"},"id":"'$2'"}'
 }
 
 # Function takes rsp index as an argument
@@ -136,7 +200,7 @@ wait_for_connect_response () {
     rsp_file="$RSP_FILE_BASE""$index"
     rsp=($(cat $rsp_file))
 
-    MSG=$(mosquitto_sub -h $MQTT_BROKER -t rfid/rsp/connect/${rsp[$DEVICE_ID_INDEX]} -C 1)
+    MSG=$(mosquitto_sub -h $MQTT_BROKER -t rfid/rsp/connect/${rsp[$DEVICE_ID_INDEX]} -C 1 -q $QOS)
     # Split the message into individual parameters
     IFS=’,’ read -ra SP1 <<< "$MSG"
     # Parse out the facility_id
@@ -158,7 +222,7 @@ wait_for_command () {
     # Loop forever
     while [ 0 -lt 1 ]; do
         # Wait for the MQTT command (block)
-        CMD=$(mosquitto_sub -h $MQTT_BROKER -t rfid/rsp/command/${rsp[$DEVICE_ID_INDEX]} -C 1)
+        CMD=$(mosquitto_sub -h $MQTT_BROKER -t rfid/rsp/command/${rsp[$DEVICE_ID_INDEX]} -C 1 -q $QOS)
         process_command $index $CMD &
     done
 }
@@ -175,19 +239,25 @@ process_command () {
 
     # Extract the id
     ID=${CMD[1]}
+    # parse out the actual id value
+    ID=`sed -r 's/"id":\s*"([^"]+)"\s*}*/\1/g' <<< $ID`
     # Extract the method
     METHOD=${CMD[2]}
+    # parse out the actual method value
+    METHOD=`sed -r 's/"method":\s*"([^"]+)"\s*}*/\1/g' <<< $METHOD`
 
-    if [ "$METHOD" = '"method":"apply_behavior"' ]; then
+    log_receive_msg ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+
+    if [ "$METHOD" = "apply_behavior" ]; then
         ACTION=${CMD[3]}
         REPEAT=${CMD[26]}
         if [ "$ACTION" = '"params":{"action":"STOP"' ]; then
-            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
             rsp[$READ_STATE_INDEX]="STOPPED"
             echo "${rsp[@]}" > $rsp_file
             send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
         elif [ "$REPEAT" = '"auto_repeat":false' ]; then
-            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
             rsp[$READ_STATE_INDEX]="STARTED"
             echo "${rsp[@]}" > $rsp_file
             DUR=${CMD[19]}
@@ -197,30 +267,30 @@ process_command () {
             echo "${rsp[@]}" > $rsp_file
             send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
         else
-            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
             rsp[$READ_STATE_INDEX]="STARTED"
             echo "${rsp[@]}" > $rsp_file
         fi
-    elif [ "$METHOD" = '"method":"get_sw_version"}' ]; then
-        send_sw_version_response ${rsp[$DEVICE_ID_INDEX]} $ID
+    elif [ "$METHOD" = "get_sw_version" ]; then
+        send_sw_version_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
 
-    elif [ "$METHOD" = '"method":"get_state"}' ]; then
-        send_state_response ${rsp[$DEVICE_ID_INDEX]} $index $ID
+    elif [ "$METHOD" = "get_state" ]; then
+        send_state_response ${rsp[$DEVICE_ID_INDEX]} $index $ID $METHOD
 
-    elif [ "$METHOD" = '"method":"get_bist_results"}' ]; then
+    elif [ "$METHOD" = "get_bist_results" ]; then
         TIME=$(($(date +%s%N)/1000000))
         uptime=$(($TIME-$START_TIME))
-        send_bist_results_response ${rsp[$DEVICE_ID_INDEX]} $uptime $ID
+        send_bist_results_response ${rsp[$DEVICE_ID_INDEX]} $uptime $ID $METHOD
 
-    elif [ "$METHOD" = '"method":"set_led"' ]; then
+    elif [ "$METHOD" = "set_led" ]; then
         # Do nothing
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
 
-    elif [ "$METHOD" = '"method":"set_motion_event"' ]; then
+    elif [ "$METHOD" = "set_motion_event" ]; then
         # Do nothing
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
 
-    elif [ "$METHOD" = '"method":"set_device_alert"' ]; then
+    elif [ "$METHOD" = "set_device_alert" ]; then
         # Extract the alert number
         IFS=’:’ read -ra ARRAY <<< "${CMD[3]}"
         number=${ARRAY[2]}
@@ -257,11 +327,11 @@ process_command () {
         IFS=’}’ read -ra ARRAY <<< "$threshold"
         threshold=${ARRAY[0]}
         # Send the command response
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
         sleep 1
         send_device_alert_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} $number $description $severity $option
 
-    elif [ "$METHOD" = '"method":"set_facility_id"' ]; then
+    elif [ "$METHOD" = "set_facility_id" ]; then
         # Extract the new facility_id
         FACILITY=${CMD[3]}
         IFS=’\"’ read -ra FAC <<< "$FACILITY"
@@ -269,7 +339,7 @@ process_command () {
         rsp[$FACILITY_ID_INDEX]=$FACID
         echo "${rsp[@]}" > $rsp_file
         # Send the command response
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID
+        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
     fi
 }
 
@@ -282,17 +352,19 @@ generate_tag_reads_from_file () {
     # Check to make sure these files exist
     if [[ -f $rsp_file && -f $tag_file ]]; then
         # Loop forever
-        while [ 0 -lt 1 ]; do
+        while true; do
             # Get the state of this rsp
             rsp=($(cat $rsp_file))
             if [ "${rsp[$READ_STATE_INDEX]}" == "STARTED" ]; then
-                tags=($(cat $tag_file))
-                for tag in "${tags[@]}"
-                do
-                    send_inventory_data_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} $tag
-                done
+                TIME=$(($(date +%s%N)/1000000))
+                tag_count=`wc -w < $tag_file`
+                reads=$(($tag_count * $READ_PERCENT / 100))
+                tagdata=`shuf -n $reads -e $(cat $tag_file) \
+                      | paste -s -d ',' \
+                      | sed -r 's/([0-9a-fA-F]+)/{"epc":"\1","tid":null,"antenna_id":0,"last_read_on":"'$TIME'","rssi":-654,"phase":32,"frequency":915250}/g'`
+                send_inventory_data_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} $reads $tagdata &
             fi
-            sleep 1
+            sleep 0.5
         done
     fi
 }
@@ -304,7 +376,7 @@ generate_tag_reads_from_file () {
 
 # Get the root certificate
 echo "requesting root certificate from $ROOT_CERT_URL"
-RAW=$(curl --request GET $ROOT_CERT_URL)
+RAW=$(curl --progress-bar --request GET $ROOT_CERT_URL)
 IFS=’\"’ read -ra ARRAY <<< "$RAW"
 ROOT_CERT=${ARRAY[3]}
 if [ "$ROOT_CERT" = "" ]; then
@@ -316,8 +388,17 @@ echo "Creating default rsp data..."
 index=0
 while [ $index -lt $RSPS ]; do
     rsp_file="$RSP_FILE_BASE""$index"
+    device_id="RSP-$(($HOST_BASE+$index))"
+
+    if [ $NO_COLOR -eq 1 ]; then
+        RSP_COLORS[$device_id]="0"
+    else
+        #RSP_COLORS[$device_id]="38;5;$(($index + 1))"
+        RSP_COLORS[$device_id]="1;$(( 91 + ($index % 6) ))"
+    fi
+
     if [ ! -f $rsp_file ]; then
-        rsp[$DEVICE_ID_INDEX]="RSP-$(($HOST_BASE+$index))"
+        rsp[$DEVICE_ID_INDEX]=$device_id
         rsp[$FACILITY_ID_INDEX]="UNKNOWN"
         rsp[$READ_STATE_INDEX]="STOPPED"
         rsp[$TOKEN_INDEX]=$DEFAULT_TOKEN
@@ -335,8 +416,8 @@ while [ $index -lt $RSPS ]; do
 done
 
 
-# This loop connects the RSPs to the RSP Controller
-# assuming the RSP Controller is already running.
+# This loop connects the RSPs to the Gateway
+# assuming the Gateway is already running.
 index=0
 while [ $index -lt $RSPS ]; do
     rsp_file="$RSP_FILE_BASE""$index"
@@ -369,11 +450,37 @@ while [ $index -lt $RSPS ]; do
     generate_tag_reads_from_file $index &
     let index=index+1
 done
-echo "Press CTRL-C to disconnect."
 
+if [ $QUIET -ne 1 ]; then
+    if [ $NO_COLOR -eq 1 ]; then
+        echo ""
+        echo ""
+        echo "******************************************"
+        echo "*     Connected to RSP Controller        *"
+        echo "******************************************"
+        echo "*                                        *"
+        echo "*     Press CTRL-C to disconnect         *"
+        echo "*                                        *"
+        echo "******************************************"
+        echo ""
+        echo ""
+    else
+        echo ""
+        echo ""
+        printf "\e[1;2m******************************************\e[0m\n"
+        printf "\e[1;2m*     \e[92mConnected to RSP Controller\e[39m        *\e[0m\n"
+        printf "\e[1;2m******************************************\e[0m\n"
+        printf "\e[1;2m*                                        *\e[0m\n"
+        printf "\e[1;2m*     \e[91mPress CTRL-C to disconnect\e[39m         *\e[0m\n"
+        printf "\e[1;2m*                                        *\e[0m\n"
+        printf "\e[1;2m******************************************\e[0m\n"
+        echo ""
+        echo ""
+    fi
+fi
 
 # This loop sends heartbeat_indications
-# to the RSP Controller every 30 seconds, forever.
+# to the Gateway every 30 seconds, forever.
 while [ 0 -lt 1 ]; do
     index=0
     while [ $index -lt $RSPS ]; do
