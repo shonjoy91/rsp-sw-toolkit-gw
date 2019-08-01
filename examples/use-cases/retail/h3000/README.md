@@ -1,4 +1,4 @@
-![Retail Use Case](./RetailUseCase.png)
+![Retail H3000 Use Case](./Retail_H3000.png)
 
 This use case demonstrates configuring the Intel&reg; RSP Devkit Sensors and Intel&reg; RSP Controller 
 Application as deployed in a typical retail envinronment.
@@ -72,13 +72,14 @@ Continue to the Observe Tag Events section.
 ___
   
 ### USING THE CLI
-1. Open a terminal window
-2. Copy the use case behaviors to the deployed controller so they are available for use.
+1. Open a terminal window and copy the use case behaviors to the deployed controller so they are available 
+for use.
     ```bash
     cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000
     cp DevkitRetailBehavior*.json YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/config/behaviors/
     ```
-3. Connect to the controller's command line interface and execute the following series of commands.
+
+2. Connect to the controller's command line interface and execute the following series of commands.
     ```bash
     ssh -p5222 console@localhost
     password: console
@@ -138,6 +139,7 @@ command responses.
     #-- monitor the rpc command responses
     mosquitto_sub -t rfid/controller/response
     ```
+
 3. Open another terminal to send JsonRPC commands over MQTT to configure and control the controller.
     ```bash
     #-- change directory to the examples folder 
@@ -154,7 +156,6 @@ command responses.
     #-- (lowered power levels as sensors are likely interferring)
     mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_DeepScan.json
     mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_Exit.json
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_Mobility.json
     
     #-- load (set) the cluster configuration
     mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/cluster_set_config_request_use_case_retail.json
@@ -200,7 +201,7 @@ mosquitto_sub -t rfid/controller/events
             "epc_encode_format": "tbd",
             "event_type": "arrival",
             "timestamp": 1559867406524,
-            "location": "RSP-150994-0"
+            "location": "RSP-150005-0"
           }
         ]
       }
@@ -229,7 +230,7 @@ mosquitto_sub -t rfid/controller/events
             "epc_encode_format": "tbd",
             "event_type": "departed",
             "timestamp": 1559867428832,
-            "location": "RSP-150994-0"
+            "location": "RSP-150005-0"
           },
           {
             "facility_id": "SalesFloor",
@@ -238,7 +239,7 @@ mosquitto_sub -t rfid/controller/events
             "epc_encode_format": "tbd",
             "event_type": "arrival",
             "timestamp": 1559867429172,
-            "location": "RSP-1508ec-0"
+            "location": "RSP-150003-0"
           }
         ]
       }
@@ -264,7 +265,7 @@ mosquitto_sub -t rfid/controller/events
             "epc_encode_format": "tbd",
             "event_type": "departed",
             "timestamp": 1559867494569,
-            "location": "RSP-150a8e-0"
+            "location": "RSP-150003-0"
           }
         ]
       }
