@@ -24,12 +24,13 @@ public class JmDNSService {
     protected Logger log = LoggerFactory.getLogger(getClass());
 
     public static class ServiceAnnouncement {
-        public boolean sensor_token_required = false;
-        public String mqtt_credentials_url = "";
-        public String root_cert_url = "";
-        public String ntp_host = "";
 
-        public void update() {
+        public final boolean sensor_token_required;
+        public final String mqtt_credentials_url;
+        public final String root_cert_url;
+        public final String ntp_host;
+
+        public ServiceAnnouncement() {
             ConfigManager cm = ConfigManager.instance;
             ntp_host = cm.getLocalHost("ntp.server.host");
             sensor_token_required = cm.getProvisionSensorTokenRequired();
@@ -40,21 +41,7 @@ public class JmDNSService {
 
     private static ObjectMapper mapper = Jackson.getMapper();
 
-    private static String REGISTER_TYPE = "_rfid._tcp.local.";
-    private static String REGISTER_NAME_PREFIX = "RSP-Controller";
-    private ServiceAnnouncement serviceAnnouncement;
-
     private boolean started = false;
-
-    public JmDNSService() {
-        REGISTER_TYPE = ConfigManager.instance.getOptString(
-                "jmdns.register.type", "_rfid._tcp.local.");
-        REGISTER_NAME_PREFIX = ConfigManager.instance.getOptString(
-                "jmdns.register.name.prefix", "RSP-Controller");
-
-        serviceAnnouncement = new ServiceAnnouncement();
-        serviceAnnouncement.update();
-    }
 
     public boolean start() {
         if (!started) {
@@ -131,27 +118,38 @@ public class JmDNSService {
     }
 
     private synchronized void registerService(JmDNS jmdns) {
-        try {
-            String fullName = REGISTER_NAME_PREFIX + "-" + ConfigManager.instance.getRspControllerDeviceId();
 
-            log.info("attempting to register mdns: {} on {} ({})...",
-                     fullName,
-                     jmdns.getHostName(),
-                     jmdns.getInetAddress().getHostAddress());
+        ServiceAnnouncement announcement = new ServiceAnnouncement();
+        // need to handle the deprecated name for Gateway and the new name to support
+        // sensor software versions
+        String[] prefixes = {"RFID-Gateway", "RSP-Controller"};
+        String registerType = "_rfid._tcp.local.";
+        String deviceId = ConfigManager.instance.getRspControllerDeviceId();
 
-            final ServiceInfo info = ServiceInfo.create(
-                    REGISTER_TYPE, fullName, "", 0, 0, 0, false, mapper.writeValueAsBytes(serviceAnnouncement));
+        for (String prefix : prefixes) {
+            try {
+                String fullName = prefix + "-" + deviceId;
 
-            jmdns.registerService(info);
+                log.info("attempting to register mdns: {} on {} ({})...",
+                         fullName,
+                         jmdns.getHostName(),
+                         jmdns.getInetAddress().getHostAddress());
 
-            log.info("registered mdns: {} on {} ({}) with {} ",
-                     fullName,
-                     jmdns.getHostName(),
-                     jmdns.getInetAddress().getHostAddress(),
-                     new String(info.getTextBytes()));
-        } catch (IOException ioe) {
-            log.warn("Unable to register jmdns.", ioe);
+                final ServiceInfo info = ServiceInfo.create(
+                        registerType, fullName, "", 0, 0, 0, false, mapper.writeValueAsBytes(announcement));
+
+                jmdns.registerService(info);
+
+                log.info("registered mdns: {} on {} ({}) with {} ",
+                         fullName,
+                         jmdns.getHostName(),
+                         jmdns.getInetAddress().getHostAddress(),
+                         new String(info.getTextBytes()));
+            } catch (IOException ioe) {
+                log.warn("Unable to register jmdns.", ioe);
+            }
         }
+
     }
 
 }
