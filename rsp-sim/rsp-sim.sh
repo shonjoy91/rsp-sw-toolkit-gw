@@ -37,6 +37,10 @@ if [ -z $READ_PERCENT ] || [ $READ_PERCENT -gt 100 ]; then
     READ_PERCENT=100
 fi
 
+millis () {
+    echo "$(($(date +%s%N)/1000000))"
+}
+
 # Customizable options
 QUIET=${QUIET:-0}
 DEBUG=${DEBUG:-0}
@@ -44,6 +48,8 @@ QOS=${QOS:-1}
 COLOR=${COLOR:-1}
 STYLE=${STYLE:-1}
 RSP_CONTROLLER_IP="${RSP_CONTROLLER_IP:-127.0.0.1}"
+DATE_FORMAT="${DATE_FORMAT:-+%x %X}"
+MAX_DEBUG_BYTES=${MAX_DEBUG_BYTES:-2048}
 
 DEVICE_ID_INDEX=0
 FACILITY_ID_INDEX=1
@@ -56,7 +62,7 @@ MQTT_BROKER=$RSP_CONTROLLER_IP
 HOST_BASE=150000
 RSP_FILE_BASE="rsp_"
 TAG_FILE_BASE="tags_in_view_of_rsp_"
-START_TIME=$(($(date +%s%N)/1000000))
+START_TIME=$(millis)
 AMBI_TEMP=30
 RFID_TEMP=70
 HCPU_TEMP=100
@@ -99,19 +105,9 @@ fi
 # Define all the functions up front
 #
 
-# Function takes device_id and token as arguments
-get_mqtt_credentials () {
-    TIME=$(($(date +%s%N)/1000000))
-    echo "$1 requesting mqtt credentials from $MQTT_CRED_URL"
-    RAW=$(curl --insecure --progress-bar --header "Content-type: application/json" --request POST --data '{"username":"'$1'","token":"'$2'","generatedTimestamp":'$TIME',"expirationTimestamp":-1}' $MQTT_CRED_URL)
-    if [ "$RAW" = "" ]; then
-        echo "Cannot access MQTT Credentials REST endpoint!"
-        exit 1
-    fi
-    IFS='/' read -ra ARRAY <<< "$RAW"
-    RAW=${ARRAY[2]}
-    IFS=':' read -ra ARRAY <<< "$RAW"
-    MQTT_BROKER=${ARRAY[0]}
+# Function outputs date in specified format for logging purposes
+pretty_date() {
+    date "$DATE_FORMAT"
 }
 
 # Function takes topic and message string as arguments
@@ -122,43 +118,60 @@ publish () {
 
 # Function takes topic and filename as arguments
 publish_file () {
-    log_debug "[publish] topic: $1, len: $(wc --bytes < "$2") bytes"
+    local bytes=$(wc --bytes < "$2")
+    # only display the raw message if it is smaller than the MAX_DEBUG_BYTES or MAX_DEBUG_BYTES=-1
+    local raw_msg=$(if [[ $MAX_DEBUG_BYTES -lt 0 ]] || [[ $bytes -le $MAX_DEBUG_BYTES ]]; then echo ", msg: $(cat $2)"; fi)
+    log_debug "[publish] topic: $1, len: ${bytes} bytes${raw_msg}"
     mosquitto_pub -q $QOS -h $MQTT_BROKER -t "$1" -f "$2"
 }
 
 # Function takes debug message as argument
 log_debug () {
-    if [ $DEBUG -eq 1 ]; then
-        printf "${dim}[$(date '+%x %X')] [DEBUG] %s${clear}\n" "$1"
+    if [ $QUIET -ne 1 ] && [ $DEBUG -eq 1 ]; then
+        printf "${dim}[$(pretty_date)] [DEBUG] %s${clear}\n" "$1"
     fi
 }
 
 # Function takes device_id and message as argument
 log_warning () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(date '+%x %X')]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${yellow}[WARNING] %s${clear}\n" "$1" "$2"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${yellow}[WARNING] %s${clear}\n" "$1" "$2"
     fi
 }
 
 # Function takes device_id, jsonrpc id, jsonrpc method and optional extra message as arguments
 log_send_response () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(date '+%x %X')]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${bold}--->>${normal} ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" "id: $2" "$3" "${4:-// response}"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${bold}--->>${normal} ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" "id: $2" "$3" "${4:-// response}"
     fi
 }
 
 # Function takes device_id, jsonrpc method and optional extra message as arguments
 log_send_msg () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(date '+%x %X')]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${dim}--->>${normal} ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" " " "$2" "$3"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${dim}--->>${normal} ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" " " "$2" "$3"
     fi
 }
 
 # Function takes device_id, jsonrpc id, jsonrpc method and optional extra message as arguments
 log_receive_msg () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(date '+%x %X')]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${bold}<<---${normal} %10.10s ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" "id: $2" "$3" "${4:-// request}"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${bold}<<---${normal} %10.10s ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" "id: $2" "$3" "${4:-// request}"
     fi
+}
+
+# Function takes device_id and token as arguments
+get_mqtt_credentials () {
+    echo "$1 requesting mqtt credentials from $MQTT_CRED_URL"
+    RAW=$(curl --insecure --progress-bar --header "Content-type: application/json" --request POST --data '{"username":"'$1'","token":"'$2'","generatedTimestamp":'$(millis)',"expirationTimestamp":-1}' $MQTT_CRED_URL)
+    if [ "$RAW" = "" ]; then
+        echo "Cannot access MQTT Credentials REST endpoint!"
+        exit 1
+    fi
+    IFS='/' read -ra ARRAY <<< "$RAW"
+    RAW=${ARRAY[2]}
+    IFS=':' read -ra ARRAY <<< "$RAW"
+    MQTT_BROKER=${ARRAY[0]}
 }
 
 # Function takes device_id and rsp index as arguments
@@ -169,41 +182,36 @@ send_connect_request () {
 
 # Function takes device_id, facility_id and status as arguments
 send_status_indication () {
-    TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "status_update" "// $3"
-    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","status":"'$3'"}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$(millis)',"device_id":"'$1'","facility_id":"'$2'","status":"'$3'"}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_heartbeat_indication () {
-    TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "heartbeat"
-    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"heartbeat","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","location":null,"video_url":null}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"heartbeat","params":{"sent_on":'$(millis)',"device_id":"'$1'","facility_id":"'$2'","location":null,"video_url":null}}'
 }
 
 # Function takes device_id, facility_id, alert_number, alert_description, serverity and optional as arguments
 send_device_alert_indication () {
-    TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "device_alert"
-    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"device_alert","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","alert_number":'$3',"alert_description":"'$4'","severity":"'$5'","optional":'$6'}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"device_alert","params":{"sent_on":'$(millis)',"device_id":"'$1'","facility_id":"'$2'","alert_number":'$3',"alert_description":"'$4'","severity":"'$5'","optional":'$6'}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_inventory_complete_indication () {
-    TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "inventory_complete"
-    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"inventory_complete","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'"}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"inventory_complete","params":{"sent_on":'$(millis)',"device_id":"'$1'","facility_id":"'$2'"}}'
 }
 
 # Function takes device_id, facility_id, tag count and tagdata as arguments
 # tagdata is an array of json epc read objects without the beginning and ending [ ]
 # example: {"epc":"1234ABC","tid":null,"antenna_id":0,"last_read_on":123456,"rssi":-654,"phase":32,"frequency":915250},{...},{...}
 send_inventory_data_indication () {
-    TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "inventory_data" "// $3 tags | $2"
     # tag data may be too large to pass over command line and should be stored in a temp file
     tmpfile=`mktemp`
-    echo -n '{"jsonrpc":"2.0","method":"inventory_data","params":{"sent_on":'$TIME',"period":500,"device_id":"'$1'","facility_id":"'$2'","location":null,"motion_detected":true,"data":['$4']}}' > $tmpfile
+    echo -n '{"jsonrpc":"2.0","method":"inventory_data","params":{"sent_on":'$(millis)',"period":500,"device_id":"'$1'","facility_id":"'$2'","location":null,"motion_detected":true,"data":['$4']}}' > $tmpfile
     publish_file "rfid/rsp/data/$1" "$tmpfile"
     rm -f $tmpfile
 }
@@ -310,7 +318,7 @@ process_command () {
         send_state_response ${rsp[$DEVICE_ID_INDEX]} $index $ID $METHOD
 
     elif [ "$METHOD" = "get_bist_results" ]; then
-        TIME=$(($(date +%s%N)/1000000))
+        TIME=$(millis)
         uptime=$(($TIME-$START_TIME))
         send_bist_results_response ${rsp[$DEVICE_ID_INDEX]} $uptime $ID $METHOD
 
@@ -432,7 +440,6 @@ generate_tag_reads_from_file () {
             # Get the state of this rsp
             eval "$(rsp_array ${index})"
             if [ "${rsp[$READ_STATE_INDEX]}" == "STARTED" ]; then
-                TIME=$(($(date +%s%N)/1000000))
                 tag_count=`wc -w < $tag_file`
                 reads=$(($tag_count * $READ_PERCENT / 100))
 
@@ -441,7 +448,7 @@ generate_tag_reads_from_file () {
                 else
                     tagdata=`shuf -n $reads -e $(cat $tag_file) \
                           | paste -s -d ',' \
-                          | sed -r 's/([0-9a-fA-F]+)/{"epc":"\1","tid":null,"antenna_id":0,"last_read_on":'$TIME',"rssi":-654,"phase":32,"frequency":915250}/g'`
+                          | sed -r 's/([0-9a-fA-F]+)/{"epc":"\1","tid":null,"antenna_id":0,"last_read_on":'$(millis)',"rssi":-654,"phase":32,"frequency":915250}/g'`
                     send_inventory_data_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} $reads $tagdata &
                 fi
             fi
