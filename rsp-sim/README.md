@@ -94,11 +94,12 @@ Press CTRL-C to disconnect.
 ### Additional Options
 Some additional simulator options can be set by setting them _BEFORE_ the script filename using the following bash syntax:
 ```
-NO_COLOR=1 QUIET=1 QOS=2 ./rsp_sim.sh 3
+COLOR=0 QUIET=1 QOS=2 ./rsp_sim.sh 3
 ```
 #### Available options
 ```
-NO_COLOR=1                  // Disable the use of terminal colors and formatting (default: 0)
+COLOR=0                     // Disable the use of terminal colors (default: 1)
+STYLE=0                     // Disable the use of terminal styles/formatting (default: 1)
 QUIET=1                     // Disable logging (default: 0)
 QOS=0 | QOS=1 | QOS=2       // Set the QOS (quality of service) to use when subscribing and poublishing MQTT messages (default: 1)
 CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (default: 127.0.0.1)
@@ -107,7 +108,7 @@ CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (def
 
 ### Example Simulator Output
 ```
-:~$ NO_COLOR=1 ./rsp-sim.sh 3 33
+:~$ ./rsp-sim.sh 3 33
 requesting root certificate from http://127.0.0.1:8080/provision/root-ca-cert
 Creating default rsp data...
 RSP-150000 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
