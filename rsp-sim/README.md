@@ -101,6 +101,7 @@ COLOR=0 QUIET=1 QOS=2 ./rsp_sim.sh 3
 COLOR=0                     // Disable the use of terminal colors (default: 1)
 STYLE=0                     // Disable the use of terminal styles/formatting (default: 1)
 QUIET=1                     // Disable logging (default: 0)
+DEBUG=1                     // Enable debug logging of mqtt messages (default: 0)
 QOS=0 | QOS=1 | QOS=2       // Set the QOS (quality of service) to use when subscribing and poublishing MQTT messages (default: 1)
 RSP_CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (default: 127.0.0.1)
 ```

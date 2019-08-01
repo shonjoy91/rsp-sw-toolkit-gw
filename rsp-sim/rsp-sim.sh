@@ -39,6 +39,7 @@ fi
 
 # Customizable options
 QUIET=${QUIET:-0}
+DEBUG=${DEBUG:-0}
 QOS=${QOS:-1}
 COLOR=${COLOR:-1}
 STYLE=${STYLE:-1}
@@ -113,10 +114,29 @@ get_mqtt_credentials () {
     MQTT_BROKER=${ARRAY[0]}
 }
 
+# Function takes topic and message string as arguments
+publish () {
+    log_debug "[publish] topic: $1, msg: $2"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t "$1" -m "$2"
+}
+
+# Function takes topic and filename as arguments
+publish_file () {
+    log_debug "[publish] topic: $1, len: $(wc --bytes < "$2") bytes"
+    mosquitto_pub -q $QOS -h $MQTT_BROKER -t "$1" -f "$2"
+}
+
+# Function takes debug message as argument
+log_debug () {
+    if [ $DEBUG -eq 1 ]; then
+        printf "${dim}[$(date '+%x %X')] [DEBUG] %s${clear}\n" "$1"
+    fi
+}
+
 # Function takes device_id and message as argument
 log_warning () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(date '+%x %X')]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${yellow}WARNING: %s${clear}\n" "$1" "$2"
+        printf "${dim}[$(date '+%x %X')]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${yellow}[WARNING] %s${clear}\n" "$1" "$2"
     fi
 }
 
@@ -144,35 +164,35 @@ log_receive_msg () {
 # Function takes device_id and rsp index as arguments
 send_connect_request () {
     log_send_msg "$1" "connect"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/connect -m '{"jsonrpc":"2.0","id":"1","method":"connect","params":{"hostname":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.7.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"}}'
+    publish "rfid/rsp/connect" '{"jsonrpc":"2.0","id":"1","method":"connect","params":{"hostname":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.7.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"}}'
 }
 
 # Function takes device_id, facility_id and status as arguments
 send_status_indication () {
     TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "status_update" "// $3"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","status":"'$3'"}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","status":"'$3'"}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_heartbeat_indication () {
     TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "heartbeat"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"heartbeat","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","location":null,"video_url":null}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"heartbeat","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","location":null,"video_url":null}}'
 }
 
 # Function takes device_id, facility_id, alert_number, alert_description, serverity and optional as arguments
 send_device_alert_indication () {
     TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "device_alert"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"device_alert","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","alert_number":'$3',"alert_description":"'$4'","severity":"'$5'","optional":'$6'}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"device_alert","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'","alert_number":'$3',"alert_description":"'$4'","severity":"'$5'","optional":'$6'}}'
 }
 
 # Function takes device_id and facility_id as arguments
 send_inventory_complete_indication () {
     TIME=$(($(date +%s%N)/1000000))
     log_send_msg "$1" "inventory_complete"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/rsp_status/$1 -m '{"jsonrpc":"2.0","method":"inventory_complete","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'"}}'
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"inventory_complete","params":{"sent_on":'$TIME',"device_id":"'$1'","facility_id":"'$2'"}}'
 }
 
 # Function takes device_id, facility_id, tag count and tagdata as arguments
@@ -184,32 +204,32 @@ send_inventory_data_indication () {
     # tag data may be too large to pass over command line and should be stored in a temp file
     tmpfile=`mktemp`
     echo -n '{"jsonrpc":"2.0","method":"inventory_data","params":{"sent_on":'$TIME',"period":500,"device_id":"'$1'","facility_id":"'$2'","location":null,"motion_detected":true,"data":['$4']}}' > $tmpfile
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/data/$1 -f $tmpfile
+    publish_file "rfid/rsp/data/$1" "$tmpfile"
     rm -f $tmpfile
 }
 
 # Function takes device_id, request id, request method, and optional log string as arguments
 send_command_response () {
     log_send_response "$1" "$2" "$3" "$4"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":true,"id":"'$2'"}'
+    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":true,"id":"'$2'"}'
 }
 
 # Function takes device_id, request id and request method as arguments
 send_bist_results_response () {
     log_send_response "$1" "$3" "$4"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"rf_module_error":false,"rf_status_code":0,"rf_module_temp":'$RFID_TEMP',"ambient_temp":'$AMBI_TEMP',"time_alive":'$2',"cpu_usage":'$CPU_USAGE',"mem_used_percent":'$MEM_USAGE',"mem_total_bytes":'$MEM_TOTAL',"camera_installed":false,"temp_sensor_installed":true,"accelerometer_installed":true,"region":"USA","rf_port_statuses":[{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true},{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true}],"device_moved":false},"id":"'$3'"}'
+    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":{"rf_module_error":false,"rf_status_code":0,"rf_module_temp":'$RFID_TEMP',"ambient_temp":'$AMBI_TEMP',"time_alive":'$2',"cpu_usage":'$CPU_USAGE',"mem_used_percent":'$MEM_USAGE',"mem_total_bytes":'$MEM_TOTAL',"camera_installed":false,"temp_sensor_installed":true,"accelerometer_installed":true,"region":"USA","rf_port_statuses":[{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true},{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true}],"device_moved":false},"id":"'$3'"}'
 }
 
 # Function takes device_id, request id and request method as arguments
 send_state_response () {
     log_send_response "$1" "$3" "$4"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"device_id":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.1.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"},"id":"'$3'"}'
+    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":{"device_id":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.1.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"},"id":"'$3'"}'
 }
 
 # Function takes device_id, request id and request method as arguments
 send_sw_version_response () {
     log_send_response "$1" "$2" "$3"
-    mosquitto_pub -q $QOS -h $MQTT_BROKER -t rfid/rsp/response/$1 -m '{"jsonrpc":"2.0","result":{"app_version":"19.1.sim","module_version":"none"},"id":"'$2'"}'
+    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":{"app_version":"19.7.sim","module_version":"none"},"id":"'$2'"}'
 }
 
 # Function takes rsp index as an argument
@@ -218,6 +238,7 @@ wait_for_connect_response () {
     eval "$(rsp_array ${index})"
 
     MSG=$(mosquitto_sub -h $MQTT_BROKER -t rfid/rsp/connect/${rsp[$DEVICE_ID_INDEX]} -C 1 -q $QOS)
+    log_debug "[receive] topic: rfid/rsp/connect/${rsp[$DEVICE_ID_INDEX]}, msg: $MSG"
     # Split the message into individual parameters
     IFS=',' read -ra SP1 <<< "$MSG"
     # Parse out the facility_id
@@ -238,6 +259,7 @@ wait_for_command () {
         eval "$(rsp_array ${index})"
         # Wait for the MQTT command (block)
         CMD=$(mosquitto_sub -h $MQTT_BROKER -t rfid/rsp/command/${rsp[$DEVICE_ID_INDEX]} -C 1 -q $QOS)
+        log_debug "[receive] topic: rfid/rsp/command/${rsp[$DEVICE_ID_INDEX]}, msg: $CMD"
         process_command $index $CMD &
     done
 }
