@@ -102,7 +102,7 @@ COLOR=0                     // Disable the use of terminal colors (default: 1)
 STYLE=0                     // Disable the use of terminal styles/formatting (default: 1)
 QUIET=1                     // Disable logging (default: 0)
 QOS=0 | QOS=1 | QOS=2       // Set the QOS (quality of service) to use when subscribing and poublishing MQTT messages (default: 1)
-CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (default: 127.0.0.1)
+RSP_CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (default: 127.0.0.1)
 ```
 
 

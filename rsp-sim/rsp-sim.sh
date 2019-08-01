@@ -8,7 +8,7 @@
 if [ "$#" -lt 1 ]; then
     echo
     echo "This script simulates the API messages between the specified number of"
-    echo "Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - Gateway."
+    echo "Intel RFID Sensor Platforms (RSP) and the Intel RSP SW Toolkit - RSP Controller."
     echo
     echo "Usage: rsp-sim.sh <count> [read_percent]"
     echo "where <count> is the number of RSP's to simulate."
@@ -17,7 +17,7 @@ if [ "$#" -lt 1 ]; then
     echo "This script depends on the mosquitto-clients package being installed."
     echo "Run 'sudo apt install mosquitto-clients' to install."
     echo
-    echo "NOTE: The Intel RSP SW Toolkit - Gateway must be running BEFORE"
+    echo "NOTE: The Intel RSP SW Toolkit - RSP Controller must be running BEFORE"
     echo "      attempting to execute this script."
     echo
     exit 1
@@ -42,16 +42,16 @@ QUIET=${QUIET:-0}
 QOS=${QOS:-1}
 COLOR=${COLOR:-1}
 STYLE=${STYLE:-1}
-CONTROLLER_IP="${CONTROLLER_IP:-127.0.0.1}"
+RSP_CONTROLLER_IP="${RSP_CONTROLLER_IP:-127.0.0.1}"
 
 DEVICE_ID_INDEX=0
 FACILITY_ID_INDEX=1
 READ_STATE_INDEX=2
 TOKEN_INDEX=3
 DEFAULT_TOKEN="D544DF3F42EA86BED3C3D15FC321B8E949D666C06B008C6357580BC3816E00DE"
-ROOT_CERT_URL="http://$CONTROLLER_IP:8080/provision/root-ca-cert"
-MQTT_CRED_URL="https://$CONTROLLER_IP:8443/provision/sensor-credentials"
-MQTT_BROKER=$CONTROLLER_IP
+ROOT_CERT_URL="http://$RSP_CONTROLLER_IP:8080/provision/root-ca-cert"
+MQTT_CRED_URL="https://$RSP_CONTROLLER_IP:8443/provision/sensor-credentials"
+MQTT_BROKER=$RSP_CONTROLLER_IP
 HOST_BASE=150000
 RSP_FILE_BASE="rsp_"
 TAG_FILE_BASE="tags_in_view_of_rsp_"
@@ -479,8 +479,8 @@ while [ $index -lt $RSPS ]; do
 done
 
 
-# This loop connects the RSPs to the Gateway
-# assuming the Gateway is already running.
+# This loop connects the RSPs to the RSP Controller
+# assuming the RSP Controller is already running.
 index=0
 while [ $index -lt $RSPS ]; do
     eval "$(rsp_array ${index})"
@@ -530,11 +530,21 @@ clean_shutdown() {
     trap - INT
     printf "\n${lt_red}${bold}Shutting down sensors...${clear}\n"
 
-    # This loop sends shutdown status for each rsp.
+    # This loop sends shutting_down rsp_status for each rsp and if the sensor
+    # is in the STARTED state it will send an inventory_complete and set the state to STOPPED
     index=0
     while [ $index -lt $RSPS ]; do
         eval "$(rsp_array ${index})"
+
+        # Stop any currently running read cycles
+        if [ "${rsp[$READ_STATE_INDEX]}" == "STARTED" ]; then
+            send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
+            set_rsp_field $index $READ_STATE_INDEX "STOPPED"
+        fi
+
+        # Let RSP Controller know we are shutting down
         send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "shutting_down"
+
         let index=index+1
     done
 
@@ -545,7 +555,7 @@ clean_shutdown() {
 trap clean_shutdown INT
 
 # This loop sends heartbeat_indications
-# to the Gateway every 30 seconds, forever.
+# to the RSP Controller every 30 seconds, forever.
 while true; do
     index=0
     while [ $index -lt $RSPS ]; do
