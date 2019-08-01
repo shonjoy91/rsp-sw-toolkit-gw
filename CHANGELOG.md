@@ -1,6 +1,28 @@
-Build 2019Q3-1 
+Build 2019Q3-1 (version pending)
 
-    (re) added gateway heartbeat on the Upstream alerts channel.
+    Implemented suggested changes from the developer experience testing...
+    added clarifications to Upstream Downstream dashboard tiles changed nomenclature from gateway to rsp controller
+    changed tag-stats info modal to describe sensor antenna port and alias and tag location more clearly fixed disti page method name inconsistency
+    changed names and references from gateway to rsp controller including mqtt topic and some of the API
+    KNOWN ISSUE: breaks sensors ability to get the SHUTTING_DOWN status from the rsp controller so they stay "connected"
+    KNOWN ISSUE: JmDNS publishes duplicate announcements to support backward compatibility for sensors connecting
+                 will be fixed in next release of sensor software
+
+    added web-admin support for mobility profile
+
+    updated example api upstream json files
+
+    fixed incorrect reference in config manager from mqtt.gpio back to mqtt.downstream
+
+    updated example api upstream json files
+
+    changed schedule manager exception handling to not log as error when the backing cache file does not exist
+
+    fixed javascript date conversion to add 1 to the getUTCMonth value as it is 0 based so the month was wrong
+
+    fixed sensor disti page functional problem when sensors connect while page was already open, connection state info name from current to connection_state
+
+    (re) added gateway heartbeat on the Upstream alerts channel.
 
     added about page to the web-admin to show the gateway software version etc.
 
