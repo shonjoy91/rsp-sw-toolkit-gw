@@ -14,7 +14,7 @@
       "personality": "EXIT",
       "facility_id": "SalesFloor",
       "aliases": [],
-      "behavior_id": "ClusterExit_PORTS_1",
+      "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
       "sensor_groups": [["RSP-150003"]],
       "tokens": []
     }

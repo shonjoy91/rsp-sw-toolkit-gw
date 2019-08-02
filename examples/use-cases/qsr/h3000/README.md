@@ -1,28 +1,28 @@
-![Retail H3000 Use Case](./Retail_H3000.png)
+![QSR H3000 Use Case](./QSR_H3000.png)
 
 This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors and Intel&reg; RSP 
-Controller Application as deployed in a typical retail envinronment.
+Controller Application as deployed in a typical quick serve restaurant (qsr) envinronment.
 
-## Goals  
-- Manage a deployment with two separate facilities of interest ... BackStock and SalesFloor
-- Know when tagged items come into the store in either facility
+## Goals
+- Manage a deployment with two separate facilities of interest ... Receiving-Exiting and DryGoods
+- Know when tagged items come into the restaurant
 - Know the location of a tagged item (sensor and facility)
-- Know when a tagged item has moved from the BackStock to the SalesFloor or vice-versa
-- Know when a tagged item has left the store
+- Know when a tagged item has moved from Receiving-Exiting to the DryGoods or vice-versa
+- Know when a tagged item has left the restaurant
   
-By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
-transitions to the SalesFloor, and then departs out the front door of the store.
+By the end of the example, you will be able to track a tag as it arrives through Receiving-Exiting, 
+transitions to DryGoods, and then departs out the exit (Receiving-Exiting).
   
 ## Prerequsites  
 1. It is assumed that the controller is already running and the sensors are running and connected to the 
 controller.
 
-2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device ids in the 
+2. In [DevkitQsrCluster.json](./DevkitQsrCluster.json), edit the sensor device ids in the 
 sensor_groups to match the sensors included with the Devkit. 
 This cluster configuration file is an example that establishes the two facilities of interest 
-(BackStock, SalesFloor), configures one sensor to be in the BackStock and the other sensor to be in the 
-SalesFloor, assigns the SalesFloor sensor with an EXIT personality in order to detect when tags have 
-gone out the front entrance, and assigns appropriate behaviors for reading RFID tags.  
+(Receiving-Exiting, DryGoods), configures one sensor to be in Receiving-Exiting and the other sensor to 
+be in DryGoods, assigns the Receiving-Exiting sensor with an EXIT personality in order to detect when 
+tags have gone out the entryway, and assigns appropriate behaviors for reading RFID tags.  
 
 3. Hide the Tags  
 Make sure no tags are visible to the sensors in order to see a complete use case scenario.
@@ -53,8 +53,8 @@ to clear out all previous tag history to start a clean session.
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
 button to upload all of the use case behaviors to the controller. The behavior files can be found at 
-YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000, matching the pattern 
-DevkitRetailBehavior*.json.  
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h3000, matching the pattern 
+DevkitQsrBehavior*.json.  
 
     These __MUST__ be loaded to the controller __BEFORE__ the cluster configuration because the cluster
     file references those behavior ids, and the behaviors must already be known by the controller. Otherwise
@@ -80,8 +80,8 @@ ___
 1. Open a terminal window and copy the use case behaviors to the deployed controller so they are available 
 for use.
     ```bash
-    cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000
-    cp DevkitRetailBehavior*.json YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/config/behaviors/
+    cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h3000
+    cp DevkitQsrBehavior*.json YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/config/behaviors/
     ```
 
 2. Connect to the controller's command line interface and execute the following series of commands.
@@ -102,7 +102,7 @@ for use.
     ------------------------------------------
     
     #-- load the cluster configuration
-    cli> clusters load.file YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/DevkitRetailCluster.json
+    cli> clusters load.file YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h3000/DevkitQsrCluster.json
     ------------------------------------------
     completed
     ------------------------------------------
@@ -119,14 +119,14 @@ for use.
     runState: FROM_CONFIG
     ------------------------------------------
     clusters:
-          id: BackStockCluster
-    behavior: ClusterDeepScan_PORTS_1
-    sensors: [RSP-150005 ]
+          id: DryGoodsCluster
+    behavior: DevkitQsrBehaviorMobility_PORTS_1
+    sensors: [RSP-150003 ]
     
     ------------------------------------------
-          id: SalesFloorExitCluster
-    behavior: DevkitRetailBehaviorExit_PORTS_1
-    sensors: [RSP-150003 ]
+          id: Receiving-ExitingCluster
+    behavior: DevkitQsrBehaviorExit_PORTS_1
+    sensors: [RSP-150001 ]
     
     ------------------------------------------
     ```
@@ -135,8 +135,8 @@ Continue to the Observe Tag Events section.
 ___
 
 ### USING MQTT:
-1. Edit [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) 
-replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitRetailCluster.json file. 
+1. Edit [cluster_set_config_request_use_case_qsr.json](./cluster_set_config_request_use_case_qsr.json) 
+replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitQsrCluster.json file. 
 
 2. Open a terminal window and subscribe to the controller's command response topic in order to monitor the 
 command responses.
@@ -159,11 +159,11 @@ command responses.
     
     #-- load behaviors specific to this exercise
     #-- (lowered power levels as sensors are likely interferring)
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_DeepScan.json
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_Exit.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h3000/behavior_put_request_Exit.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h3000/behavior_put_request_Mobility.json
     
     #-- load (set) the cluster configuration
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/cluster_set_config_request_use_case_retail.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h3000/cluster_set_config_request_use_case_qsr.json
     
     #-- activate the scheduler in custom configuration mode
     mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
@@ -184,12 +184,12 @@ tag events as produced by the controller.
 mosquitto_sub -t rfid/controller/events
 ```
 
-1. ##### Tag arrival in BackStock
-    At this point, remove a tag from hiding and place it nearby the BackStock sensor. 
+1. ##### Tag arrival in Receiving-Exiting
+    At this point, remove a tag from hiding and place it nearby the Receiving-Exiting sensor. 
     When the tag is read initially, an arrival event will be generated on the rfid/controller/events topic.
     Verify from the Web Admin 
-    [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now PRESENT
-    and the location is at the BackStock sensor.  
+    [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now in the EXITING
+    state and the location is at the Receiving-Exiting sensor.
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -200,28 +200,28 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "BackStock",
+            "facility_id": "Receiving-Exiting",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "arrival",
             "timestamp": 1559867406524,
-            "location": "RSP-150005-0"
+            "location": "RSP-150001-0"
           }
         ]
       }
     }
     ```    
 
-2. ##### Tag departure from BackStock and arrival in SalesFloor
-    Now move the tag from the BackStock sensor to the SalesFloor sensor. Since these sensors are in different 
-    facilities, the events generated will be a 'departure' from BackStock and an 'arrival' into SalesFloor. 
-    It may take a few moments for the event(s) to be generated as the algorithm uses time-weighted RSSI 
-    averages to determine the tag location. From the 
+2. ##### Tagged item is moved to DryGoods (departure from Receiving-Exiting and arrival in DryGoods)
+    Now move the tag from the Receiving-Exiting sensor to the DryGoods sensor. Since these sensors are in 
+    different facilities, the events generated will be a 'departure' from Receiving-Exiting and an 'arrival' 
+    into DryGoods. It may take a few moments for the event(s) to be generated as the algorithm uses 
+    time-weighted RSSI averages to determine the tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
-    locations to the second sensor and that the tag state has changed to EXITING.
+    locations to the second sensor (DryGoods) and that the tag state has changed to PRESENT.
     Verify the receipt of the MQTT event message.
-    ```json  
+    ```json
     {
       "jsonrpc": "2.0",
       "method": "inventory_event",
@@ -230,16 +230,16 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "BackStock",
+            "facility_id": "Receiving-Exiting",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "departed",
             "timestamp": 1559867428832,
-            "location": "RSP-150005-0"
+            "location": "RSP-150001-0"
           },
           {
-            "facility_id": "SalesFloor",
+            "facility_id": "DryGoods",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -252,27 +252,65 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-3. ##### Tag departs
-    Hide the tag so that no sensor is able to read it to emulate the tag actually being gone.
-    A departure event should be generated in about 30 seconds and the tag state should change
-    to DEPARTED_EXIT.
+3. ##### Tagged item is staged for trashing (departure from DryGoods and arrival in Receiving-Exiting)
+    Now move the tag back to the Receiving-Exiting sensor.  Again, since the two sensors are in 
+    different facilities, there will be a departure-arrival pair of events generated. Again, this can 
+    take a few moments to occur. From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
+    page, confirm that the location changes back to Receiving-Exiting and the tag's state changes to EXITING.
     Verify the receipt of the MQTT event message.
-    ```json  
+    ```json
     {
       "jsonrpc": "2.0",
       "method": "inventory_event",
       "params": {
-        "sent_on": 1559867527713,
+        "sent_on": 1559867432813,
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "SalesFloor",
+            "facility_id": "DryGoods",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "departed",
-            "timestamp": 1559867494569,
+            "timestamp": 1559867432117,
             "location": "RSP-150003-0"
+          },
+          {
+            "facility_id": "Receiving-Exiting",
+            "epc_code": "303530C29C000000F0006B12",
+            "tid": null,
+            "epc_encode_format": "tbd",
+            "event_type": "arrival",
+            "timestamp": 1559867432492,
+            "location": "RSP-150001-0"
+          }
+        ]
+      }
+    }
+    ```
+
+4. ##### Tagged item is taken out to trash (departure from Receiving-Exiting)
+    Hide the tag so that no sensor is able to read it to emulate the tag actually being gone. After 
+    about 30 seconds, a departed event should be generated from the Receiving-Exiting sensor. From 
+    the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the state 
+    changes to DEPARTED_EXIT.
+    Verify the receipt of the MQTT event message.
+    ```json
+    {
+      "jsonrpc": "2.0",
+      "method": "inventory_event",
+      "params": {
+        "sent_on": 1559867434772,
+        "device_id": "intel-acetest",
+        "data": [
+          {
+            "facility_id": "Receiving-Exiting",
+            "epc_code": "303530C29C000000F0006B12",
+            "tid": null,
+            "epc_encode_format": "tbd",
+            "event_type": "departed",
+            "timestamp": 1559867434476,
+            "location": "RSP-150001-0"
           }
         ]
       }
