@@ -1,7 +1,7 @@
 ![Retail H3000 Use Case](./Retail_H3000.png)
 
-This use case demonstrates configuring the Intel&reg; RSP Devkit Sensors and Intel&reg; RSP Controller 
-Application as deployed in a typical retail envinronment.
+This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors and Intel&reg; RSP 
+Controller Application as deployed in a typical retail envinronment.
 
 ## Goals  
 - Manage a deployment with two separate facilities of interest ... BackStock and SalesFloor
@@ -17,24 +17,26 @@ transitions to the SalesFloor, and then departs out the front door of the store.
 1. It is assumed that the controller is already running and the sensors are running and connected to the 
 controller.
 
-2. The directory structure is consistent for source ($HOME/projects/rsp-sw)
-
-3. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device ids in the 
+2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device ids in the 
 sensor_groups to match the sensors included with the DevKit. 
 This cluster configuration file is an example that establishes the two facilities of interest 
 (BackStock, SalesFloor), configures one sensor to be in the BackStock and the other sensor to be in the 
 SalesFloor, assigns the SalesFloor sensor with an EXIT personality in order to detect when tags have 
 gone out the front entrance, and assigns appropriate behaviors for reading RFID tags.  
 
-4. Hide the Tags  
+3. Hide the Tags  
 Make sure no tags are visible to the sensors in order to see a complete use case scenario.
 
 ## Configure / Control the Intel&reg; RSP Controller Application
-After ther prerequisites have been met, choose one of the following methods to configure and control the 
+After the prerequisites have been met, choose one of the following methods to configure and control the 
 application. Each method accomplishes the same configuration tasks.
 - Using the Web Admin
 - Using the Command Line Interface (CLI)
 - Using the MQTT Messaging API
+
+Note: In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where the 
+cloned rsp-sw-toolkit-gw repo contents reside, and the term YOUR_DEPLOY_DIRECTORY will refer to the directory 
+where the Intel&reg; RSP Controller Application was deployed.
 
 ___
 
@@ -46,7 +48,10 @@ page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.
 2. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensors from reading 
 by selecting the INACTIVE run state.
 
-3. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
+3. On the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the Unload button 
+to clear out all previous tag history to start a clean session.
+
+4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
 button to upload all of the use case behaviors to the controller. The behavior files can be found at 
 YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000, matching the pattern 
 DevkitRetailBehavior*.json.  
@@ -55,17 +60,17 @@ DevkitRetailBehavior*.json.
     file references those behavior ids, and the behaviors must already be known by the controller. Otherwise
     the loading of the cluster configuration file will fail validation.
 
-4. Upload the __edited__ cluster configuration file (see Prerequistes) using the 
+5. Upload the __edited__ cluster configuration file (see Prerequistes) using the 
 [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
-5. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
+6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
 according to the cluster configuration by selecting the FROM_CONFIG run state. The clusters that the 
 scheduler is using will be displayed on the page.
 
-6. On the [sensors](http://localhost:8080/web-admin/sensors-main.html) page, confirm that the sensors have 
+7. On the [sensors](http://localhost:8080/web-admin/sensors-main.html) page, confirm that the sensors have 
 been configured as expected and are reading tags according to the cluster configuration file.
 
-7. Navigate to the [inventory](http://localhost:8080/web-admin/inventory-main.html) page which can be used 
+8. Navigate to the [inventory](http://localhost:8080/web-admin/inventory-main.html) page which can be used 
 to monitor tag reads and states.
 
 Continue to the Observe Tag Events section.
@@ -185,7 +190,7 @@ mosquitto_sub -t rfid/controller/events
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now PRESENT
     and the location is at the BackStock sensor.  
-    Verify receipt of the event messag on mqtt
+    Verify the receipt of the MQTT event message.
     ```json
     {
       "jsonrpc": "2.0",
@@ -215,6 +220,7 @@ mosquitto_sub -t rfid/controller/events
     averages to determine the tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
     locations to the second sensor and that the tag state has changed to EXITING.
+    Verify the receipt of the MQTT event message.
     ```json  
     {
       "jsonrpc": "2.0",
@@ -249,7 +255,8 @@ mosquitto_sub -t rfid/controller/events
 3. ##### Tag departs
     Hide the tag so that no sensor is able to read it to emulate the tag actually being gone.
     A departure event should be generated in about 30 seconds and the tag state should change
-    to DEPARTED_EXIT.  
+    to DEPARTED_EXIT.
+    Verify the receipt of the MQTT event message.
     ```json  
     {
       "jsonrpc": "2.0",
