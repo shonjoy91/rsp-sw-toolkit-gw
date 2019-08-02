@@ -45,7 +45,7 @@ cd ~/projects/rsp-sw-toolkit-gw
 gradle clean deploy
 
 #-- !!!! CERTIFICATES ARE NEEDED !!!!
-controller
+#-- the sensors connect securely to the gateway using a self signed certificate.
 #-- a convenience script will generate these credentials in order to get the
 #-- reference deployment up and running quickly.
 mkdir -p ~/deploy/rsp-sw-toolkit-gw/cache
