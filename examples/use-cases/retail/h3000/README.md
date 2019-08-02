@@ -1,7 +1,7 @@
 ![Retail H3000 Use Case](./Retail_H3000.png)
 
 This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors and Intel&reg; RSP 
-Controller Application as deployed in a typical retail envinronment.
+Controller Application as deployed in a typical retail environment.
 
 ## Goals  
 - Manage a deployment with two separate facilities of interest ... BackStock and SalesFloor
