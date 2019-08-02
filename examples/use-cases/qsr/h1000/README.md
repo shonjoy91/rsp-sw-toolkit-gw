@@ -1,28 +1,28 @@
-![Retail H1000 Use Case](./Retail_H1000.png)
+![Retail H1000 Use Case](./QSR_H1000.png)
 
 This use case demonstrates configuring the Intel&reg; RSP H1000 Devkit Sensor and Intel&reg; RSP 
-Controller Application as deployed in a typical retail envinronment.
+Controller Application as deployed in a typical quick serve restaurant (qsr) envinronment.
 
 ## Goals  
-- Manage a deployment with two separate fitting rooms, using one H1000 sensor and two antennae
-- Know when tagged items come into either fitting room
+- Manage a deployment with two separate cold storage rooms, using one H1000 sensor and two antennae
+- Know when tagged items come into either cold room
 - Determine the location of a tagged item (sensor and facility)
-- Know when items potentially move between the fitting rooms
-- Know when items leave either fitting room
+- Know when items potentially move between the cold rooms
+- Know when items leave either of the cold rooms
   
 By the end of the example, you will be able to track tags as they move in and out of the different 
-fitting rooms.
+cold rooms.
   
 ## Prerequsites  
 1. It is assumed that the controller is already running and the sensor has its antennae attached, is 
 running, and is connected to the controller.
 
-2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device id in the 
+2. In [DevkitQsrCluster.json](./DevkitQsrCluster.json), edit the sensor device id in the 
 sensor_groups to match the sensor included with the Devkit. 
-This cluster configuration file is an example that establishes the one facility (FittingRooms).  It also 
-creates aliases for the two antennae (FittingRoom1 and FittingRoom2) in order to generate more natural 
-locations names, as opposed to RSP-150002-0 and RSP-150002-1.  The sensor is configured with an EXIT 
-personality in order to detect when an item leaves either of the fitting rooms.  It also will assign 
+This cluster configuration file is an example that establishes the one facility (ColdArea).  It also 
+creates aliases for the two antennae (Freezer and Refridgerator) in order to generate more natural 
+locations names, as opposed to RSP-150004-0 and RSP-150004-1.  The sensor is configured with an EXIT 
+personality in order to detect when an item leaves either of the cold rooms.  It also will assign 
 the appropriate behaviors for reading the RFID tags.
 
 3. Hide the Tags  
@@ -55,7 +55,7 @@ to clear out all previous tag history to start a clean session.
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
 button to upload the use case behavior to the controller. The behavior file can be found at 
-YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitRetailBehaviorExit_PORTS_2.json.  
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrBehaviorExit_PORTS_2.json.  
 
     This __MUST__ be loaded to the controller __BEFORE__ the cluster configuration because the cluster file 
     references that behavior id, and that behavior must already be known by the controller. Otherwise the 
@@ -81,8 +81,8 @@ ___
 1. Open a terminal window and copy the use case behavior to the deployed controller so it is available for 
 use.
     ```bash
-    cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000
-    cp DevkitRetailBehaviorExit_PORTS_2.json YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/config/behaviors/
+    cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000
+    cp DevkitQsrBehaviorExit_PORTS_2.json YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/config/behaviors/
     ```
 
 2. Connect to the controller's command line interface and execute the following series of commands.
@@ -103,7 +103,7 @@ use.
     ------------------------------------------
     
     #-- load the cluster configuration
-    cli> clusters load.file YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitRetailCluster.json
+    cli> clusters load.file YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrCluster.json
     ------------------------------------------
     completed
     ------------------------------------------
@@ -120,9 +120,9 @@ use.
     runState: FROM_CONFIG
     ------------------------------------------
     clusters:
-          id: FittingRoomsCluster
-    behavior: DevkitRetailBehaviorExit_PORTS_2
-    sensors: [RSP-150002 ]
+          id: ColdAreaCluster
+    behavior: DevkitQsrBehaviorExit_PORTS_2
+    sensors: [RSP-150004 ]
     
     ------------------------------------------
     ```
@@ -131,8 +131,8 @@ Continue to the Observe Tag Events section.
 ___
 
 ### USING MQTT:
-1. Edit [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) 
-replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitRetailCluster.json file. 
+1. Edit [cluster_set_config_request_use_case_qsr.json](./cluster_set_config_request_use_case_qsr.json) 
+replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitQsrCluster.json file. 
 
 2. Open a terminal window and subscribe to the controller's command response topic in order to monitor the 
 command responses.
@@ -155,10 +155,10 @@ command responses.
     
     #-- load the behavior specific to this exercise
     #-- (lowered power level as antennae are likely interferring)
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h1000/behavior_put_request_Exit.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h1000/behavior_put_request_Exit.json
     
     #-- load (set) the cluster configuration
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h1000/cluster_set_config_request_use_case_retail.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h1000/cluster_set_config_request_use_case_qsr.json
     
     #-- activate the scheduler in custom configuration mode
     mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
@@ -179,12 +179,12 @@ produced by the controller.
 mosquitto_sub -t rfid/controller/events
 ```
 
-1. ##### Tag arrivals in the first fitting room
-    At this point, remove two tags from hiding and place them nearby one of the two antennae. When the tags 
-    are read initially, an arrival event will be generated on the rfid/controller/events topic for each tag. 
+1. ##### Tag arrival in the first cold room
+    At this point, remove a tag from hiding and place it nearby one of the two antennae. When the tag is  
+    read initially, an arrival event will be generated on the rfid/controller/events topic. 
     Verify from the Web Admin 
-    [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now EXITING
-    and the location is at the first antenna's alias (either FittingRoom1 or FittingRoom2). 
+    [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now in the 
+    EXITING state and the location is at the first antenna's alias (either Freezer or Refridgerator). 
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -195,63 +195,27 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
+            "facility_id": "ColdArea",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "arrival",
             "timestamp": 1559867406524,
-            "location": "FittingRoom1"
-          }, {
-            "facility_id": "FittingRooms",
-            "epc_code": "303530C29C000000F0006B14",
-            "tid": null,
-            "epc_encode_format": "tbd",
-            "event_type": "arrival",
-            "timestamp": 1559867406337,
-            "location": "FittingRoom1"
+            "location": "Freezer"
           }
         ]
       }
     }
     ```
 
-2. ##### Tag departure from first fitting room
-    Now take one of the tags at the first antenna and hide it again such that it can't be seen by either 
-    antenna. After about 30 seconds, a departed event should be generated for the tag that was removed. 
-    From the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag 
-    state of the removed tag has changed to DEPARTED_EXIT.
-    Verify the receipt of the MQTT event message.
-    ```json  
-    {
-      "jsonrpc": "2.0",
-      "method": "inventory_event",
-      "params": {
-        "sent_on": 1559867429368,
-        "device_id": "intel-acetest",
-        "data": [
-          {
-            "facility_id": "FittingRooms",
-            "epc_code": "303530C29C000000F0006B12",
-            "tid": null,
-            "epc_encode_format": "tbd",
-            "event_type": "departed",
-            "timestamp": 1559867428762,
-            "location": "FittingRoom1"
-          }
-        ]
-      }
-    }
-    ```
-
-3. ##### Tag moves from one fitting room to the other
-    Now take the tag that remains near the antenna and move it to the other antenna.  Since these antennae 
-    are in the same facility, a moved event will be generated. It may take a few moments for the event to 
-    be generated as the algorithm uses time-weighted RSSI averages to determine tag location. From the 
+2. ##### Tag moved to the other cold room
+    Now take the tag and move it to the other antenna. Since these antennae are in the same facility, a 
+    moved event will be generated. It may take a few moments for the event to be generated as the 
+    algorithm uses time-weighted RSSI averages to determine tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag's location 
-    has changed to the other fitting room.
+    has changed to the other cold room.
     Verify the receipt of the MQTT event message.
-    ```json  
+    ```json
     {
       "jsonrpc": "2.0",
       "method": "inventory_event",
@@ -260,21 +224,21 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
-            "epc_code": "303530C29C000000F0006B14",
+            "facility_id": "ColdArea",
+            "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "moved",
             "timestamp": 1559867487834,
-            "location": "FittingRoom2"
+            "location": "Refridgerator"
           }
         ]
       }
     }
     ```
 
-4. ##### Tag departure from the second fitting room
-    Now take that remaining tag and hide it such that it can't be seen by either antenna.  After about 
+3. ##### Tag departure from the second cold room
+    Now take that tag and hide it such that it can't be seen by either antenna.  After about 
     30 seconds, a departed event should be generated for the tag that was removed. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag 
     state of the removed tag has changed to DEPARTED_EXIT.
@@ -288,13 +252,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
-            "epc_code": "303530C29C000000F0006B14",
+            "facility_id": "ColdArea",
+            "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "departed",
             "timestamp": 1559867494569,
-            "location": "FittingRoom2"
+            "location": "Refridgerator"
           }
         ]
       }

@@ -18,7 +18,7 @@ transitions to the SalesFloor, and then departs out the front door of the store.
 controller.
 
 2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device ids in the 
-sensor_groups to match the sensors included with the DevKit. 
+sensor_groups to match the sensors included with the Devkit. 
 This cluster configuration file is an example that establishes the two facilities of interest 
 (BackStock, SalesFloor), configures one sensor to be in the BackStock and the other sensor to be in the 
 SalesFloor, assigns the SalesFloor sensor with an EXIT personality in order to detect when tags have 

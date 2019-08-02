@@ -1,0 +1,15 @@
+{
+  "id": "QsrUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "ColdAreaCluster",
+      "personality": "EXIT",
+      "facility_id": "ColdArea",
+      "aliases": [ "Freezer", "Refridgerator" ],
+      "behavior_id": "DevkitQsrBehaviorExit_PORTS_2",
+      "sensor_groups": [["RSP-150004"]],
+      "tokens": []
+    }
+  ]
+}
+

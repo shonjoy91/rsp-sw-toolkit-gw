@@ -1,0 +1,30 @@
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "behavior_put",
+  "params": {
+    "id": "DevkitQsrBehaviorExit_PORTS_2",
+    "operation_mode": "NonContinuous",
+    "link_profile": 1,
+    "power_level": 18.0,
+    "selected_state": "Any",
+    "session_flag": "S0",
+    "target_state": "A",
+    "q_algorithm": "Dynamic",
+    "fixed_q_value": 10,
+    "start_q_value": 7,
+    "min_q_value": 3,
+    "max_q_value": 15,
+    "retry_count": 0,
+    "threshold_multiplier": 2,
+    "dwell_time": 1000,
+    "inv_cycles": 0,
+    "toggle_target_flag": false,
+    "repeat_until_no_tags": false,
+    "perform_select": false,
+    "perform_post_match": false,
+    "filter_duplicates": false,
+    "toggle_mode": "OnInvCycle",
+    "auto_repeat": false
+  }
+}
