@@ -189,7 +189,7 @@ mosquitto_sub -t rfid/controller/events
     When the tag is read initially, an arrival event will be generated on the rfid/controller/events topic.
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now in the EXITING
-    state and the location is at the Receiving-Exiting sensor.
+    state and the location is at the Receiving-Exiting sensor.  
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -219,7 +219,7 @@ mosquitto_sub -t rfid/controller/events
     into DryGoods. It may take a few moments for the event(s) to be generated as the algorithm uses 
     time-weighted RSSI averages to determine the tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
-    locations to the second sensor (DryGoods) and that the tag state has changed to PRESENT.
+    locations to the second sensor (DryGoods) and that the tag state has changed to PRESENT.  
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -256,7 +256,7 @@ mosquitto_sub -t rfid/controller/events
     Now move the tag back to the Receiving-Exiting sensor.  Again, since the two sensors are in 
     different facilities, there will be a departure-arrival pair of events generated. Again, this can 
     take a few moments to occur. From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
-    page, confirm that the location changes back to Receiving-Exiting and the tag's state changes to EXITING.
+    page, confirm that the location changes back to Receiving-Exiting and the tag's state changes to EXITING.  
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -293,7 +293,7 @@ mosquitto_sub -t rfid/controller/events
     Hide the tag so that no sensor is able to read it to emulate the tag actually being gone. After 
     about 30 seconds, a departed event should be generated from the Receiving-Exiting sensor. From 
     the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the state 
-    changes to DEPARTED_EXIT.
+    changes to DEPARTED_EXIT.  
     Verify the receipt of the MQTT event message.
     ```json
     {

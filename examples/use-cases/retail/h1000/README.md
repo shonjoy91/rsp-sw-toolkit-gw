@@ -184,7 +184,7 @@ mosquitto_sub -t rfid/controller/events
     are read initially, an arrival event will be generated on the rfid/controller/events topic for each tag. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now EXITING
-    and the location is at the first antenna's alias (either FittingRoom1 or FittingRoom2). 
+    and the location is at the first antenna's alias (either FittingRoom1 or FittingRoom2).  
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -220,7 +220,7 @@ mosquitto_sub -t rfid/controller/events
     Now take one of the tags at the first antenna and hide it again such that it can't be seen by either 
     antenna. After about 30 seconds, a departed event should be generated for the tag that was removed. 
     From the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag 
-    state of the removed tag has changed to DEPARTED_EXIT.
+    state of the removed tag has changed to DEPARTED_EXIT.  
     Verify the receipt of the MQTT event message.
     ```json  
     {
@@ -249,7 +249,7 @@ mosquitto_sub -t rfid/controller/events
     are in the same facility, a moved event will be generated. It may take a few moments for the event to 
     be generated as the algorithm uses time-weighted RSSI averages to determine tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag's location 
-    has changed to the other fitting room.
+    has changed to the other fitting room.  
     Verify the receipt of the MQTT event message.
     ```json  
     {
@@ -277,7 +277,7 @@ mosquitto_sub -t rfid/controller/events
     Now take that remaining tag and hide it such that it can't be seen by either antenna.  After about 
     30 seconds, a departed event should be generated for the tag that was removed. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag 
-    state of the removed tag has changed to DEPARTED_EXIT.
+    state of the removed tag has changed to DEPARTED_EXIT.  
     Verify the receipt of the MQTT event message.
     ```json  
     {

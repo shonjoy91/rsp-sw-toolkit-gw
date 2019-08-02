@@ -219,7 +219,7 @@ mosquitto_sub -t rfid/controller/events
     It may take a few moments for the event(s) to be generated as the algorithm uses time-weighted RSSI 
     averages to determine the tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
-    locations to the second sensor and that the tag state has changed to EXITING.
+    locations to the second sensor and that the tag state has changed to EXITING.  
     Verify the receipt of the MQTT event message.
     ```json  
     {
@@ -255,7 +255,7 @@ mosquitto_sub -t rfid/controller/events
 3. ##### Tag departs
     Hide the tag so that no sensor is able to read it to emulate the tag actually being gone.
     A departure event should be generated in about 30 seconds and the tag state should change
-    to DEPARTED_EXIT.
+    to DEPARTED_EXIT.  
     Verify the receipt of the MQTT event message.
     ```json  
     {

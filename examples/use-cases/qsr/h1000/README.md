@@ -184,7 +184,7 @@ mosquitto_sub -t rfid/controller/events
     read initially, an arrival event will be generated on the rfid/controller/events topic. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now in the 
-    EXITING state and the location is at the first antenna's alias (either Freezer or Refridgerator). 
+    EXITING state and the location is at the first antenna's alias (either Freezer or Refridgerator).  
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -213,7 +213,7 @@ mosquitto_sub -t rfid/controller/events
     moved event will be generated. It may take a few moments for the event to be generated as the 
     algorithm uses time-weighted RSSI averages to determine tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag's location 
-    has changed to the other cold room.
+    has changed to the other cold room.  
     Verify the receipt of the MQTT event message.
     ```json
     {
@@ -241,7 +241,7 @@ mosquitto_sub -t rfid/controller/events
     Now take that tag and hide it such that it can't be seen by either antenna.  After about 
     30 seconds, a departed event should be generated for the tag that was removed. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag 
-    state of the removed tag has changed to DEPARTED_EXIT.
+    state of the removed tag has changed to DEPARTED_EXIT.  
     Verify the receipt of the MQTT event message.
     ```json  
     {
