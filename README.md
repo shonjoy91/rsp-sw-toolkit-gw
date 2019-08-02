@@ -25,7 +25,13 @@ The following instructions assume an Ubuntu 18.04 installation.
 sudo apt-get install default-jdk git gradle
 
 #-- install runtime dependencies
-sudo apt-get install mosquitto mosquitto-clients avahi-daemon ntp ssh
+sudo apt-get install mosquitto mosquitto-clients avahi-daemon ssh
+
+#-- install and configure network time server on the local machine
+sudo apt-get install ntp
+echo "server 127.127.1.0 prefer" | sudo tee -a /etc/ntp.conf
+echo "fudge 127.127.22.1" | sudo tee -a /etc/ntp.conf
+sudo systemctl status ntp
 
 #-- create expected directories for the use case examples and documentation
 mkdir -p ~/projects
