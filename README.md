@@ -1,4 +1,4 @@
-# Intel&reg; RSP Constoller
+# Intel&reg; RSP Controller
 
 The features and functionality included in this reference design are 
 intended to showcase the capabilities of the Intel® RFID Sensor Platform (Intel® RSP) 
