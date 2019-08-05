@@ -47,14 +47,22 @@ DEBUG=${DEBUG:-0}
 QOS=${QOS:-1}
 COLOR=${COLOR:-1}
 STYLE=${STYLE:-1}
+DATE_FORMAT=${DATE_FORMAT:-}
 RSP_CONTROLLER_IP="${RSP_CONTROLLER_IP:-127.0.0.1}"
-DATE_FORMAT="${DATE_FORMAT:-+%x %X}"
 MAX_DEBUG_BYTES=${MAX_DEBUG_BYTES:-2048}
+ALWAYS_TRUE=${ALWAYS_TRUE:-0}
+IN_RESET_SECONDS=${IN_RESET_SECONDS:-15}
+REBOOT_SECONDS=${REBOOT_SECONDS:-60}
 
+# rsp file array
 DEVICE_ID_INDEX=0
 FACILITY_ID_INDEX=1
 READ_STATE_INDEX=2
 TOKEN_INDEX=3
+REGION_INDEX=4
+STATUS_INDEX=5
+
+DEFAULT_REGION="USA"
 DEFAULT_TOKEN="D544DF3F42EA86BED3C3D15FC321B8E949D666C06B008C6357580BC3816E00DE"
 ROOT_CERT_URL="http://$RSP_CONTROLLER_IP:8080/provision/root-ca-cert"
 MQTT_CRED_URL="https://$RSP_CONTROLLER_IP:8443/provision/sensor-credentials"
@@ -80,7 +88,7 @@ DeviceMoved=151
 declare -A rsp_colors
 
 # Only define colors if COLOR is enabled (1)
-if [[ $COLOR -eq 1 ]]; then
+if [ $COLOR -eq 1 ]; then
     # clear resets color and style back to defaults
     clear="\e[0m"
     # no_color clears the foreground color
@@ -92,7 +100,7 @@ if [[ $COLOR -eq 1 ]]; then
 fi
 
 # Only define styles if STYLE is enabled (1):wq
-if [[ $STYLE -eq 1 ]]; then
+if [ $STYLE -eq 1 ]; then
     # clear resets color and style back to defaults
     clear="\e[0m"
     # normal clears dim, bold, and underline
@@ -105,9 +113,29 @@ fi
 # Define all the functions up front
 #
 
+# This will cleanly shutdown the simulators and send rsp_status of shutting_down
+clean_shutdown () {
+    trap - INT
+    printf "\n${lt_red}${bold}Shutting down simulated RSPs...${clear}\n"
+
+    # This loop sends shutting_down rsp_status for each rsp and if the sensor
+    # is in the STARTED state it will send an inventory_complete and set the state to STOPPED
+    index=0
+    while [ $index -lt $RSPS ]; do
+        shutdown_rsp $index
+        let index=index+1
+    done
+
+    exit 0
+}
+
 # Function outputs date in specified format for logging purposes
 pretty_date() {
-    date "$DATE_FORMAT"
+    if [ ! -z $DATE_FORMAT ]; then
+      echo "$(date $DATE_FORMAT)"
+    else
+      echo "$(date +%X) | $(millis)"
+    fi
 }
 
 # Function takes topic and message string as arguments
@@ -120,7 +148,7 @@ publish () {
 publish_file () {
     local bytes=$(wc --bytes < "$2")
     # only display the raw message if it is smaller than the MAX_DEBUG_BYTES or MAX_DEBUG_BYTES=-1
-    local raw_msg=$(if [[ $MAX_DEBUG_BYTES -lt 0 ]] || [[ $bytes -le $MAX_DEBUG_BYTES ]]; then echo ", msg: $(cat $2)"; fi)
+    local raw_msg=$(if [ $MAX_DEBUG_BYTES -lt 0 ] || [ $bytes -le $MAX_DEBUG_BYTES ]; then echo ", msg: $(cat $2)"; fi)
     log_debug "[publish] topic: $1, len: ${bytes} bytes${raw_msg}"
     mosquitto_pub -q $QOS -h $MQTT_BROKER -t "$1" -f "$2"
 }
@@ -133,7 +161,7 @@ log_debug () {
 }
 
 # Function takes device_id and message as argument
-log_warning () {
+log_rsp_warning () {
     if [ $QUIET -ne 1 ]; then
         printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${yellow}[WARNING] %s${clear}\n" "$1" "$2"
     fi
@@ -142,21 +170,24 @@ log_warning () {
 # Function takes device_id, jsonrpc id, jsonrpc method and optional extra message as arguments
 log_send_response () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${bold}--->>${normal} ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" "id: $2" "$3" "${4:-// response}"
+        local message="${4}"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${bold}--->>${normal} ${uline}%-20s${normal} ${dim}| ${lt_green}response${no_color}\t| ${message}${clear}\n" "$1" "id: $2" "$3"
     fi
 }
 
 # Function takes device_id, jsonrpc method and optional extra message as arguments
 log_send_msg () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${dim}--->>${normal} ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" " " "$2" "$3"
+        local message="$3"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} %-10.10s ${dim}--->>${normal} ${uline}%-20s${normal} ${dim}| ${message}${clear}\n" "$1" " " "$2"
     fi
 }
 
-# Function takes device_id, jsonrpc id, jsonrpc method and optional extra message as arguments
+# Function takes device_id, jsonrpc id, jsonrpc method and request message as arguments
 log_receive_msg () {
     if [ $QUIET -ne 1 ]; then
-        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${bold}<<---${normal} %10.10s ${uline}%-20s${normal} ${dim}%s${clear}\n" "$1" "id: $2" "$3" "${4:-// request}"
+        local bytes="${lt_blue}$(wc --bytes <<< "$4") bytes"
+        printf "${dim}[$(pretty_date)]${normal} ${bold}${rsp_colors[$1]}%s${clear} ${bold}<<---${normal} %10.10s ${uline}%-20s${normal} ${dim}| ${lt_blue}request${no_color}\t| ${bytes}${clear}\n" "$1" "id: $2" "$3"
     fi
 }
 
@@ -180,10 +211,23 @@ send_connect_request () {
     publish "rfid/rsp/connect" '{"jsonrpc":"2.0","id":"1","method":"connect","params":{"hostname":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.7.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"}}'
 }
 
-# Function takes device_id, facility_id and status as arguments
+# Function takes device_id, facility_id, status, and rsp index as arguments
 send_status_indication () {
-    log_send_msg "$1" "status_update" "// $3"
-    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$(millis)',"device_id":"'$1'","facility_id":"'$2'","status":"'$3'"}}'
+    local status="$3"
+    local index=$4
+    set_rsp_field $index $STATUS_INDEX $status
+
+    local color=""
+    if [ "$status" == "ready" ]; then
+        color="${normal}${lt_green}";
+    elif [ "$status" == "in_reset" ]; then
+        color="${normal}${lt_red}"
+    elif [ "$status" == "shutting_down" ]; then
+        color="${normal}${lt_red}"
+    fi
+
+    log_send_msg "$1" "status_update" "${color}${status}"
+    publish "rfid/rsp/rsp_status/$1" '{"jsonrpc":"2.0","method":"status_update","params":{"sent_on":'$(millis)',"device_id":"'$1'","facility_id":"'$2'","status":"'$status'"}}'
 }
 
 # Function takes device_id and facility_id as arguments
@@ -208,36 +252,40 @@ send_inventory_complete_indication () {
 # tagdata is an array of json epc read objects without the beginning and ending [ ]
 # example: {"epc":"1234ABC","tid":null,"antenna_id":0,"last_read_on":123456,"rssi":-654,"phase":32,"frequency":915250},{...},{...}
 send_inventory_data_indication () {
-    log_send_msg "$1" "inventory_data" "// $3 tags | $2"
+    log_send_msg "$1" "inventory_data" "${lt_cyan}$3 tags${no_color}\t| ${lt_cyan}$2"
     # tag data may be too large to pass over command line and should be stored in a temp file
-    tmpfile=`mktemp`
+    tmpfile=$(mktemp)
     echo -n '{"jsonrpc":"2.0","method":"inventory_data","params":{"sent_on":'$(millis)',"period":500,"device_id":"'$1'","facility_id":"'$2'","location":null,"motion_detected":true,"data":['$4']}}' > $tmpfile
     publish_file "rfid/rsp/data/$1" "$tmpfile"
     rm -f $tmpfile
 }
 
-# Function takes device_id, request id, request method, and optional log string as arguments
+# Function takes device_id, request id, request method, and result json value
 send_command_response () {
-    log_send_response "$1" "$2" "$3" "$4"
-    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":true,"id":"'$2'"}'
+    local device_id=$1
+    local request_id=$2
+    local method=$3
+    local result=$4
+
+    local message="$(if [ "$result" == "true" ]; then echo "${lt_green}true"; else echo "${lt_green}$(wc --bytes <<< "$result") bytes"; fi)"
+    log_send_response "$device_id" "$request_id" "$method" "$message"
+    publish "rfid/rsp/response/$device_id" '{"jsonrpc":"2.0","result":'$result',"id":"'$request_id'"}'
 }
 
-# Function takes device_id, request id and request method as arguments
+# Function takes device_id, request id, and request method as arguments
 send_bist_results_response () {
-    log_send_response "$1" "$3" "$4"
-    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":{"rf_module_error":false,"rf_status_code":0,"rf_module_temp":'$RFID_TEMP',"ambient_temp":'$AMBI_TEMP',"time_alive":'$2',"cpu_usage":'$CPU_USAGE',"mem_used_percent":'$MEM_USAGE',"mem_total_bytes":'$MEM_TOTAL',"camera_installed":false,"temp_sensor_installed":true,"accelerometer_installed":true,"region":"USA","rf_port_statuses":[{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true},{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true}],"device_moved":false},"id":"'$3'"}'
-}
-
-# Function takes device_id, request id and request method as arguments
-send_state_response () {
-    log_send_response "$1" "$3" "$4"
-    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":{"device_id":"'$1'","hwaddress":"98:4f:ee:15:00:'$2'","app_version":"19.1.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"},"id":"'$3'"}'
+    send_command_response "$@" '{"rf_module_error":false,"rf_status_code":0,"rf_module_temp":'$RFID_TEMP',"ambient_temp":'$AMBI_TEMP',"time_alive":'$(($(millis) - $START_TIME))',"cpu_usage":'$CPU_USAGE',"mem_used_percent":'$MEM_USAGE',"mem_total_bytes":'$MEM_TOTAL',"camera_installed":false,"temp_sensor_installed":true,"accelerometer_installed":true,"region":"USA","rf_port_statuses":[{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true},{"port":0,"forward_power_dbm10":280,"reverse_power_dbm10":0,"connected":true}],"device_moved":false}'
 }
 
 # Function takes device_id, request id and request method as arguments
 send_sw_version_response () {
-    log_send_response "$1" "$2" "$3"
-    publish "rfid/rsp/response/$1" '{"jsonrpc":"2.0","result":{"app_version":"19.7.sim","module_version":"none"},"id":"'$2'"}'
+    send_command_response "$@" '{"app_version":"19.7.sim","module_version":"none"}'
+}
+
+# Function takes device_id, request id, request method, and device index as arguments
+send_state_response () {
+    mac=$(printf "98:4f:ee:15:00:%02d" $4)
+    send_command_response "$1" "$2" "$3" '{"device_id":"'$1'","hwaddress":"'$mac'","app_version":"19.7.sim","module_version":"none","num_physical_ports":2,"motion_sensor":true,"camera":false,"wireless":false,"configuration_state":"unknown","operational_state":"unknown"}'
 }
 
 # Function takes rsp index as an argument
@@ -272,35 +320,71 @@ wait_for_command () {
     done
 }
 
+# Function takes rsp index as an argument
+shutdown_rsp () {
+    local index=$1
+    eval "$(rsp_array ${index})"
+
+    # Stop any currently running read cycles
+    if [ "${rsp[$READ_STATE_INDEX]}" == "STARTED" ]; then
+        send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
+        set_rsp_field $index $READ_STATE_INDEX "STOPPED"
+    fi
+
+    # Let RSP Controller know we are shutting down
+    send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "shutting_down" $index
+}
+
+# Function takes rsp index as an argument
+connect_rsp() {
+    local index=$1
+    eval "$(rsp_array ${index})"
+
+    get_mqtt_credentials ${rsp[$DEVICE_ID_INDEX]} ${rsp[$TOKEN_INDEX]}
+    if [ "$MQTT_BROKER" = "" ]; then
+        echo "Invalid MQTT Broker address!"
+        exit 1
+    fi
+
+    wait_for_connect_response $index &
+    send_connect_request ${rsp[$DEVICE_ID_INDEX]} $index
+    send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "ready" $index
+}
+
 # Function takes rsp index and command as arguments
 process_command () {
     index=$1
     eval "$(rsp_array ${index})"
 
+    # todo: some messages should return WRONG_STATE when status is "in_reset"
+    if [ "${rsp[$STATUS_INDEX]}" == "shutting_down" ]; then
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "RSP is in simulated shutdown state. Ignoring message!"
+        return
+    fi
+
     # Split the command into individual parameters
     IFS=',' read -ra CMD <<< "$2"
-#    printf '%s\n' "${CMD[@]}"
 
-    # Extract the id
-    ID=${CMD[1]}
-    # parse out the actual id value
-    ID=`sed -r 's/"id":\s*"([^"]+)"\s*}*/\1/g' <<< $ID`
-    # Extract the method
-    METHOD=${CMD[2]}
-    # parse out the actual method value
-    METHOD=`sed -r 's/"method":\s*"([^"]+)"\s*}*/\1/g' <<< $METHOD`
+    json_value_regex='\s*"([^"]+)"\s*}*'
+    # Extract the id and parse out the actual id value
+    ID=$(sed -r 's/"id":'${json_value_regex}'/\1/g' <<< ${CMD[1]})
+    # Extract the method and parse out the actual method value
+    METHOD=$(sed -r 's/"method":'${json_value_regex}'/\1/g' <<< ${CMD[2]})
 
-    log_receive_msg ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+    # Base arguments to send to the response handler functions
+    response_args=(${rsp[$DEVICE_ID_INDEX]} $ID $METHOD)
+
+    log_receive_msg ${response_args[@]} "$2"
 
     if [ "$METHOD" = "apply_behavior" ]; then
         ACTION=${CMD[3]}
         REPEAT=${CMD[26]}
         if [ "$ACTION" = '"params":{"action":"STOP"' ]; then
-            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+            send_command_response ${response_args[@]} true
             set_rsp_field $index $READ_STATE_INDEX "STOPPED"
             send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
         elif [ "$REPEAT" = '"auto_repeat":false' ]; then
-            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+            send_command_response ${response_args[@]} true
             set_rsp_field $index $READ_STATE_INDEX "STARTED"
             DUR=${CMD[19]}
             IFS=':' read -ra MILLIS <<< "$DUR"
@@ -308,27 +392,17 @@ process_command () {
             set_rsp_field $index $READ_STATE_INDEX "STOPPED"
             send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
         else
-            send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+            send_command_response ${response_args[@]} true
             set_rsp_field $index $READ_STATE_INDEX "STARTED"
         fi
     elif [ "$METHOD" = "get_sw_version" ]; then
-        send_sw_version_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+        send_sw_version_response ${response_args[@]}
 
     elif [ "$METHOD" = "get_state" ]; then
-        send_state_response ${rsp[$DEVICE_ID_INDEX]} $index $ID $METHOD
+        send_state_response ${response_args[@]} $index
 
     elif [ "$METHOD" = "get_bist_results" ]; then
-        TIME=$(millis)
-        uptime=$(($TIME-$START_TIME))
-        send_bist_results_response ${rsp[$DEVICE_ID_INDEX]} $uptime $ID $METHOD
-
-    elif [ "$METHOD" = "set_led" ]; then
-        # Do nothing
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
-
-    elif [ "$METHOD" = "set_motion_event" ]; then
-        # Do nothing
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+        send_bist_results_response ${response_args[@]}
 
     elif [ "$METHOD" = "set_device_alert" ]; then
         # Extract the alert number
@@ -367,7 +441,7 @@ process_command () {
         IFS='}' read -ra ARRAY <<< "$threshold"
         threshold=${ARRAY[0]}
         # Send the command response
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+        send_command_response ${response_args[@]} true
         sleep 1
         send_device_alert_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} $number $description $severity $option
 
@@ -378,20 +452,65 @@ process_command () {
         FACID=${FAC[3]}
         set_rsp_field $index $FACILITY_ID_INDEX $FACID
         # Send the command response
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+        send_command_response ${response_args[@]} true
 
     elif [ "$METHOD" = "reset" ]; then
         # Send the command response
-        send_command_response ${rsp[$DEVICE_ID_INDEX]} $ID $METHOD
+        send_command_response ${response_args[@]} true
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "RSP-Controller has requested a reset of the RFID module"
         # Alert of the in_reset state
-        send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "in_reset"
+        send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "in_reset" $index
         # wait some time, pretend we are resetting
-        sleep 15
+        sleep $IN_RESET_SECONDS
         # send status of ready
-        send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "ready"
+        send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "ready" $index
+
+    elif [ "$METHOD" = "reboot" ]; then
+        # Send a true response
+        send_command_response ${response_args[@]} true
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "RSP-Controller has requested a reboot"
+        # Virtually shutdown the sensor
+        shutdown_rsp $index
+        # wait some time, pretend we are rebooting
+        sleep $REBOOT_SECONDS
+        # instead of just sending status of "ready" perform connect routine again
+        connect_rsp $index
+
+    elif [ "$METHOD" = "shutdown" ]; then
+        # Send a true response
+        send_command_response ${response_args[@]} true
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "RSP-Controller has requested a shutdown"
+        # Virtually shutdown the sensor
+        shutdown_rsp $index
+
+    elif [ "$METHOD" = "set_led" ]; then
+        # Do nothing
+        send_command_response ${response_args[@]} true
+
+    elif [ "$METHOD" = "set_motion_event" ]; then
+        # Do nothing
+        send_command_response ${response_args[@]} true
+
+    elif [ "$METHOD" = "software_update" ]; then
+        # Send a true response
+        send_command_response ${response_args[@]} true
+
+    elif [ "$METHOD" = "set_geo_region" ]; then
+        local region=$(sed -nr 's/.+"region":'${json_value_regex}'.*/\1/p' <<< ${2})
+        set_rsp_field $index $REGION_INDEX $region
+        # Send a true response
+        send_command_response ${response_args[@]} true
+
+    elif [ "$METHOD" = "get_geo_region" ]; then
+        # Send simple response
+        send_command_response ${response_args[@]} '{"region":"'${rsp[$REGION_INDEX]}'"}'
 
     else
-        log_warning "${rsp[$DEVICE_ID_INDEX]}" "Received request with unhandled method: ${METHOD}"
+        if [ $ALWAYS_TRUE -eq 1 ]; then
+            send_command_response ${response_args[@]} true
+        else
+            log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "Received request with unhandled method: ${METHOD}"
+        fi
     fi
 }
 
@@ -399,7 +518,7 @@ process_command () {
 set_rsp_field() {
     rsp_file="${RSP_FILE_BASE}${1}"
 
-    if [[ `type -P flock` ]]; then
+    if [ $(type -P flock) ]; then
         # write the changes using an exclusive lock
         flock --exclusive --no-fork ${rsp_file} -c "rsp=(\$(cat ${rsp_file})); rsp[${2}]=${3}; echo \"\${rsp[@]}\" > ${rsp_file}"
     else
@@ -411,12 +530,12 @@ set_rsp_field() {
 }
 
 # Function takes rsp_file as argument
-# Returns array declaration for use with eval which when called will define an array called `rsp`
+# Returns array declaration for use with eval which when called will define an array variable called "rsp"
 # example: eval "$(rsp_array ${index})"
 rsp_array () {
     rsp_file="${RSP_FILE_BASE}${1}"
 
-    if [[ `type -P flock` ]]; then
+    if [ $(type -P flock) ]; then
         # read the contents using a shared lock
         local rsp=($(flock --shared --no-fork ${rsp_file} -c "cat ${rsp_file}"))
     else
@@ -434,21 +553,23 @@ generate_tag_reads_from_file () {
     tag_file="$TAG_FILE_BASE""$index"
 
     # Check to make sure these files exist
-    if [[ -f $rsp_file && -f $tag_file ]]; then
+    if [ -f $rsp_file ] && [ -f $tag_file ]; then
         # Loop forever
         while true; do
             # Get the state of this rsp
             eval "$(rsp_array ${index})"
             if [ "${rsp[$READ_STATE_INDEX]}" == "STARTED" ]; then
-                tag_count=`wc -w < $tag_file`
+                tag_count=$(wc -w < $tag_file)
                 reads=$(($tag_count * $READ_PERCENT / 100))
 
-                if [[ $reads -eq 0 ]]; then
-                    log_warning "${rsp[$DEVICE_ID_INDEX]}" "No tags available to read for sensor"
+                if [ $reads -eq 0 ]; then
+                    log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "No tags available to read for sensor"
                 else
-                    tagdata=`shuf -n $reads -e $(cat $tag_file) \
-                          | paste -s -d ',' \
-                          | sed -r 's/([0-9a-fA-F]+)/{"epc":"\1","tid":null,"antenna_id":0,"last_read_on":'$(millis)',"rssi":-654,"phase":32,"frequency":915250}/g'`
+                    tagdata=$(
+                      shuf -n $reads -e $(cat $tag_file) \
+                        | paste -s -d ',' \
+                          | sed -r 's/([0-9a-fA-F]+)/{"epc":"\1","tid":null,"antenna_id":0,"last_read_on":'$(millis)',"rssi":-654,"phase":32,"frequency":915250}/g'
+                    )
                     send_inventory_data_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} $reads $tagdata &
                 fi
             fi
@@ -457,6 +578,40 @@ generate_tag_reads_from_file () {
     fi
 }
 
+verify_rsp_file_fields() {
+    local index=$1
+    local device_id=$2
+
+    eval "$(rsp_array ${index})"
+
+    # Make sure every field has a value
+    if [ "${rsp[$DEVICE_ID_INDEX]}" == "" ]; then
+        log_rsp_warning $device_id "Device ID for RSP was missing. Setting to $device_id."
+        set_rsp_field $index $DEVICE_ID_INDEX $device_id
+        # Set it here as well in case it is needed below
+        rsp[$DEVICE_ID_INDEX]=$device_id
+    fi
+    if [ "${rsp[$FACILITY_ID_INDEX]}" == "" ]; then
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "Facility ID for RSP was missing. Setting to UNKNOWN."
+        set_rsp_field $index $FACILITY_ID_INDEX "UNKNOWN"
+    fi
+    if [ "${rsp[$READ_STATE_INDEX]}" == "" ]; then
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "Read state for RSP was missing. Setting to STOPPED."
+        set_rsp_field $index $READ_STATE_INDEX "STOPPED"
+    fi
+    if [ "${rsp[$TOKEN_INDEX]}" == "" ]; then
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "Provision token for RSP was missing. Setting to $DEFAULT_TOKEN."
+        set_rsp_field $index $TOKEN_INDEX "$DEFAULT_TOKEN"
+    fi
+    if [ "${rsp[$REGION_INDEX]}" == "" ]; then
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "Region information for RSP was missing. Setting to $DEFAULT_REGION."
+        set_rsp_field $index $REGION_INDEX $DEFAULT_REGION
+    fi
+    if [ "${rsp[$STATUS_INDEX]}" == "" ]; then
+        log_rsp_warning "${rsp[$DEVICE_ID_INDEX]}" "Status information for RSP was missing. Setting to unknown."
+        set_rsp_field $index $STATUS_INDEX "unknown"
+    fi
+}
 
 #
 # Here is where the fun begins
@@ -490,12 +645,18 @@ while [ $index -lt $RSPS ]; do
 
     if [ ! -f $rsp_file ]; then
         # the file does not exist yet, so do not care about using flock
+        declare -a rsp
         rsp[$DEVICE_ID_INDEX]=$device_id
         rsp[$FACILITY_ID_INDEX]="UNKNOWN"
         rsp[$READ_STATE_INDEX]="STOPPED"
         rsp[$TOKEN_INDEX]=$DEFAULT_TOKEN
+        rsp[$REGION_INDEX]=$DEFAULT_REGION
+        rsp[$STATUS_INDEX]="unknown"
         echo "${rsp[@]}" > $rsp_file
+    else
+        verify_rsp_file_fields $index $device_id
     fi
+
     let index=index+1
 done
 
@@ -512,15 +673,7 @@ done
 # assuming the RSP Controller is already running.
 index=0
 while [ $index -lt $RSPS ]; do
-    eval "$(rsp_array ${index})"
-    get_mqtt_credentials ${rsp[$DEVICE_ID_INDEX]} ${rsp[$TOKEN_INDEX]}
-    if [ "$MQTT_BROKER" = "" ]; then
-        echo "Invalid MQTT Broker address!"
-        exit 1
-    fi
-    wait_for_connect_response $index &
-    send_connect_request ${rsp[$DEVICE_ID_INDEX]} $index
-    send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "ready"
+    connect_rsp $index
     let index=index+1
 done
 
@@ -554,34 +707,11 @@ if [ $QUIET -ne 1 ]; then
     printf "${clear}\n\n"
 fi
 
-# This will cleanly shutdown the simulators and send rsp_status of shutting_down
-clean_shutdown() {
-    trap - INT
-    printf "\n${lt_red}${bold}Shutting down sensors...${clear}\n"
-
-    # This loop sends shutting_down rsp_status for each rsp and if the sensor
-    # is in the STARTED state it will send an inventory_complete and set the state to STOPPED
-    index=0
-    while [ $index -lt $RSPS ]; do
-        eval "$(rsp_array ${index})"
-
-        # Stop any currently running read cycles
-        if [ "${rsp[$READ_STATE_INDEX]}" == "STARTED" ]; then
-            send_inventory_complete_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
-            set_rsp_field $index $READ_STATE_INDEX "STOPPED"
-        fi
-
-        # Let RSP Controller know we are shutting down
-        send_status_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]} "shutting_down"
-
-        let index=index+1
-    done
-
-    exit 0
-}
 
 # close connections when Ctrl-C is pressed
 trap clean_shutdown INT
+# Note: Do not move this trap any higher, as we do not want to do this unless
+#       the RSP-Controller connection has already been established!
 
 # This loop sends heartbeat_indications
 # to the RSP Controller every 30 seconds, forever.
@@ -589,6 +719,14 @@ while true; do
     index=0
     while [ $index -lt $RSPS ]; do
         eval "$(rsp_array ${index})"
+
+        # todo: should we send for "in_reset" or not?
+        if [ "${rsp[$STATUS_INDEX]}" == "shutting_down" ]; then
+            # Do not send heartbeat
+            log_debug "Skip sending heartbeat for rsp in shutdown state ${rsp[$DEVICE_ID_INDEX]}"
+            break
+        fi
+
         send_heartbeat_indication ${rsp[$DEVICE_ID_INDEX]} ${rsp[$FACILITY_ID_INDEX]}
         let index=index+1
     done

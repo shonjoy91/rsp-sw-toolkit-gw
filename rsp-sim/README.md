@@ -100,12 +100,15 @@ COLOR=0 QUIET=1 QOS=2 ./rsp_sim.sh 3
 ```
 COLOR=0                         // Disable the use of terminal colors (default: 1)
 STYLE=0                         // Disable the use of terminal styles/formatting (default: 1)
-QUIET=1                         // Disable logging (default: 0)
+QUIET=1                         // Disable all logging (default: 0)
 DEBUG=1                         // Enable debug logging of mqtt messages (default: 0)
 QOS=0 | QOS=1 | QOS=2           // Set the QOS (quality of service) to use when subscribing and poublishing MQTT messages (default: 1)
 RSP_CONTROLLER_IP=xx.xx.xx.xx   // Set the IP or hostname of the RSP Controller (default: 127.0.0.1)
-DATE_FORMAT="+%X"               // Set the date/time format used in log messages (default: "+%x %X")
+DATE_FORMAT="+%x %X"            // Set the date/time format used in log messages
 MAX_DEBUG_BYTES=-1              // Set the maximum bytes of a jsonrpc message to be logged to console in DEBUG mode. -1 is unlimited (default: 2048)
+ALWAYS_TRUE=1                   // When this is set to 1, respond true to every jsonrpc request even if it is not implemented (default: 0)
+IN_RESET_SECONDS=30             // How many seconds the RSP should stay in the `in_reset` state when a reset is requested before becoming `ready` again (default: 15)
+REBOOT_SECONDS=120              // How many seconds to simulate rebooting an RSP when a `reboot` command is sent (default: 60)
 ```
 
 
@@ -113,16 +116,20 @@ MAX_DEBUG_BYTES=-1              // Set the maximum bytes of a jsonrpc message to
 ```
 :~$ ./rsp-sim.sh 3 33
 requesting root certificate from http://127.0.0.1:8080/provision/root-ca-cert
+######################################################################################################################################################################################################################################################### 100.0%
 Creating default rsp data...
 RSP-150000 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
-[07/26/2019 12:34:06 PM] RSP-150000            --->> connect              
-[07/26/2019 12:34:06 PM] RSP-150000            --->> status_update        
+######################################################################################################################################################################################################################################################### 100.0%
+[04:48:02 PM | 1565048882467] RSP-150000            --->> connect              | 
+[04:48:02 PM | 1565048882594] RSP-150000            --->> status_update        | ready
 RSP-150001 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
-[07/26/2019 12:34:06 PM] RSP-150001            --->> connect              
-[07/26/2019 12:34:06 PM] RSP-150001            --->> status_update        
+######################################################################################################################################################################################################################################################### 100.0%
+[04:48:02 PM | 1565048882661] RSP-150001            --->> connect              | 
+[04:48:02 PM | 1565048882682] RSP-150001            --->> status_update        | ready
 RSP-150002 requesting mqtt credentials from https://127.0.0.1:8443/provision/sensor-credentials
-[07/26/2019 12:34:06 PM] RSP-150002            --->> connect              
-[07/26/2019 12:34:06 PM] RSP-150002            --->> status_update        
+######################################################################################################################################################################################################################################################### 100.0%
+[04:48:02 PM | 1565048882737] RSP-150002            --->> connect              | 
+[04:48:02 PM | 1565048882759] RSP-150002            --->> status_update        | ready
 
 
 ******************************************
@@ -134,30 +141,24 @@ RSP-150002 requesting mqtt credentials from https://127.0.0.1:8443/provision/sen
 ******************************************
 
 
-[07/26/2019 12:34:06 PM] RSP-150000            --->> heartbeat            
-[07/26/2019 12:34:06 PM] RSP-150001            --->> heartbeat            
-[07/26/2019 12:34:06 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:06 PM] RSP-150002            --->> heartbeat            
-[07/26/2019 12:34:07 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:07 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:08 PM] RSP-150000 <<---  id: 57494 apply_behavior       // request
-[07/26/2019 12:34:08 PM] RSP-150000 id: 57494  --->> apply_behavior       // response
-[07/26/2019 12:34:08 PM] RSP-150001 <<---  id: 57495 apply_behavior       // request
-[07/26/2019 12:34:08 PM] RSP-150001 id: 57495  --->> apply_behavior       // response
-[07/26/2019 12:34:08 PM] RSP-150000            --->> inventory_complete   
-[07/26/2019 12:34:08 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:08 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:09 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:09 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:10 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:11 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:11 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:12 PM] RSP-150001            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:12 PM] RSP-150001            --->> inventory_complete   
-[07/26/2019 12:34:12 PM] RSP-150002 <<---  id: 57496 apply_behavior       // request
-[07/26/2019 12:34:12 PM] RSP-150002 id: 57496  --->> apply_behavior       // response
-[07/26/2019 12:34:12 PM] RSP-150002            --->> inventory_data       // 990 tags
-[07/26/2019 12:34:13 PM] RSP-150002            --->> inventory_data       // 990 tags
+[04:48:02 PM | 1565048882829] RSP-150000            --->> heartbeat            | 
+[04:48:02 PM | 1565048882853] RSP-150001 <<--- id: 197213 apply_behavior       | request        | 636 bytes
+[04:48:02 PM | 1565048882858] RSP-150001            --->> heartbeat            | 
+[04:48:02 PM | 1565048882859] RSP-150001 id: 197213 --->> apply_behavior       | response       | true
+[04:48:02 PM | 1565048882894] RSP-150002            --->> heartbeat            | 
+[04:48:03 PM | 1565048883313] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+[04:48:03 PM | 1565048883840] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+[04:48:04 PM | 1565048884375] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+[04:48:04 PM | 1565048884910] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+[04:48:05 PM | 1565048885442] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+[04:48:05 PM | 1565048885976] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+[04:48:06 PM | 1565048886512] RSP-150001            --->> inventory_data       | 33 tags        | fac99
+^C
+Shutting down simulated RSPs...
+[04:48:06 PM | 1565048886699] RSP-150000            --->> status_update        | shutting_down
+[04:48:06 PM | 1565048886721] RSP-150001            --->> inventory_complete   | 
+[04:48:06 PM | 1565048886759] RSP-150001            --->> status_update        | shutting_down
+[04:48:06 PM | 1565048886789] RSP-150002            --->> status_update        | shutting_down
 ```
 
 ## Use the RSP Controller Command Line Interface (CLI)
