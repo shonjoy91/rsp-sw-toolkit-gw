@@ -5,25 +5,17 @@
       "id": "BackStockCluster",
       "personality": null,
       "facility_id": "BackStock",
-      "aliases": [],
+      "aliases": [ "BackStock", "BackStock" ],
       "behavior_id": "ClusterDeepScan_PORTS_1",
       "sensor_groups": [["RSP-150005"]],
-      "tokens": []
-    }, {
-      "id": "SalesFloorCluster",
-      "personality": null,
-      "facility_id": "SalesFloor",
-      "aliases": [],
-      "behavior_id": "ClusterMobility_PORTS_1",
-      "sensor_groups": [["RSP-150000"]],
       "tokens": []
     }, {
       "id": "SalesFloorExitCluster",
       "personality": "EXIT",
       "facility_id": "SalesFloor",
-      "aliases": [],
-      "behavior_id": "ClusterExit_PORTS_1",
-      "sensor_groups": [["RSP-150004"]],
+      "aliases": [ "SalesFloor", "SalesFloor" ],
+      "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
+      "sensor_groups": [["RSP-150003"]],
       "tokens": []
     }
   ]

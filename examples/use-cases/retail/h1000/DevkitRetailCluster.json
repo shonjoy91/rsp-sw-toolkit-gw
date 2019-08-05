@@ -1,0 +1,15 @@
+{
+  "id": "RetailUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "FittingRoomsCluster",
+      "personality": "EXIT",
+      "facility_id": "FittingRooms",
+      "aliases": [ "FittingRoom1", "FittingRoom2" ],
+      "behavior_id": "DevkitRetailBehaviorExit_PORTS_2",
+      "sensor_groups": [["RSP-150002"]],
+      "tokens": []
+    }
+  ]
+}
+

@@ -1,0 +1,23 @@
+{
+  "id": "QsrUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "DryGoodsCluster",
+      "personality": null,
+      "facility_id": "DryGoods",
+      "aliases": [ "DryGoods", "DryGoods" ],
+      "behavior_id": "DevkitQsrBehaviorMobility_PORTS_1",
+      "sensor_groups": [["RSP-150003"]],
+      "tokens": []
+    }, {
+      "id": "Receiving-ExitingCluster",
+      "personality": "EXIT",
+      "facility_id": "Receiving-Exiting",
+      "aliases": [ "Receiving-Exiting", "Receiving-Exiting" ],
+      "behavior_id": "DevkitQsrBehaviorExit_PORTS_1",
+      "sensor_groups": [["RSP-150001"]],
+      "tokens": []
+    }
+  ]
+}
+
