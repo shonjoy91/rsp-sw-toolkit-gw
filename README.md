@@ -122,7 +122,7 @@ mosquitto_sub -t rfid/controller/events
 
 # Use Cases
 Explore the reference use cases that are included:  
-[Quick Serve Restaurant with H1000 Devkit](examples/use-cases/retail/h1000)  
-[Quick Serve Restaurant with H3000 Devkit](examples/use-cases/retail/h3000)  
+[Quick Serve Restaurant with H1000 Devkit](examples/use-cases/qsr/h1000)  
+[Quick Serve Restaurant with H3000 Devkit](examples/use-cases/qsr/h3000)  
 [Retail with H1000 Devkit](examples/use-cases/retail/h1000)  
 [Retail with H3000 Devkit](examples/use-cases/retail/h3000)
