@@ -246,9 +246,12 @@
 <div class="w3-row-padding w3-margin-top">
 
     <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar w3-xxlarge">
-            <div class="w3-bar-item"><i class="fa fa-cloud-upload-alt"></i></div>
-            <div class="w3-bar-item w3-right">Upstream MQTT</div>
+        <div class="w3-bar">
+            <div class="w3-bar-item w3-xxlarge"><i class="fa fa-cloud-upload-alt"></i></div>
+            <div class="w3-bar-item w3-right" title="Communication channel between Controller and Cloud">
+                <span class="w3-xxlarge">Upstream MQTT</span>
+                <br>(Controller &lt;---&gt; Cloud)
+            </div>
         </div>
         <div class="w3-bar">
             <div class="w3-bar-item">Connection State</div>
@@ -269,9 +272,12 @@
     </div>
 
     <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar w3-xxlarge">
-            <div class="w3-bar-item"><i class="fa fa-download"></i></div>
-            <div class="w3-bar-item w3-right">Downstream MQTT</div>
+        <div class="w3-bar">
+            <div class="w3-bar-item w3-xxlarge"><i class="fa fa-download"></i></div>
+            <div class="w3-bar-item w3-right" title="Communication channel between Controller and Sensor">
+                <span class="w3-xxlarge">Downstream MQTT</span>
+                <br>(Controller &lt;---&gt; Sensor)
+            </div>
         </div>
         <div class="w3-bar">
             <div class="w3-bar-item">Connection State</div>
