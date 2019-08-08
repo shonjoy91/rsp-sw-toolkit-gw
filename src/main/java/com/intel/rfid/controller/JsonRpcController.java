@@ -84,6 +84,7 @@ import com.intel.rfid.api.upstream.SensorRemoveRequest;
 import com.intel.rfid.api.upstream.SensorResetRequest;
 import com.intel.rfid.api.upstream.SensorSetGeoRegionRequest;
 import com.intel.rfid.api.upstream.SensorSetLedRequest;
+import com.intel.rfid.api.upstream.SensorSetRssiThresholdRequest;
 import com.intel.rfid.api.upstream.SensorStateSummaryNotification;
 import com.intel.rfid.api.upstream.SensorUpdateSoftwareRequest;
 import com.intel.rfid.api.upstream.UpstreamGetMqttStatusRequest;
@@ -399,6 +400,7 @@ public class JsonRpcController
 
                 case SensorGetBasicInfoRequest.METHOD_NAME:
                 case SensorRemoveRequest.METHOD_NAME:
+                case SensorSetRssiThresholdRequest.METHOD_NAME:
                     handleSensorLocalCommand(rootNode, reqId, reqMethod);
                     break;
 
@@ -649,6 +651,12 @@ public class JsonRpcController
                     sendErr(_reqId, JsonRpcError.Type.WRONG_STATE, result.message);
                 }
                 sendOK(_reqId, result.message);
+                break;
+            }
+            case SensorSetRssiThresholdRequest.METHOD_NAME: {
+                int threshold = _rootNode.get("params").get("threshold").asInt();
+                sensor.setMinRssiDbm10X(threshold);
+                sendOK(_reqId, true);
                 break;
             }
         }

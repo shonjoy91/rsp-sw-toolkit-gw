@@ -92,6 +92,7 @@ import com.intel.rfid.api.upstream.SensorRemoveRequest;
 import com.intel.rfid.api.upstream.SensorResetRequest;
 import com.intel.rfid.api.upstream.SensorSetGeoRegionRequest;
 import com.intel.rfid.api.upstream.SensorSetLedRequest;
+import com.intel.rfid.api.upstream.SensorSetRssiThresholdRequest;
 import com.intel.rfid.api.upstream.SensorStateSummaryNotification;
 import com.intel.rfid.api.upstream.SensorUpdateSoftwareRequest;
 import com.intel.rfid.api.upstream.UpstreamGetMqttStatusRequest;
@@ -432,6 +433,7 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         persistJsonApi(new SensorResetRequest());
         persistJsonApi(new SensorSetGeoRegionRequest(theSensor.getDeviceId(), GeoRegion.USA));
         persistJsonApi(new SensorSetLedRequest(theSensor.getDeviceId(), LEDState.Disabled));
+        persistJsonApi(new SensorSetRssiThresholdRequest(theSensor.getDeviceId(), 645));
         persistJsonApi(new SensorStateSummaryNotification(sensorMgr.getSummary()));
         persistJsonApi(new SensorUpdateSoftwareRequest());
 
