@@ -18,18 +18,21 @@ import javax.jmdns.ServiceInfo;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JmDNSService {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
     public static class ServiceAnnouncement {
-        public boolean sensor_token_required = false;
-        public String mqtt_credentials_url = "";
-        public String root_cert_url = "";
-        public String ntp_host = "";
 
-        public void update() {
+        public final boolean sensor_token_required;
+        public final String mqtt_credentials_url;
+        public final String root_cert_url;
+        public final String ntp_host;
+
+        public ServiceAnnouncement() {
             ConfigManager cm = ConfigManager.instance;
             ntp_host = cm.getLocalHost("ntp.server.host");
             sensor_token_required = cm.getProvisionSensorTokenRequired();
@@ -38,30 +41,25 @@ public class JmDNSService {
         }
     }
 
-    private static ObjectMapper mapper = Jackson.getMapper();
-
-    private static String REGISTER_TYPE = "_rfid._tcp.local.";
-    private static String REGISTER_NAME_PREFIX = "RSP-Controller";
-    private ServiceAnnouncement serviceAnnouncement;
-
-    private boolean started = false;
-
-    public JmDNSService() {
-        REGISTER_TYPE = ConfigManager.instance.getOptString(
-                "jmdns.register.type", "_rfid._tcp.local.");
-        REGISTER_NAME_PREFIX = ConfigManager.instance.getOptString(
-                "jmdns.register.name.prefix", "RSP-Controller");
-
-        serviceAnnouncement = new ServiceAnnouncement();
-        serviceAnnouncement.update();
+    protected Map<String, String> buildProperTxtRecordMap() {
+        Map<String, String> map = new HashMap<>();
+        ConfigManager cm = ConfigManager.instance;
+        map.put("mqtt_credentials_url", cm.getProvisionUrlSensorCredentials());
+        map.put("ntp_host", cm.getLocalHost("ntp.server.host"));
+        map.put("root_cert_url", cm.getProvisionUrlCACert());
+        map.put("sensor_token_required", Boolean.toString(cm.getProvisionSensorTokenRequired()));
+        return map;
     }
+
+    private ObjectMapper mapper = Jackson.getMapper();
+    private boolean started = false;
 
     public boolean start() {
         if (!started) {
             try {
-
-                JmmDNS.Factory.getInstance().addNetworkTopologyListener(new NetworkChangeListener());
-                for (JmDNS jmdns : JmmDNS.Factory.getInstance().getDNS()) {
+                JmmDNS jmmDNS = JmmDNS.Factory.getInstance();
+                jmmDNS.addNetworkTopologyListener(new NetworkChangeListener());
+                for (JmDNS jmdns : jmmDNS.getDNS()) {
                     if (isValidRegisterAddress(jmdns.getInetAddress())) {
                         registerService(jmdns);
                         started = true;
@@ -79,8 +77,16 @@ public class JmDNSService {
 
         if (started) {
             try {
-                log.info("Un-registering JmDNS services...");
-                JmmDNS.Factory.getInstance().close();
+                JmmDNS jmmDNS = JmmDNS.Factory.getInstance();
+                for (JmDNS jmdns : jmmDNS.getDNS()) {
+                    if (isValidRegisterAddress(jmdns.getInetAddress())) {
+                        log.info("Un-registering JmDNS services {}", info.getName());
+                        jmdns.unregisterService(info);
+                        log.info("Un-registering JmDNS services {}", info2.getName());
+                        jmdns.unregisterService(info2);
+                    }
+                }
+                jmmDNS.close();
                 started = false;
             } catch (IOException _e) {
                 log.error("IOException stopping: {}", _e.getMessage());
@@ -130,28 +136,67 @@ public class JmDNSService {
         return addr instanceof Inet4Address && !addr.isLoopbackAddress();
     }
 
+    ServiceInfo info, info2;
     private synchronized void registerService(JmDNS jmdns) {
+
+        // need to handle the deprecated name for Gateway and the new name to support
+        // sensor software versions
         try {
-            String fullName = REGISTER_NAME_PREFIX + "-" + ConfigManager.instance.getRspControllerDeviceId();
+            String hostName = jmdns.getHostName();
+            String hostAddress = jmdns.getInetAddress().getHostAddress();
+            String deviceId = ConfigManager.instance.getRspControllerDeviceId();
 
-            log.info("attempting to register mdns: {} on {} ({})...",
-                     fullName,
-                     jmdns.getHostName(),
-                     jmdns.getInetAddress().getHostAddress());
-
-            final ServiceInfo info = ServiceInfo.create(
-                    REGISTER_TYPE, fullName, "", 0, 0, 0, false, mapper.writeValueAsBytes(serviceAnnouncement));
+            info = ServiceInfo.create(
+                    "_rfid._tcp.local.",
+                    "RFID-Gateway-" + deviceId,
+                    "",
+                    0, 0, 0,
+                    false,
+                    mapper.writeValueAsBytes(new ServiceAnnouncement()));
 
             jmdns.registerService(info);
 
             log.info("registered mdns: {} on {} ({}) with {} ",
-                     fullName,
-                     jmdns.getHostName(),
-                     jmdns.getInetAddress().getHostAddress(),
-                     new String(info.getTextBytes()));
+                     info.getName(),
+                     hostName, hostAddress,
+                     info.getNiceTextString());
+
+            info2 = ServiceInfo.create(
+                    "_rsp-controller._tcp.local.",
+                    deviceId,
+                    "",
+                    0, 0, 0,
+                    false,
+                    buildProperTxtRecordMap());
+
+            jmdns.registerService(info2);
+
+            log.info("registered mdns: {} on {} ({}) with {} ",
+                     info2.getName(),
+                     hostName, hostAddress,
+                     parseTxtRecord(info2.getTextBytes()));
+
+
         } catch (IOException ioe) {
             log.warn("Unable to register jmdns.", ioe);
         }
     }
-
+    
+    public String parseTxtRecord(byte[] _bytes) {
+        final StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < _bytes.length) {
+            sb.append(System.lineSeparator());
+            int size = _bytes[i];
+            i++;
+            int j = i;
+            i += size;
+            while(j < i) {
+                sb.append((char) _bytes[j]);
+                j++;
+            }
+        }
+        return sb.toString();
+    }
 }
+
