@@ -84,6 +84,13 @@ HighCpuUsage=103
 HighMemoryUsage=104
 DeviceMoved=151
 
+# Check for the existence of flock command and if so if the --no-fork option is supported
+FLOCK_AVAILABLE=$(type -P flock)
+FLOCK_ARGS=""
+if [ $FLOCK_AVAILABLE ] && [ ! -z "$(flock --help | grep -e '--no-fork')" ]; then
+    FLOCK_ARGS="--no-fork"
+fi
+
 # Create a lookup map of RSP colors for logging: map[device_id] = color
 declare -A rsp_colors
 
@@ -518,9 +525,9 @@ process_command () {
 set_rsp_field() {
     rsp_file="${RSP_FILE_BASE}${1}"
 
-    if [ $(type -P flock) ]; then
+    if [ $FLOCK_AVAILABLE ]; then
         # write the changes using an exclusive lock
-        flock --exclusive --no-fork ${rsp_file} -c "rsp=(\$(cat ${rsp_file})); rsp[${2}]=${3}; echo \"\${rsp[@]}\" > ${rsp_file}"
+        flock --exclusive $FLOCK_ARGS ${rsp_file} -c "rsp=(\$(cat ${rsp_file})); rsp[${2}]=${3}; echo \"\${rsp[@]}\" > ${rsp_file}"
     else
         # write the changes un-synchronized
        local rsp=($(cat ${rsp_file}))
@@ -535,9 +542,9 @@ set_rsp_field() {
 rsp_array () {
     rsp_file="${RSP_FILE_BASE}${1}"
 
-    if [ $(type -P flock) ]; then
+    if [ $FLOCK_AVAILABLE ]; then
         # read the contents using a shared lock
-        local rsp=($(flock --shared --no-fork ${rsp_file} -c "cat ${rsp_file}"))
+        local rsp=($(flock --shared $FLOCK_ARGS ${rsp_file} -c "cat ${rsp_file}"))
     else
         # read the contents un-synchronized
         local rsp=($(cat ${rsp_file}))

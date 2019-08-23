@@ -111,6 +111,23 @@ IN_RESET_SECONDS=30             // How many seconds the RSP should stay in the `
 REBOOT_SECONDS=120              // How many seconds to simulate rebooting an RSP when a `reboot` command is sent (default: 60)
 ```
 
+### Supported jsonrpc commands
+```
+apply_behavior
+get_bist_results
+get_geo_region
+get_state
+get_sw_version
+reboot
+reset
+set_device_alert
+set_facility_id
+set_geo_region
+set_led
+set_motion_event
+shutdown
+software_update
+```
 
 ### Example Simulator Output
 ```
