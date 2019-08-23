@@ -53,7 +53,7 @@ public class MqttUpstream extends Mqtt {
             String deviceId = ConfigManager.instance.getRspControllerDeviceId();
             RspControllerStatusUpdateNotification gsu = new RspControllerStatusUpdateNotification(deviceId,
                                                                                                   RspControllerStatus.RSP_CONTROLLER_STARTED);
-            publishAlert(mapper.writeValueAsBytes(gsu));
+            publishAlert(gsu);
             log.info("Published {}", RspControllerStatus.RSP_CONTROLLER_STARTED);
         } catch (Exception e) {
             log.warn("Error publishing {}", RspControllerStatus.RSP_CONTROLLER_STARTED.label, e);
