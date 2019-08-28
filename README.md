@@ -31,7 +31,7 @@ sudo apt-get install mosquitto mosquitto-clients avahi-daemon ssh
 sudo apt-get install ntp
 echo "server 127.127.1.0 prefer" | sudo tee -a /etc/ntp.conf
 echo "fudge 127.127.22.1" | sudo tee -a /etc/ntp.conf
-sudo systemctl status ntp
+sudo systemctl restart ntp
 
 #-- create expected directories for the use case examples and documentation
 mkdir -p ~/projects
