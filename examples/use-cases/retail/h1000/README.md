@@ -33,7 +33,6 @@ scenario.
 After the prerequisites have been met, choose one of the following methods to configure and control the 
 application. Each method accomplishes the same configuration tasks.
 - Using the Web Admin
-- Using the Command Line Interface (CLI)
 - Using the MQTT Messaging API
 
 Note: In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where the 
@@ -77,59 +76,6 @@ to monitor tag reads and states.
 Continue to the Observe Tag Events section.
 ___
   
-### USING THE CLI
-1. Open a terminal window and copy the use case behavior to the deployed controller so it is available for 
-use.
-    ```bash
-    cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000
-    cp DevkitRetailBehaviorExit_PORTS_2.json YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/config/behaviors/
-    ```
-
-2. Connect to the controller's command line interface and execute the following series of commands.
-    ```bash
-    ssh -p5222 console@localhost
-    password: console
-        
-    #-- stop the scheduler
-    cli> scheduler set.run.state INACTIVE 
-    ------------------------------------------
-    completed
-    ------------------------------------------
-    
-    #-- unload the current inventory
-    cli> inventory unload 
-    ------------------------------------------
-    unload complete
-    ------------------------------------------
-    
-    #-- load the cluster configuration
-    cli> clusters load.file YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitRetailCluster.json
-    ------------------------------------------
-    completed
-    ------------------------------------------
-    
-    #-- activate the scheduler in custom configuration mode
-    cli> scheduler set.run.state FROM_CONFIG 
-    ------------------------------------------
-    completed
-    ------------------------------------------
-
-    #-- confirm the configuration is active 
-    cli> scheduler show 
-    ------------------------------------------
-    runState: FROM_CONFIG
-    ------------------------------------------
-    clusters:
-          id: FittingRoomsCluster
-    behavior: DevkitRetailBehaviorExit_PORTS_2
-    sensors: [RSP-150002 ]
-    
-    ------------------------------------------
-    ```
-
-Continue to the Observe Tag Events section.
-___
-
 ### USING MQTT:
 1. Edit [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) 
 replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitRetailCluster.json file. 
