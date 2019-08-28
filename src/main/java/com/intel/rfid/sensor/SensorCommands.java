@@ -654,9 +654,6 @@ public class SensorCommands implements CLICommander.Support {
                 showCmdResult(rsp, SET_ALIAS, true, _out);
             }
         }
-
-        // Persist the new aliases to disk
-        sensorMgr.persist();
     }
 
     public void doShow(ArgumentIterator _argIter, PrettyPrinter _out) throws RspControllerException {
