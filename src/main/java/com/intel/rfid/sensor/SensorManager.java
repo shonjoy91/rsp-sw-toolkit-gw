@@ -439,6 +439,8 @@ public class SensorManager {
     void notifyConfigUpdate(SensorPlatform _sensor) {
         final SensorConfigInfo info = _sensor.getConfigInfo();
         configUpdatePublisher.notifyListeners(listener -> listener.onConfigUpdate(info));
+        // persist the new config to disk
+        persist();
     }
 
     private void checkLostHeartbeats() {
