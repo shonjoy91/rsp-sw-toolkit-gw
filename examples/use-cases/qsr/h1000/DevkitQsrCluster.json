@@ -4,7 +4,7 @@
     {
       "id": "ColdAreaCluster",
       "personality": "EXIT",
-      "facility_id": "ColdArea",
+      "facility_id": "QSR_Store_8402",
       "aliases": [ "Freezer", "Refridgerator" ],
       "behavior_id": "DevkitQsrBehaviorExit_PORTS_2",
       "sensor_groups": [["RSP-150004"]],

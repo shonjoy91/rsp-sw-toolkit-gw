@@ -19,7 +19,7 @@ running, and is connected to the controller.
 
 2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device id in the 
 sensor_groups to match the sensor included with the Devkit. 
-This cluster configuration file is an example that establishes the one facility (FittingRooms).  It also 
+This cluster configuration file is an example that establishes the one facility (Retail_Store_8402).  It also 
 creates aliases for the two antennae (FittingRoom1 and FittingRoom2) in order to generate more natural 
 locations names, as opposed to RSP-150002-0 and RSP-150002-1.  The sensor is configured with an EXIT 
 personality in order to detect when an item leaves either of the fitting rooms.  It also will assign 
@@ -141,7 +141,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -149,7 +149,7 @@ mosquitto_sub -t rfid/controller/events
             "timestamp": 1559867406524,
             "location": "FittingRoom1"
           }, {
-            "facility_id": "FittingRooms",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B14",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -177,7 +177,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -206,7 +206,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B14",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -234,7 +234,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "FittingRooms",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B14",
             "tid": null,
             "epc_encode_format": "tbd",

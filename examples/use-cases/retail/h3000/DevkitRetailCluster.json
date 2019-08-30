@@ -4,7 +4,7 @@
     {
       "id": "BackStockCluster",
       "personality": null,
-      "facility_id": "BackStock",
+      "facility_id": "Retail_Store_8402",
       "aliases": [ "BackStock", "BackStock" ],
       "behavior_id": "ClusterDeepScan_PORTS_1",
       "sensor_groups": [["RSP-150005"]],
@@ -12,7 +12,7 @@
     }, {
       "id": "SalesFloorExitCluster",
       "personality": "EXIT",
-      "facility_id": "SalesFloor",
+      "facility_id": "Retail_Store_8402",
       "aliases": [ "SalesFloor", "SalesFloor" ],
       "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
       "sensor_groups": [["RSP-150003"]],

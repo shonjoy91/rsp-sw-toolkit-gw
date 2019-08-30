@@ -4,8 +4,8 @@ This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors a
 Controller Application as deployed in a typical retail environment.
 
 ## Goals  
-- Manage a deployment with two separate facilities of interest ... BackStock and SalesFloor
-- Know when tagged items come into the store in either facility
+- Manage a deployment with two separate locations of interest ... BackStock and SalesFloor
+- Know when tagged items come into the store in either location
 - Know the location of a tagged item (sensor and facility)
 - Know when a tagged item has moved from the BackStock to the SalesFloor or vice-versa
 - Know when a tagged item has left the store
@@ -19,10 +19,11 @@ controller.
 
 2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device ids in the 
 sensor_groups to match the sensors included with the Devkit. 
-This cluster configuration file is an example that establishes the two facilities of interest 
-(BackStock, SalesFloor), configures one sensor to be in the BackStock and the other sensor to be in the 
-SalesFloor, assigns the SalesFloor sensor with an EXIT personality in order to detect when tags have 
-gone out the front entrance, and assigns appropriate behaviors for reading RFID tags.  
+This cluster configuration file is an example that establishes the two locations of interest 
+(BackStock, SalesFloor) at a single facility (Retail_Store_8402), configures one sensor to be in the 
+BackStock and the other sensor to be in the SalesFloor, assigns the SalesFloor sensor with an EXIT 
+personality in order to detect when tags have gone out the front entrance, and assigns appropriate 
+behaviors for reading RFID tags.  
 
 3. Hide the Tags  
 Make sure no tags are visible to the sensors in order to see a complete use case scenario.
@@ -141,13 +142,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "BackStock",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "arrival",
             "timestamp": 1559867406524,
-            "location": "RSP-150005-0"
+            "location": "BackStock"
           }
         ]
       }
@@ -155,11 +156,10 @@ mosquitto_sub -t rfid/controller/events
     ```    
 
 2. ##### Tag departure from BackStock and arrival in SalesFloor
-    Now move the tag from the BackStock sensor to the SalesFloor sensor. Since these sensors are in different 
-    facilities, the events generated will be a 'departure' from BackStock and an 'arrival' into SalesFloor. 
-    It may take a few moments for the event(s) to be generated as the algorithm uses time-weighted RSSI 
-    averages to determine the tag location. From the 
-    [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
+    Now move the tag from the BackStock sensor to the SalesFloor sensor. Since these sensors are at different 
+    locations within the same facility, a "moved" event will be generated.  It may take a few moments for the 
+    event to be generated as the algorithm uses time-weighted RSSI averages to determine the tag location. From 
+    the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
     locations to the second sensor and that the tag state has changed to EXITING.  
     Verify the receipt of the MQTT event message.
     ```json  
@@ -171,22 +171,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "BackStock",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
-            "event_type": "departed",
+            "event_type": "moved",
             "timestamp": 1559867428832,
-            "location": "RSP-150005-0"
-          },
-          {
-            "facility_id": "SalesFloor",
-            "epc_code": "303530C29C000000F0006B12",
-            "tid": null,
-            "epc_encode_format": "tbd",
-            "event_type": "arrival",
-            "timestamp": 1559867429172,
-            "location": "RSP-150003-0"
+            "location": "SalesFloor"
           }
         ]
       }
@@ -207,13 +198,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "SalesFloor",
+            "facility_id": "Retail_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "departed",
             "timestamp": 1559867494569,
-            "location": "RSP-150003-0"
+            "location": "SalesFloor"
           }
         ]
       }

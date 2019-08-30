@@ -1,4 +1,4 @@
-# Select the image of your sensor to access the appropriate use-case
+# Select the image of your sensor to access the appropriate use-case.
 
 | H1000 | H3000 |
 |:-----:|:-----:|

@@ -4,7 +4,7 @@ This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors a
 Controller Application as deployed in a typical quick serve restaurant (qsr) environment.
 
 ## Goals
-- Manage a deployment with two separate facilities of interest ... Receiving-Exiting and DryGoods
+- Manage a deployment with two separate locations of interest ... Receiving-Exiting and DryGoods
 - Know when tagged items come into the restaurant
 - Know the location of a tagged item (sensor and facility)
 - Know when a tagged item has moved from Receiving-Exiting to the DryGoods or vice-versa
@@ -19,8 +19,8 @@ controller.
 
 2. In [DevkitQsrCluster.json](./DevkitQsrCluster.json), edit the sensor device ids in the 
 sensor_groups to match the sensors included with the Devkit. 
-This cluster configuration file is an example that establishes the two facilities of interest 
-(Receiving-Exiting, DryGoods), configures one sensor to be in Receiving-Exiting and the other sensor to 
+This cluster configuration file is an example that establishes the two locations of interest 
+(Receiving-Exiting, DryGoods) at a single facility (QSR_Store_8402), configures one sensor to be in Receiving-Exiting and the other sensor to 
 be in DryGoods, assigns the Receiving-Exiting sensor with an EXIT personality in order to detect when 
 tags have gone out the entryway, and assigns appropriate behaviors for reading RFID tags.  
 
@@ -141,13 +141,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "Receiving-Exiting",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "arrival",
             "timestamp": 1559867406524,
-            "location": "RSP-150001-0"
+            "location": "Receiving-Exiting"
           }
         ]
       }
@@ -156,9 +156,8 @@ mosquitto_sub -t rfid/controller/events
 
 2. ##### Tagged item is moved to DryGoods (departure from Receiving-Exiting and arrival in DryGoods)
     Now move the tag from the Receiving-Exiting sensor to the DryGoods sensor. Since these sensors are in 
-    different facilities, the events generated will be a 'departure' from Receiving-Exiting and an 'arrival' 
-    into DryGoods. It may take a few moments for the event(s) to be generated as the algorithm uses 
-    time-weighted RSSI averages to determine the tag location. From the 
+    the same facility, a 'moved' event will be generated. It may take a few moments for the event(s) to be 
+    generated as the algorithm uses time-weighted RSSI averages to determine the tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
     locations to the second sensor (DryGoods) and that the tag state has changed to PRESENT.  
     Verify the receipt of the MQTT event message.
@@ -171,22 +170,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "Receiving-Exiting",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
-            "event_type": "departed",
+            "event_type": "moved",
             "timestamp": 1559867428832,
-            "location": "RSP-150001-0"
-          },
-          {
-            "facility_id": "DryGoods",
-            "epc_code": "303530C29C000000F0006B12",
-            "tid": null,
-            "epc_encode_format": "tbd",
-            "event_type": "arrival",
-            "timestamp": 1559867429172,
-            "location": "RSP-150003-0"
+            "location": "DryGoods"
           }
         ]
       }
@@ -194,8 +184,8 @@ mosquitto_sub -t rfid/controller/events
     ```
 
 3. ##### Tagged item is staged for trashing (departure from DryGoods and arrival in Receiving-Exiting)
-    Now move the tag back to the Receiving-Exiting sensor.  Again, since the two sensors are in 
-    different facilities, there will be a departure-arrival pair of events generated. Again, this can 
+    Now move the tag back to the Receiving-Exiting sensor.  Again, since the two sensors are in the same 
+    facility, there will be another "moved" event, this time ending up at Receiving-Exiting. Again, this can 
     take a few moments to occur. From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
     page, confirm that the location changes back to Receiving-Exiting and the tag's state changes to EXITING.  
     Verify the receipt of the MQTT event message.
@@ -208,22 +198,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "DryGoods",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
-            "event_type": "departed",
+            "event_type": "moved",
             "timestamp": 1559867432117,
-            "location": "RSP-150003-0"
-          },
-          {
-            "facility_id": "Receiving-Exiting",
-            "epc_code": "303530C29C000000F0006B12",
-            "tid": null,
-            "epc_encode_format": "tbd",
-            "event_type": "arrival",
-            "timestamp": 1559867432492,
-            "location": "RSP-150001-0"
+            "location": "Receiving-Exiting"
           }
         ]
       }
@@ -231,9 +212,10 @@ mosquitto_sub -t rfid/controller/events
     ```
 
 4. ##### Tagged item is taken out to trash (departure from Receiving-Exiting)
-    Hide the tag so that no sensor is able to read it to emulate the tag actually being gone. After 
-    about 30 seconds, a departed event should be generated from the Receiving-Exiting sensor. From 
-    the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the state 
+    Hide the tag so that no sensor is able to read it to emulate the tag actually being gone. After about 
+    30 seconds (the default configured time threshold), a departed event should be generated from the 
+    Receiving-Exiting sensor. From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
+    page, confirm that the state 
     changes to DEPARTED_EXIT.  
     Verify the receipt of the MQTT event message.
     ```json
@@ -245,13 +227,13 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "Receiving-Exiting",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
             "event_type": "departed",
             "timestamp": 1559867434476,
-            "location": "RSP-150001-0"
+            "location": "Receiving-Exiting"
           }
         ]
       }

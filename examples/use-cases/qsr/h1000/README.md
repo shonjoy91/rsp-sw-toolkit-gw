@@ -19,7 +19,7 @@ running, and is connected to the controller.
 
 2. In [DevkitQsrCluster.json](./DevkitQsrCluster.json), edit the sensor device id in the 
 sensor_groups to match the sensor included with the Devkit. 
-This cluster configuration file is an example that establishes the one facility (ColdArea).  It also 
+This cluster configuration file is an example that establishes the one facility (QSR_Store_8402).  It also 
 creates aliases for the two antennae (Freezer and Refridgerator) in order to generate more natural 
 locations names, as opposed to RSP-150004-0 and RSP-150004-1.  The sensor is configured with an EXIT 
 personality in order to detect when an item leaves either of the cold rooms.  It also will assign 
@@ -141,7 +141,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "ColdArea",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -170,7 +170,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "ColdArea",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",
@@ -198,7 +198,7 @@ mosquitto_sub -t rfid/controller/events
         "device_id": "intel-acetest",
         "data": [
           {
-            "facility_id": "ColdArea",
+            "facility_id": "QSR_Store_8402",
             "epc_code": "303530C29C000000F0006B12",
             "tid": null,
             "epc_encode_format": "tbd",

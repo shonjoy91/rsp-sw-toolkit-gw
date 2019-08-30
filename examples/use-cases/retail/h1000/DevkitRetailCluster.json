@@ -4,7 +4,7 @@
     {
       "id": "FittingRoomsCluster",
       "personality": "EXIT",
-      "facility_id": "FittingRooms",
+      "facility_id": "Retail_Store_8402",
       "aliases": [ "FittingRoom1", "FittingRoom2" ],
       "behavior_id": "DevkitRetailBehaviorExit_PORTS_2",
       "sensor_groups": [["RSP-150002"]],
