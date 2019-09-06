@@ -3,8 +3,8 @@
 This use case demonstrates configuring the Intel&reg; RSP H1000 Devkit Sensor and Intel&reg; RSP 
 Controller Application as deployed in a typical quick serve restaurant (qsr) environment.
 
-## Goals  
-- Manage a deployment with two separate cold storage rooms, using one H1000 sensor and two antennae
+## Goals
+- Manage a deployment with two separate cold storage rooms, using one H1000 sensor and two antennas
 - Know when tagged items come into either cold room
 - Determine the location of a tagged item (sensor and facility)
 - Know when items potentially move between the cold rooms
@@ -12,32 +12,39 @@ Controller Application as deployed in a typical quick serve restaurant (qsr) env
   
 By the end of the example, you will be able to track tags as they move in and out of the different 
 cold rooms.
-  
-## Prerequsites  
-1. It is assumed that the controller is already running and the sensor has its antennae attached, is 
-running, and is connected to the controller.
 
-2. In [DevkitQsrCluster.json](./DevkitQsrCluster.json), edit the sensor device id in the 
-sensor_groups to match the sensor included with the Devkit. 
-This cluster configuration file is an example that establishes the one facility (QSR_Store_8402).  It also 
-creates aliases for the two antennae (Freezer and Refridgerator) in order to generate more natural 
-locations names, as opposed to RSP-150004-0 and RSP-150004-1.  The sensor is configured with an EXIT 
-personality in order to detect when an item leaves either of the cold rooms.  It also will assign 
-the appropriate behaviors for reading the RFID tags.
+## Prerequisites
+1. It is assumed that the Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) 
+is already running and the sensor has its antennas attached, is running, and is connected to the RSP Controller.
 
-3. Hide the Tags  
-Make sure no tags are visible to the antennae attached to the sensor in order to see a complete use case 
-scenario.
+2. Hide the Tags  
+Make sure no tags are visible to the sensors in order to see a complete use case scenario.  You can hide the 
+tags by enclosing them in some metallic material, like a metal box or some aluminum foil.  you can also hide 
+the tags under a laptop or computer.
 
 ## Configure / Control the Intel&reg; RSP Controller Application
-After the prerequisites have been met, choose one of the following methods to configure and control the 
-application. Each method accomplishes the same configuration tasks.
+To configure and use the RSP Controller, one of the main components is the cluster file.  The cluster 
+file specifies how the sensors should be grouped together, which behavior settings should be used, which 
+personalities (if any) should be assigned to the sensors, and what aliases should be assigned to the sensors' 
+antenna ports (for unique/custom location reporting).
+
+__Note:__ In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where 
+the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/), and the term 
+YOUR_DEPLOY_DIRECTORY will refer to the directory where the Intel&reg; RSP Controller Application was 
+deployed (the default location is ~/deploy/).
+
+In the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/), edit the sensor device id in the 
+sensor_groups to match the sensor included with the Devkit.  This cluster configuration file is an example 
+that establishes the one facility (QSR_Store_8402).  It also creates aliases for the two antennas (Freezer 
+and Refridgerator) in order to generate more natural locations names, as opposed to RSP-150004-0 and 
+RSP-150004-1.  The sensor is configured with an EXIT personality in order to detect when an item leaves either 
+of the cold rooms.  It also will assign the appropriate behaviors for reading the RFID tags.
+
+After the cluster file has been edited and saved, choose one of the following methods to configure and control 
+the RSP Controller. Each method accomplishes the same configuration tasks.
 - Using the Web Admin
 - Using the MQTT Messaging API
-
-Note: In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where the 
-cloned rsp-sw-toolkit-gw repo contents reside, and the term YOUR_DEPLOY_DIRECTORY will refer to the directory 
-where the Intel&reg; RSP Controller Application was deployed.
 
 ___
 
@@ -53,11 +60,11 @@ by selecting the INACTIVE run state.
 to clear out all previous tag history to start a clean session.
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
-button to upload the use case behavior to the controller. The behavior file can be found at 
+button to upload the use case behavior to the RSP Controller. The behavior file can be found at 
 YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrBehaviorExit_PORTS_2.json.  
 
-    This __MUST__ be loaded to the controller __BEFORE__ the cluster configuration because the cluster file 
-    references that behavior id, and that behavior must already be known by the controller. Otherwise the 
+    This __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration because the cluster file 
+    references that behavior id, and that behavior must already be known by the RSP Controller. Otherwise the 
     loading of the cluster configuration file will fail validation.
 
 5. Upload the __edited__ cluster configuration file (see Prerequistes) using the 
@@ -80,14 +87,14 @@ ___
 1. Edit [cluster_set_config_request_use_case_qsr.json](./cluster_set_config_request_use_case_qsr.json) 
 replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitQsrCluster.json file. 
 
-2. Open a terminal window and subscribe to the controller's command response topic in order to monitor the 
+2. Open a terminal window and subscribe to the RSP Controller's command response topic in order to monitor the 
 command responses.
     ```bash
     #-- monitor the rpc command responses
     mosquitto_sub -t rfid/controller/response
     ```
 
-3. Open another terminal to send JsonRPC commands over MQTT to configure and control the controller.
+3. Open another terminal to send JsonRPC commands over MQTT to configure and control the RSP Controller.
     ```bash
     #-- change directory to the examples folder 
     #-- so the example commands work correctly
@@ -100,7 +107,7 @@ command responses.
     mosquitto_pub -t rfid/controller/command -f api/upstream/inventory_unload_request.json
     
     #-- load the behavior specific to this exercise
-    #-- (lowered power level as antennae are likely interferring)
+    #-- (lowered power level as antennas are likely interferring)
     mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h1000/behavior_put_request_Exit.json
     
     #-- load (set) the cluster configuration
@@ -114,11 +121,11 @@ Continue to the Observe Tag Events section.
 ___
 
 ## Observe Tag Events
-Check that the antennae are not pointed in conflicting directions; keep the antennae separate and pointing 
+Check that the antennas are not pointed in conflicting directions; keep the antennas separate and pointing 
 away from each other as much as possible.
 
-Open a terminal window and subscribe to the controller events topic in order to monitor tag events as 
-produced by the controller.
+Open a terminal window and subscribe to the RSP Controller events topic in order to monitor tag events as 
+produced by the RSP Controller.
 
 ```bash
 #-- monitor the upstream events topic
@@ -126,7 +133,7 @@ mosquitto_sub -t rfid/controller/events
 ```
 
 1. ##### Tag arrival in the first cold room
-    At this point, remove a tag from hiding and place it nearby one of the two antennae. When the tag is  
+    At this point, remove a tag from hiding and place it nearby one of the two antennas. When the tag is  
     read initially, an arrival event will be generated on the rfid/controller/events topic. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now in the 
@@ -155,7 +162,7 @@ mosquitto_sub -t rfid/controller/events
     ```
 
 2. ##### Tag moved to the other cold room
-    Now take the tag and move it to the other antenna. Since these antennae are in the same facility, a 
+    Now take the tag and move it to the other antenna. Since these antennas are in the same facility, a 
     moved event will be generated. It may take a few moments for the event to be generated as the 
     algorithm uses time-weighted RSSI averages to determine tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag's location 

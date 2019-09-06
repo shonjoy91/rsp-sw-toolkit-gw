@@ -13,30 +13,40 @@ Controller Application as deployed in a typical retail environment.
 By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
 transitions to the SalesFloor, and then departs out the front door of the store.
   
-## Prerequsites  
-1. It is assumed that the controller is already running and the sensors are running and connected to the 
-controller.
+## Prerequisites
+1. It is assumed that the Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) 
+is already running and the sensor has its antennas attached, is running, and is connected to the RSP Controller.
 
-2. In [DevkitRetailCluster.json](./DevkitRetailCluster.json), edit the sensor device ids in the 
-sensor_groups to match the sensors included with the Devkit. 
-This cluster configuration file is an example that establishes the two locations of interest 
-(BackStock, SalesFloor) at a single facility (Retail_Store_8402), configures one sensor to be in the 
-BackStock and the other sensor to be in the SalesFloor, assigns the SalesFloor sensor with an EXIT 
-personality in order to detect when tags have gone out the front entrance, and assigns appropriate 
-behaviors for reading RFID tags.  
-
-3. Hide the Tags  
-Make sure no tags are visible to the sensors in order to see a complete use case scenario.
+2. Hide the Tags  
+Make sure no tags are visible to the sensors in order to see a complete use case scenario.  You can hide the 
+tags by enclosing them in some metallic material, like a metal box or some aluminum foil.  you can also hide 
+the tags under a laptop or computer.
 
 ## Configure / Control the Intel&reg; RSP Controller Application
-After the prerequisites have been met, choose one of the following methods to configure and control the 
-application. Each method accomplishes the same configuration tasks.
+To configure and use the RSP Controller, one of the main components is the cluster file.  The cluster 
+file specifies how the sensors should be grouped together, which behavior settings should be used, which 
+personalities (if any) should be assigned to the sensors, and what aliases should be assigned to the sensors' 
+antenna ports (for unique/custom location reporting).
+
+__Note:__ In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where 
+the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/), and the term 
+YOUR_DEPLOY_DIRECTORY will refer to the directory where the Intel&reg; RSP Controller Application was 
+deployed (the default location is ~/deploy/).
+
+In the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/), edit the sensor device ids in 
+the sensor_groups to match the sensors included with the Devkit. This cluster configuration file is an 
+example that establishes the two locations of interest (BackStock, SalesFloor) at a single facility 
+(Retail_Store_8402), configures one sensor to be in the BackStock and the other sensor to be in the SalesFloor, 
+assigns the SalesFloor sensor with an EXIT personality in order to detect when tags have gone out the front 
+entrance, assigns the appropriate behaviors for reading RFID tags, and assigns appropriate aliases to the 
+antenna ports for reporting tag locations by a singular sensor location as opposed to by indiviual sensor 
+ports.
+
+After the cluster file has been edited and saved, choose one of the following methods to configure and control 
+the RSP Controller. Each method accomplishes the same configuration tasks.
 - Using the Web Admin
 - Using the MQTT Messaging API
-
-Note: In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where the 
-cloned rsp-sw-toolkit-gw repo contents reside, and the term YOUR_DEPLOY_DIRECTORY will refer to the directory 
-where the Intel&reg; RSP Controller Application was deployed.
 
 ___
 
@@ -52,12 +62,12 @@ by selecting the INACTIVE run state.
 to clear out all previous tag history to start a clean session.
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
-button to upload all of the use case behaviors to the controller. The behavior files can be found at 
+button to upload all of the use case behaviors to the RSP Controller. The behavior files can be found at 
 YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000, matching the pattern 
 DevkitRetailBehavior*.json.  
 
-    These __MUST__ be loaded to the controller __BEFORE__ the cluster configuration because the cluster
-    file references those behavior ids, and the behaviors must already be known by the controller. Otherwise
+    These __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration because the cluster
+    file references those behavior ids, and the behaviors must already be known by the RSP Controller. Otherwise
     the loading of the cluster configuration file will fail validation.
 
 5. Upload the __edited__ cluster configuration file (see Prerequistes) using the 
@@ -80,14 +90,14 @@ ___
 1. Edit [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) 
 replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitRetailCluster.json file. 
 
-2. Open a terminal window and subscribe to the controller's command response topic in order to monitor the 
+2. Open a terminal window and subscribe to the RSP Controller's command response topic in order to monitor the 
 command responses.
     ```bash
     #-- monitor the rpc command responses
     mosquitto_sub -t rfid/controller/response
     ```
 
-3. Open another terminal to send JsonRPC commands over MQTT to configure and control the controller.
+3. Open another terminal to send JsonRPC commands over MQTT to configure and control the RSP Controller.
     ```bash
     #-- change directory to the examples folder 
     #-- so the example commands work correctly
@@ -118,8 +128,8 @@ ___
 Check that the sensors are not pointed in conflicting directions as much as possible. 
 (The H3000 antennae are directional).
 
-Open a terminal window and subscribe to the controller events topic in order to monitor 
-tag events as produced by the controller.
+Open a terminal window and subscribe to the RSP Controller events topic in order to monitor 
+tag events as produced by the RSP Controller.
 
 ```bash
 #-- monitor the upstream events topic
