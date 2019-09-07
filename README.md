@@ -16,7 +16,7 @@ To get started please visit our installer repo at: https://github.com/intel/rsp-
 
 ## Update Sensor Software
 
-To update your sensor software to the latest version, please see the update_sensor.md located in this repo.
+To update your sensor software to the latest version, please see [update_sensor.md](update_sensor.md) located in this repo.
 
 
 ## Use Cases
