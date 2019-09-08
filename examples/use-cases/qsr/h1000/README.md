@@ -82,7 +82,7 @@ and aliases) and is reading tags.
 8. Navigate to the [inventory](http://localhost:8080/web-admin/inventory-main.html) page which can be used 
 to monitor tag reads and states.
 
-Continue to the Observe Tag Events section.
+Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
 ### USING MQTT:
@@ -119,7 +119,7 @@ command responses.
     mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
     ```
 
-Continue to the Observe Tag Events section.
+Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
 ## Observe Tag Events
