@@ -43,8 +43,9 @@ of the cold rooms.  It also will assign the appropriate behaviors for reading th
 
 After the cluster file has been edited and saved, choose one of the following methods to configure and control 
 the RSP Controller. Each method accomplishes the same configuration tasks.
-- Using the Web Admin
-- Using the MQTT Messaging API
+
+- [Using the Web Admin](#using-the-web-admin)
+- [Using the MQTT Messaging API](#using-the-mqtt-messaging-api)
 
 ___
 
@@ -85,7 +86,7 @@ to monitor tag reads and states.
 Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
-### USING MQTT:
+### USING THE MQTT MESSAGING API:
 1. Edit [cluster_set_config_request_use_case_qsr.json](./cluster_set_config_request_use_case_qsr.json) 
 replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitQsrCluster.json file. 
 
