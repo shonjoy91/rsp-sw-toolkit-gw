@@ -19,7 +19,7 @@ is already running and the sensor has its antennas attached, is running, and is 
 
 2. Hide the Tags  
 Make sure no tags are visible to the sensors in order to see a complete use case scenario.  You can hide the 
-tags by enclosing them in some metallic material, like a metal box or some aluminum foil.  you can also hide 
+tags by enclosing them in some metallic material, like a metal box or some aluminum foil.  You can also hide 
 the tags under a laptop or computer.
 
 ## Configure / Control the Intel&reg; RSP Controller Application
