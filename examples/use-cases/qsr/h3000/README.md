@@ -53,32 +53,36 @@ ___
 ### USING THE WEB ADMIN
 1. Open the [web admin](http://localhost:8080/web-admin) page and confirm that the sensors included in the 
 dev kit are connected. This can be seen on the [dashboard](http://localhost:8080/web-admin/dashboard.html) 
-page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.
+page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.  You can navigate between 
+the different pages by using the menu button found at the top left of each page.
 
 2. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensors from reading 
-by selecting the INACTIVE run state.
+by pressing the INACTIVE button to set the run state to INACTIVE.
 
 3. On the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the Unload button 
 to clear out all previous tag history to start a clean session.
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
-button to upload all of the use case behaviors to the RSP Controller. The behavior files can be found at 
-YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h3000, matching the pattern 
-DevkitQsrBehavior*.json.  
+button to upload all of the use case behaviors to the RSP Controller. The behavior files can be found in the  
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h3000/ directory.  The required files are:
 
-    These __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration because the cluster
-    file references those behavior ids, and the behaviors must already be known by the RSP Controller. Otherwise
-    the loading of the cluster configuration file will fail validation.
+    - DevkitQsrBehaviorExit_PORTS_1.json
+    - DevkitQsrBehaviorMobility_PORTS_1.json
 
-5. Upload the __edited__ cluster configuration file (see Prerequistes) using the 
-[cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
+    __NOTE:__  These files __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
+    because the cluster file references those behavior ids, and the behaviors must already be known by the 
+    RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.
+
+5. Upload the __edited__ cluster configuration file (see the "Configure / Control the Intel&reg; RSP Controller 
+Application" section) using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
 according to the cluster configuration by selecting the FROM_CONFIG run state. The clusters that the 
 scheduler is using will be displayed on the page.
 
 7. On the [sensors](http://localhost:8080/web-admin/sensors-main.html) page, confirm that the sensors have 
-been configured as expected and are reading tags according to the cluster configuration file.
+been configured as specified in the cluster configuration file (have the correct behavior, facility, personality, 
+and aliases) and are reading tags.
 
 8. Navigate to the [inventory](http://localhost:8080/web-admin/inventory-main.html) page which can be used 
 to monitor tag reads and states.

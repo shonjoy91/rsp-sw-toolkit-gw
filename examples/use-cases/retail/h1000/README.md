@@ -51,10 +51,11 @@ ___
 ### USING THE WEB ADMIN
 1. Open the [web admin](http://localhost:8080/web-admin) page and confirm that the sensor included in the 
 dev kit is connected. This can be seen on the [dashboard](http://localhost:8080/web-admin/dashboard.html) 
-page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.
+page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.  You can navigate between 
+the different pages by using the menu button found at the top left of each page.
 
 2. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensor from reading 
-by selecting the INACTIVE run state.
+by pressing the INACTIVE button to set the run state to INACTIVE.
 
 3. On the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the Unload button 
 to clear out all previous tag history to start a clean session.
@@ -63,19 +64,20 @@ to clear out all previous tag history to start a clean session.
 button to upload the use case behavior to the RSP Controller. The behavior file can be found at 
 YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitRetailBehaviorExit_PORTS_2.json.  
 
-    This __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration because the cluster file 
-    references that behavior id, and that behavior must already be known by the RSP Controller. Otherwise the 
-    loading of the cluster configuration file will fail validation.
+    __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
+    because the cluster file references that behavior id, and that behavior must already be known by the 
+    RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.
 
-5. Upload the __edited__ cluster configuration file (see Prerequistes) using the 
-[cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
+5. Upload the __edited__ cluster configuration file (see the "Configure / Control the Intel&reg; RSP Controller 
+Application" section) using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensor reading 
 according to the cluster configuration by selecting the FROM_CONFIG run state. The clusters that the 
 scheduler is using will be displayed on the page.
 
 7. On the [sensors](http://localhost:8080/web-admin/sensors-main.html) page, confirm that the sensor has 
-been configured as expected and is reading tags according to the cluster configuration file.
+been configured as specified in the cluster configuration file (has the correct behavior, facility, personality, 
+and aliases) and is reading tags.
 
 8. Navigate to the [inventory](http://localhost:8080/web-admin/inventory-main.html) page which can be used 
 to monitor tag reads and states.
