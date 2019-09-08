@@ -31,8 +31,10 @@ import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.MotionEventNotification;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
+import com.intel.rfid.api.sensor.Platform;
 import com.intel.rfid.api.sensor.RebootRequest;
 import com.intel.rfid.api.sensor.ResetRequest;
+import com.intel.rfid.api.sensor.RspInfo;
 import com.intel.rfid.api.sensor.SensorHeartbeatNotification;
 import com.intel.rfid.api.sensor.SetAlertThresholdRequest;
 import com.intel.rfid.api.sensor.SetFacilityIdRequest;
@@ -112,6 +114,7 @@ public class SensorPlatform
     private final AtomicTimeMillis lastStartFailure = new AtomicTimeMillis();
     protected boolean inDeepScan = false;
     protected String provisionToken;
+    protected RspInfo rspInfo;
 
     public SensorPlatform(String _deviceId,
                           SensorManager _sensorMgr) {
@@ -241,6 +244,30 @@ public class SensorPlatform
 
     public void setAlias(int _portIndex, String _alias) {
         setAliasInternal(_portIndex, _alias);
+        sensorMgr.notifyConfigUpdate(this);
+    }
+
+    public boolean isDefaultAliases() {
+        for (int i = 0; i < aliases.size(); i++) {
+            if (aliases.get(i) != getDefaultAlias(i)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void setDefaultAlias(Platform _platform) {
+        switch (_platform) {
+            case H1000: // 4-port
+                for (int i = 0; i < NUM_ALIASES; i++) {
+                    setAliasInternal(i, deviceId + "-" + i);
+                }
+                break;
+            default: // 2-port
+                setAliasInternal(0, deviceId);
+                setAliasInternal(1, deviceId);
+                break;
+        }
         sensorMgr.notifyConfigUpdate(this);
     }
 
@@ -480,6 +507,10 @@ public class SensorPlatform
         logInboundJson(logConnect, _msg.getMethod(), _msg.params);
         try {
             sensorMgr.sendConnectResponse(_msg.getId(), deviceId, facilityId);
+            rspInfo = new RspInfo(_msg.params);
+            if ((rspInfo.platform != null) && (isDefaultAliases())){
+                setDefaultAlias(rspInfo.platform);    
+            }
             changeConnectionState(Connection.State.CONNECTING, null);
         } catch (IOException | RspControllerException _e) {
             logRSP.error("error sending connect response", _e);
