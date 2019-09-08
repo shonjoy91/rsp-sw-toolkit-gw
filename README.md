@@ -4,7 +4,7 @@ The features and functionality included in this reference design are
 intended to showcase the capabilities of the Intel® RFID Sensor Platform (Intel® RSP) 
 by demonstrating the use of the API to collect and process RFID tag read information. This software is not intended to be a complete end-to-end inventory management solution.  
 
-The Intel&reg; RSP Controller Application is a Java application built with Gradle. As such, it can run on any OS that supports 
+The Intel&reg; RSP Controller Application is a Java application built with Gradle to run on almost any edge computer. As such, it can run on any OS that supports 
 a Java Runtime Environment version 8 or greater. The following instructions will get you a copy 
 of the project up and running on your local machine for development and testing purposes.  
 
