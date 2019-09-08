@@ -11,7 +11,7 @@ of the project up and running on your local machine for development and testing 
 
 ## Installation and Getting Started
 
-To get started please visit our installer repo at: https://github.com/intel/rsp-sw-toolkit-installer
+To get started please visit our [installer repo](https://github.com/intel/rsp-sw-toolkit-installer)
 
 
 ## Update Sensor Software
