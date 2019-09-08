@@ -11,12 +11,12 @@ of the project up and running on your local machine for development and testing 
 
 ## Installation and Getting Started
 
-To get started please visit our [installer repo](https://github.com/intel/rsp-sw-toolkit-installer)
+To get started with the edge computer-based RSP Controller application please visit our [installer repo](https://github.com/intel/rsp-sw-toolkit-installer)
 
 
 ## Update Sensor Software
 
-To update your sensor software to the latest version, please see our [sensor sw repo](https://github.com/intel/rsp-sw-toolkit-installer/tree/master/sensor-sw-repo)
+To update your RSP sensor software to the latest version, please see our [sensor sw repo](https://github.com/intel/rsp-sw-toolkit-installer/tree/master/sensor-sw-repo)
 
 
 ## Use Cases
