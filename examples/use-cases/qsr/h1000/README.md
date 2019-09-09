@@ -79,8 +79,9 @@ button to upload the use case behavior to the RSP Controller.
     because the cluster file references that behavior id, and that behavior must already be known by the 
     RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.
 
-5. Upload the __edited__ cluster configuration file (see the "Configure / Control the Intel&reg; RSP Controller 
-Application" section) using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
+5. Upload the __EDITED__ cluster configuration file (see the [Configure / Control the Intel&reg; RSP 
+Controller Application section](#configure-/-control-the-intel&reg;-rsp-controller-application)) using the 
+[cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
     ![Cluster_Config_Upload_Button](../../img_resources/Cluster_Config_Upload.png)
 
