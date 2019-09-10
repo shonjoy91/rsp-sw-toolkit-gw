@@ -9,9 +9,9 @@ a Java Runtime Environment version 8 or greater. The following instructions will
 of the project up and running on your local machine for development and testing purposes.  
 
 
-## Installation and Getting Started
+## First Time Installation and/or Updating your existing RSP Controller application
 
-To get started with the edge computer-based RSP Controller application please visit our [installer repo](https://github.com/intel/rsp-sw-toolkit-installer)
+To get started with the edge computer-based RSP Controller application or to update your existing software please visit our [installer repo](https://github.com/intel/rsp-sw-toolkit-installer)
 
 
 ## Update Sensor Software
