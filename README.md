@@ -16,7 +16,7 @@ To get started with the edge computer-based RSP Controller application or to upd
 
 ## Update Sensor Software
 
-To update your RSP sensor software to the latest version, please see our [sensor sw repo](https://github.com/intel/rsp-sw-toolkit-installer/tree/master/sensor-sw-repo)
+To ONLY update your RSP sensor software to the latest version, please see our [sensor sw repo](https://github.com/intel/rsp-sw-toolkit-installer/tree/master/sensor-sw-repo)
 
 
 ## Use Cases
