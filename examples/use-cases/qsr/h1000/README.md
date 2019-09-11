@@ -44,12 +44,12 @@ of the cold rooms.  It also will assign the appropriate behaviors for reading th
 After the cluster file has been edited and saved, choose one of the following methods to configure and control 
 the RSP Controller. Each method accomplishes the same configuration tasks.
 
-- [Using the Web Admin](#using-the-web-admin)
-- [Using the MQTT Messaging API](#using-the-mqtt-messaging-api)
+- [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
+- [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
 
 ___
 
-### USING THE WEB ADMIN
+### METHOD 1: Using the Web Admin
 1. Open the [web admin](http://localhost:8080/web-admin) page and confirm that the sensor included in the 
 dev kit is connected. This can be seen on the [dashboard](http://localhost:8080/web-admin/dashboard.html) 
 page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.  You can navigate between 
@@ -102,7 +102,7 @@ to monitor tag reads and states.
 Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
-### USING THE MQTT MESSAGING API:
+### METHOD 2: Using the MQTT Messaging API
 1. Edit [cluster_set_config_request_use_case_qsr.json](./cluster_set_config_request_use_case_qsr.json) 
 replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitQsrCluster.json file. 
 
