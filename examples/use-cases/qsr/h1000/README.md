@@ -152,7 +152,7 @@ mosquitto_sub -t rfid/controller/events
 ```
 
 1. ##### Tag arrival in the first cold room
-    At this point, remove a tag from hiding and place it nearby one of the two antennas. When the tag is  
+    At this point, remove one tag from hiding and place it nearby one of the two antennas. When the tag is  
     read initially, an arrival event will be generated on the rfid/controller/events topic. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now in the 
