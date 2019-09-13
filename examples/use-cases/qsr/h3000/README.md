@@ -1,4 +1,4 @@
-![QSR H3000 Use Case](./QSR_H3000.png)
+# Quick Serve Restaurant (QSR) Use Case - H3000
 
 This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors and Intel&reg; RSP 
 Controller Application as deployed in a typical quick serve restaurant (qsr) environment.
@@ -16,7 +16,9 @@ Controller Application as deployed in a typical quick serve restaurant (qsr) env
   
 By the end of the example, you will be able to track a tag as it arrives through Receiving-Exiting, 
 transitions to DryGoods, and then departs out the exit (Receiving-Exiting).
-  
+
+![QSR H3000 Use Case](./QSR_H3000.png)
+
 ## Prerequisites
 1. You have an [H3000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h3000-integrated-rfid-reader-development-kit/), 
 or an equivalent setup.

@@ -1,4 +1,4 @@
-![Retail H3000 Use Case](./Retail_H3000.png)
+# Retail Use Case - H3000
 
 This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors and Intel&reg; RSP 
 Controller Application as deployed in a typical retail environment.
@@ -16,7 +16,9 @@ Controller Application as deployed in a typical retail environment.
   
 By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
 transitions to the SalesFloor, and then departs out the front door of the store.
-  
+
+![Retail H3000 Use Case](./Retail_H3000.png)
+
 ## Prerequisites
 1. You have an [H3000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h3000-integrated-rfid-reader-development-kit/), 
 or an equivalent setup.

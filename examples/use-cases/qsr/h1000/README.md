@@ -1,4 +1,4 @@
-![QSR H1000 Use Case](./QSR_H1000.png)
+# Quick Serve Restaurant (QSR) Use Case - H1000
 
 This use case demonstrates configuring the Intel&reg; RSP H1000 Devkit Sensor and Intel&reg; RSP 
 Controller Application as deployed in a typical quick serve restaurant (qsr) environment.
@@ -16,6 +16,8 @@ Controller Application as deployed in a typical quick serve restaurant (qsr) env
   
 By the end of the example, you will be able to track tags as they move in and out of the different 
 cold rooms.
+
+![QSR H1000 Use Case](./QSR_H1000.png)
 
 ## Prerequisites
 1. You have an [H1000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h1000-rfid-reader-development-kit/), 

@@ -1,4 +1,4 @@
-![Retail H1000 Use Case](./Retail_H1000.png)
+# Retail Use Case - H1000
 
 This use case demonstrates configuring the Intel&reg; RSP H1000 Devkit Sensor and Intel&reg; RSP 
 Controller Application as deployed in a typical retail environment.
@@ -16,7 +16,9 @@ Controller Application as deployed in a typical retail environment.
   
 By the end of the example, you will be able to track tags as they move in and out of the different 
 fitting rooms.
-  
+
+![Retail H1000 Use Case](./Retail_H1000.png)
+
 ## Prerequisites
 1. You have an [H1000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h1000-rfid-reader-development-kit/), 
 or an equivalent setup.
