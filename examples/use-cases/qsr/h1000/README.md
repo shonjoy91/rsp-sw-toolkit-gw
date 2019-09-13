@@ -5,10 +5,14 @@ Controller Application as deployed in a typical quick serve restaurant (qsr) env
 
 ## Goals
 - Manage a deployment with two separate cold storage rooms, using one H1000 sensor and two antennas
+  - This will be done by assigning a different alias to each antenna port
 - Know when tagged items come into either cold room
 - Determine the location of a tagged item (sensor and facility)
+  - This will be done by setting a facility for the sensor and the aliases for the antenna ports
 - Know when items potentially move between the cold rooms
+  - Using different aliases for the different antennas will generate events when tags move between them
 - Know when items leave either of the cold rooms
+  - This will be done by setting the personality of the sensor to EXIT to determine tag departures
   
 By the end of the example, you will be able to track tags as they move in and out of the different 
 cold rooms.
@@ -21,30 +25,37 @@ or an equivalent setup.
 
 3. The Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) is running.
 
-4. The H1000 sensor with two antennas attached is connected to the RSP Controller.
+4. The H1000 sensor (with two antennas attached) is connected to the RSP Controller.
 
-5. Hide the RFID tags.  You can hide the tags by enclosing them in some metallic material, like a metal 
+5. All RFID tags are hidden.  You can hide the tags by enclosing them in some metallic material, like a metal 
 box or some aluminum foil.  You can also hide the tags under a laptop or computer.  Make sure no tags are 
-visible to the sensor in order to see a complete use case scenario.
+visible to the sensor in order to see the complete use case scenario.
 
-6. Position the antennas in an optimal setting.  Face them away from each other, point them in different 
-direction, and space them at least 3-5 feet apart.
+6. The antennas are positioned in an optimal setting.  Face them away from each other, point them in different 
+directions, and space them at least 3-5 feet apart.
 ![H1000 Physical Setup](../../resources/H1000_Physical_Setup.png)
 
 ## Terminology and Concepts
-- Sensor/Device ID: This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  Add picture.
-- Personality: This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events.
-- Alias: An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory.
-- Facility: This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility.
+- Sensor/Device ID: This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the 
+last 6 characters of that sensor's MAC address.  Add picture.
+- Personality: This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP 
+Controller to generate specific types of tag events.
+- Alias: An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to 
+identify the location of tags in the inventory.
+- Facility: This is used to define zones that consist of one or more sensors.  A typical deployment/location 
+will consist of one facility.
 - Behavior: A collection of low-level RFID settings that dictates how the sensor operates.
-- Cluster: A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior).
-- Tag State: A particular condition that describes the tag's current status.  The most common states for tags are present, exiting, and departed.
-- Tag Event: This is generated when a tag transitions between states.  The most common events are arrival, departed, and moved.
+- Cluster: A grouping of one or more sensors that share the same set of configurations (facility, personality, 
+alias, and behavior).
+- Tag State: A particular condition that describes the tag's current status.  The most common states for tags 
+are present, exiting, and departed.
+- Tag Event: This is generated when a tag transitions between states.  The most common events are arrival, 
+departed, and moved.
 
 ## Configure / Control the Intel&reg; RSP Controller Application
 To configure and use the RSP Controller, one of the main components is the cluster file.  The cluster 
 file specifies 
-- How the sensors should be grouped together
+- How sensors should be grouped together
 - The facility(ies) to be used
 - What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting)
 - Which personalities (if any) should be assigned to the sensors
@@ -79,7 +90,7 @@ ___
 
 ### METHOD 1: Using the Web Admin
 1. Open the [web admin](http://localhost:8080/web-admin) page and confirm that the sensor included in the 
-dev kit is connected. This can be seen on the [dashboard](http://localhost:8080/web-admin/dashboard.html) 
+devkit is connected. This can be seen on the [dashboard](http://localhost:8080/web-admin/dashboard.html) 
 page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.  You can navigate between 
 the different pages by using the menu button found at the top left of each page.
 
@@ -153,7 +164,7 @@ command responses.
     mosquitto_pub -t rfid/controller/command -f api/upstream/inventory_unload_request.json
     
     #-- load the behavior specific to this exercise
-    #-- (lowered power level as antennas are likely interferring)
+    #-- (lowered power level as antennas are likely to be interfering)
     mosquitto_pub -t rfid/controller/command -f use-cases/qsr/h1000/behavior_put_request_Exit.json
     
     #-- load (set) the cluster configuration
@@ -240,14 +251,10 @@ mosquitto_sub -t rfid/controller/events
     ```
 
 3. ##### Tag departure from the second cold room
-    A departed event gets generated when a tag has left the vicinity of all of the sensors, and 
-    has continually not been seen by any sensor for the configured threshold time limit (default 
-    being 30 seconds).
-    
-    Now take the tag from the previous step and hide it such that it can't be seen by either antenna.  
-    After about 30 seconds, a departed event should be generated for the tag that was removed.   
-    From the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that 
-    the tag state of the removed tag has changed to DEPARTED_EXIT.  
+    Now take the tag and hide it such that it can't be seen by either antenna.  After the departure 
+    threshold time limit has passed (default being 30 seconds), a departed event should be generated 
+    for the tag that was removed.  From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
+    page, confirm that the tag state of the removed tag has changed to DEPARTED_EXIT.  
     
     Verify the receipt of the MQTT event message.
     ```json  
