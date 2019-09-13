@@ -14,38 +14,66 @@ By the end of the example, you will be able to track tags as they move in and ou
 cold rooms.
 
 ## Prerequisites
-1. It is assumed that the Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) 
-is already running and the sensor has its antennas attached, is running, and is connected to the RSP Controller.
+1. You have an [H1000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h1000-rfid-reader-development-kit/), 
+or an equivalent setup.
 
-2. Hide the Tags  
-Make sure no tags are visible to the sensors in order to see a complete use case scenario.  You can hide the 
-tags by enclosing them in some metallic material, like a metal box or some aluminum foil.  You can also hide 
-the tags under a laptop or computer.
+2. You have completed the setup described in the Getting Started Guide.
+
+3. The Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) is running.
+
+4. The H1000 sensor with two antennas attached is connected to the RSP Controller.
+
+5. Hide the RFID tags.  You can hide the tags by enclosing them in some metallic material, like a metal 
+box or some aluminum foil.  You can also hide the tags under a laptop or computer.  Make sure no tags are 
+visible to the sensor in order to see a complete use case scenario.
+
+6. Position the antennas in an optimal setting.  Face them away from each other, point them in different 
+direction, and space them at least 3-5 feet apart.
+![H1000 Physical Setup](./H1000_Physical_Setup.png)
+
+## Terminology and Concepts
+- Sensor/Device ID: This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  Add picture.
+- Personality: This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events.
+- Alias: An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory.
+- Facility: This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility.
+- Behavior: A collection of low-level RFID settings that dictates how the sensor operates.
+- Cluster: A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior).
+- Tag State: A particular condition that describes the tag's current status.  The most common states for tags are present, exiting, and departed.
+- Tag Event: This is generated when a tag transitions between states.  The most common events are arrival, departed, and moved.
 
 ## Configure / Control the Intel&reg; RSP Controller Application
 To configure and use the RSP Controller, one of the main components is the cluster file.  The cluster 
-file specifies how the sensors should be grouped together, which behavior settings should be used, which 
-personalities (if any) should be assigned to the sensors, and what aliases should be assigned to the sensors' 
-antenna ports (for unique/custom location reporting).
+file specifies 
+- How the sensors should be grouped together
+- The facility(ies) to be used
+- What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting)
+- Which personalities (if any) should be assigned to the sensors
+- Which behavior settings should be used
 
-__Note:__ In the following instructions, the term YOUR_PROJECT_DIRECTORY will refer to the directory where 
-the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/), and the term 
-YOUR_DEPLOY_DIRECTORY will refer to the directory where the Intel&reg; RSP Controller Application was 
-deployed (the default location is ~/deploy/).
+__Note:__ In the following instructions, these two placeholders will be used:
+- YOUR_PROJECT_DIRECTORY will refer to the directory where 
+the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/)
+- YOUR_DEPLOY_DIRECTORY will refer to the directory where the Intel&reg; RSP Controller Application was 
+deployed (the default location is ~/deploy/)
 
-In the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
-YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/), edit the sensor device id in the 
-sensor_groups to match the sensor included with the Devkit.  This cluster configuration file is an example 
-that establishes the one facility (QSR_Store_8402).  It also creates aliases for the two antennas (Freezer 
-and Refridgerator) in order to generate more natural locations names, as opposed to RSP-150004-0 and 
-RSP-150004-1.  The sensor is configured with an EXIT personality in order to detect when an item leaves either 
-of the cold rooms.  It also will assign the appropriate behaviors for reading the RFID tags.
+### Cluster Configuration
+1. Edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/), by replacing the sensor device id in the 
+sensor_groups with the ID of the sensor included with the Devkit.  This cluster configuration file is an example 
+that establishes:
+    - A single facility (QSR_Store_8402)
+    - Two different aliases for each of the antennas (Freezer and Refridgerator) in order to generate more 
+      descriptive location names
+    - An EXIT personality in order to detect when an item leaves either of the cold rooms
+    - The appropriate behaviors for reading the RFID tags
 
-After the cluster file has been edited and saved, choose one of the following methods to configure and control 
-the RSP Controller. Each method accomplishes the same configuration tasks.
+2. Save the updated cluster file.
 
-- [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
-- [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
+3. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
+the same configuration tasks.
+
+    - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
+    - [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
 
 ___
 
@@ -58,7 +86,7 @@ the different pages by using the menu button found at the top left of each page.
     ![Nav_Menu_Button](../../img_resources/Nav_Menu.png)
 
 2. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensor from reading 
-by pressing the INACTIVE button to set the run state to INACTIVE.
+tags by pressing the INACTIVE button.
 
     ![Scheduler_Inactive_Button](../../img_resources/Scheduler_Inactive.png)
 
@@ -79,14 +107,13 @@ button to upload the use case behavior to the RSP Controller.
     because the cluster file references that behavior id, and that behavior must already be known by the 
     RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.
 
-5. Upload the __EDITED__ cluster configuration file (see the [Configure / Control the Intel&reg; RSP 
-Controller Application section](#configure--control-the-intel-rsp-controller-application)) using the 
-[cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
+5. Upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)) 
+using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
     ![Cluster_Config_Upload_Button](../../img_resources/Cluster_Config_Upload.png)
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensor reading 
-according to the cluster configuration by selecting the FROM_CONFIG run state.
+according to the cluster configuration by pressing the FROM_CONFIG button.
 
     ![Scheduler_From_Config_Button](../../img_resources/Scheduler_From_Config.png)
     
@@ -99,7 +126,7 @@ and aliases) and is reading tags.
 8. Navigate to the [inventory](http://localhost:8080/web-admin/inventory-main.html) page which can be used 
 to monitor tag reads and states.
 
-Continue to the [Observe Tag Events section](#observe-tag-events).
+9. Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
 ### METHOD 2: Using the MQTT Messaging API
@@ -136,15 +163,12 @@ command responses.
     mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
     ```
 
-Continue to the [Observe Tag Events section](#observe-tag-events).
+4. Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
 ## Observe Tag Events
-Check that the antennas are not pointed in conflicting directions; keep the antennas separate and pointing 
-away from each other as much as possible.
-
-Open a terminal window and subscribe to the RSP Controller events topic in order to monitor tag events as 
-produced by the RSP Controller.
+Open a terminal window and subscribe to the RSP Controller events MQTT topic in order to monitor tag events 
+as produced by the RSP Controller.
 
 ```bash
 #-- monitor the upstream events topic
@@ -153,9 +177,9 @@ mosquitto_sub -t rfid/controller/events
 
 1. ##### Tag arrival in the first cold room
     At this point, remove one tag from hiding and place it nearby one of the two antennas. When the tag is  
-    read initially, an arrival event will be generated on the rfid/controller/events topic. 
+    read initially, an arrival event will be generated on the rfid/controller/events MQTT topic. 
     Verify from the Web Admin 
-    [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now in the 
+    [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now in the 
     EXITING state and the location is at the first antenna's alias (either Freezer or Refridgerator).  
     Verify the receipt of the MQTT event message.
     ```json
@@ -179,6 +203,12 @@ mosquitto_sub -t rfid/controller/events
       }
     }
     ```
+
+    If you do not see the expected event, please confirm that
+    - The cluster file was edited properly with the correct sensor ID (see the [Cluster Configuration 
+    section](#cluster-configuration))
+    - The cluster file was uploaded correctly
+    - The scheduler is using that cluster configuration
 
 2. ##### Tag moved to the other cold room
     Now take the tag and move it to the other antenna. Since these antennas are in the same facility, a 
@@ -210,10 +240,15 @@ mosquitto_sub -t rfid/controller/events
     ```
 
 3. ##### Tag departure from the second cold room
-    Now take that tag and hide it such that it can't be seen by either antenna.  After about 
-    30 seconds, a departed event should be generated for the tag that was removed. From the 
-    [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag 
-    state of the removed tag has changed to DEPARTED_EXIT.  
+    A departed event gets generated when a tag has left the vicinity of all of the sensors, and 
+    has continually not been seen by any sensor for the configured threshold time limit (default 
+    being 30 seconds).
+    
+    Now take the tag from the previous step and hide it such that it can't be seen by either antenna.  
+    After about 30 seconds, a departed event should be generated for the tag that was removed.   
+    From the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that 
+    the tag state of the removed tag has changed to DEPARTED_EXIT.  
+    
     Verify the receipt of the MQTT event message.
     ```json  
     {
@@ -236,3 +271,26 @@ mosquitto_sub -t rfid/controller/events
       }
     }
     ```
+
+## Starting a Clean Session
+If you would like to start another use case or would like to run your own scenario, then you will 
+want to start with a clean session for the RSP Controller so that old data and configurations do 
+not pollute your new scenario.  In order to do this, follow these steps:
+
+1. Stop the RSP Controller.  If you used the installer to install the RSP Controller, and you used 
+the native installation (non-Docker method), then simply press Ctrl+C in the terminal window where 
+you ran the installer script.
+
+2. Run the following commands to clear out the old data and configurations
+```bash
+cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/cache/
+rm -rf *.json
+```
+3. Start the RSP Controller by running the following commands
+```bash
+cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/
+./run.sh
+```
+
+Now you should have a clean session from which you can run any new scenario without worry of data 
+or configuration pollution.
