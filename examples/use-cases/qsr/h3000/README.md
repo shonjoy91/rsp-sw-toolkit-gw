@@ -38,21 +38,16 @@ directions, and space them at least 3-5 feet apart.
 ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
 
 ## Terminology and Concepts
-- Sensor/Device ID: This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the 
-last 6 characters of that sensor's MAC address.  Add picture.
-- Personality: This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP 
-Controller to generate specific types of tag events.
-- Alias: An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to 
-identify the location of tags in the inventory.
-- Facility: This is used to define zones that consist of one or more sensors.  A typical deployment/location 
-will consist of one facility.
-- Behavior: A collection of low-level RFID settings that dictates how the sensor operates.
-- Cluster: A grouping of one or more sensors that share the same set of configurations (facility, personality, 
-alias, and behavior).
-- Tag State: A particular condition that describes the tag's current status.  The most common states for tags 
-are present, exiting, and departed.
-- Tag Event: This is generated when a tag transitions between states.  The most common events are arrival, 
-departed, and moved.
+|Term|Definition|
+|:------|:------|
+|Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label. ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg)|
+|Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events|
+|Alias| An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory|
+|Facility |This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility|
+|Behavior |A collection of low-level RFID settings that dictates how the sensor operates|
+|Cluster |A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior)|
+|Tag State|A particular condition that describes the tag's current status.  The most common states for tags are present, exiting, and departed|
+|Tag Event |This is generated when a tag transitions between states.  The most common events are arrival, departed, and moved|
 
 ## Configure / Control the Intel&reg; RSP Controller Application
 To configure and use the RSP Controller, one of the main components is the cluster file.  The cluster 
