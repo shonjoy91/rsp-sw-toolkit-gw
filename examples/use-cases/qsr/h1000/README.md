@@ -29,7 +29,7 @@ visible to the sensor in order to see a complete use case scenario.
 
 6. Position the antennas in an optimal setting.  Face them away from each other, point them in different 
 direction, and space them at least 3-5 feet apart.
-![H1000 Physical Setup](./H1000_Physical_Setup.png)
+![H1000 Physical Setup](../../resources/H1000_Physical_Setup.png)
 
 ## Terminology and Concepts
 - Sensor/Device ID: This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  Add picture.
@@ -83,22 +83,22 @@ dev kit is connected. This can be seen on the [dashboard](http://localhost:8080/
 page or the [sensors](http://localhost:8080/web-admin/sensors-main.html) page.  You can navigate between 
 the different pages by using the menu button found at the top left of each page.
 
-    ![Nav_Menu_Button](../../img_resources/Nav_Menu.png)
+    ![Nav_Menu_Button](../../resources/Nav_Menu.png)
 
 2. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensor from reading 
 tags by pressing the INACTIVE button.
 
-    ![Scheduler_Inactive_Button](../../img_resources/Scheduler_Inactive.png)
+    ![Scheduler_Inactive_Button](../../resources/Scheduler_Inactive.png)
 
 3. On the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the Unload button 
 to clear out all previous tag history to start a clean session.
 
-    ![Inventory_Unload_Button](../../img_resources/Inventory_Unload.png)
+    ![Inventory_Unload_Button](../../resources/Inventory_Unload.png)
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
 button to upload the use case behavior to the RSP Controller.
 
-    ![Behaviors_Upload_Button](../../img_resources/Behaviors_Upload.png)
+    ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
 
     The behavior file can be found at 
     YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrBehaviorExit_PORTS_2.json.  
@@ -110,12 +110,12 @@ button to upload the use case behavior to the RSP Controller.
 5. Upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)) 
 using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
-    ![Cluster_Config_Upload_Button](../../img_resources/Cluster_Config_Upload.png)
+    ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensor reading 
 according to the cluster configuration by pressing the FROM_CONFIG button.
 
-    ![Scheduler_From_Config_Button](../../img_resources/Scheduler_From_Config.png)
+    ![Scheduler_From_Config_Button](../../resources/Scheduler_From_Config.png)
     
     The clusters that the scheduler is using will be displayed on the page.
 
