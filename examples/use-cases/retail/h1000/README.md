@@ -38,7 +38,7 @@ directions, and space them at least 3-5 feet apart.
 ## Terminology and Concepts
 |Term|Definition|
 |:------|:------|
-|Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address ![Hx000 MAC](../../resources/Hx000-MAC.JPG)|
+|Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label. ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg)|
 |Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events|
 |Alias| An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory|
 |Facility |This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility|
