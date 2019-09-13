@@ -58,7 +58,7 @@ file specifies
 - Which personalities (if any) should be assigned to the sensors
 - Which behavior settings should be used
 
-__Note:__ In the following instructions, these two placeholders will be used:
+__NOTE:__ In the following instructions, these two placeholders will be used:
 - YOUR_PROJECT_DIRECTORY will refer to the directory where 
 the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/)
 - YOUR_DEPLOY_DIRECTORY will refer to the directory where the Intel&reg; RSP Controller Application was 
@@ -309,24 +309,25 @@ mosquitto_sub -t rfid/controller/events
     ```
 
 ## Starting a Clean Session
-If you would like to start another use case or would like to run your own scenario, then you will 
-want to start with a clean session for the RSP Controller so that old data and configurations do 
-not pollute your new scenario.  In order to do this, follow these steps:
+If you would like to start another use case, try another configuration method, or would like to run 
+your own scenario, then you will want to start with a clean session for the RSP Controller so that 
+old data and configurations do not pollute your next exercise.  In order to do this, follow these steps:
 
 1. Stop the RSP Controller.  If you used the installer to install the RSP Controller, and you used 
 the native installation (non-Docker method), then simply press Ctrl+C in the terminal window where 
 you ran the installer script.
 
 2. Run the following commands to clear out the old data and configurations
-```bash
-cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/cache/
-rm -rf *.json
-```
+    ```bash
+    cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/cache/
+    rm -rf *.json
+    ```
+
 3. Start the RSP Controller by running the following commands
-```bash
-cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/
-./run.sh
-```
+    ```bash
+    cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/
+    ./run.sh
+    ```
 
 Now you should have a clean session from which you can run any new scenario without worry of data 
 or configuration pollution.
