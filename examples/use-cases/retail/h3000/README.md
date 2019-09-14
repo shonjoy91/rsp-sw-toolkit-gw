@@ -60,10 +60,10 @@ file specifies
 
 __NOTE: In the following instructions, these two placeholders will be used__
 
-| Placeholder| Location|
-|---|---|
-| __YOUR_PROJECT_DIRECTORY__ | Directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/)|
-| __YOUR_DEPLOY_DIRECTORY__ | Directory where the Intel&reg; RSP Controller Application was deployed (the default location is ~/deploy/)|
+| Placeholder | Meaning |
+| --- | --- |
+| __YOUR_PROJECT_DIRECTORY__ | Directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/) |
+| __YOUR_DEPLOY_DIRECTORY__ | Directory where the Intel&reg; RSP Controller Application was deployed (the default location is ~/deploy/) |
 
 ### Cluster Configuration
 1. Edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
