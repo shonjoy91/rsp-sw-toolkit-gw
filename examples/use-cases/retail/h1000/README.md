@@ -185,13 +185,15 @@ produced by the RSP Controller.
 mosquitto_sub -t rfid/controller/events
 ```
 
-1. ##### Tag arrivals in the first fitting room
+1. ### Tag arrivals in the first fitting room
     At this point, remove two tags from hiding and place them nearby one of the two antennas. When the tags 
     are read initially, an arrival event will be generated on the rfid/controller/events topic for each tag. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now EXITING
-    and the location is at the first antenna's alias (either FittingRoom1 or FittingRoom2).  
+    and the location is at the first antenna's alias (either FittingRoom1 or FittingRoom2).
+
     Verify the receipt of the MQTT event message.
+    ![Retail H1000 Output 1](./Retail_H1000_Out_1.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -228,7 +230,7 @@ mosquitto_sub -t rfid/controller/events
     - The cluster file was uploaded correctly
     - The scheduler is using that cluster configuration
 
-2. ##### Tag departure from first fitting room
+2. ### Tag departure from first fitting room
     Now take one of the tags at the first antenna and hide it again such that it can't be seen by either 
     antenna. After the departure threshold time limit has passed (default being 30 seconds), a departed 
     event should be generated for the tag that was removed.  From the 
@@ -236,6 +238,7 @@ mosquitto_sub -t rfid/controller/events
     the removed tag has changed to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
+    ![Retail H1000 Output 2](./Retail_H1000_Out_2.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -258,13 +261,15 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-3. ##### Tag moves from one fitting room to the other
+3. ### Tag moves from one fitting room to the other
     Now take the tag that remains near the antenna and move it to the other antenna.  Since these antennas 
     are in the same facility, a moved event will be generated. It may take a few moments for the event to 
     be generated as the algorithm uses time-weighted RSSI averages to determine tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag's location 
-    has changed to the other fitting room.  
+    has changed to the other fitting room.
+
     Verify the receipt of the MQTT event message.
+    ![Retail H1000 Output 3](./Retail_H1000_Out_3.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -287,13 +292,14 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-4. ##### Tag departure from the second fitting room
+4. ### Tag departure from the second fitting room
     Now take that remaining tag and hide it such that it can't be seen by either antenna.  Aagain, 
     after the departure threshold time limit has passed, a departed event should be generated for 
     the tag that was removed. From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
     page, confirm that the tag state of the removed tag has changed to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
+    ![Retail H1000 Output 4](./Retail_H1000_Out_4.png)
     ```json  
     {
       "jsonrpc": "2.0",

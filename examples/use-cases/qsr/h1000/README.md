@@ -184,13 +184,15 @@ as produced by the RSP Controller.
 mosquitto_sub -t rfid/controller/events
 ```
 
-1. ##### Tag arrival in the first cold room
+1. ### Tag arrival in the first cold room
     At this point, remove one tag from hiding and place it nearby one of the two antennas. When the tag is  
     read initially, an arrival event will be generated on the rfid/controller/events MQTT topic. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now in the 
-    EXITING state and the location is at the first antenna's alias (either Freezer or Refridgerator).  
+    EXITING state and the location is at the first antenna's alias (either Freezer or Refridgerator).
+
     Verify the receipt of the MQTT event message.
+    ![QSR H1000 Output 1](./QSR_H1000_Out_1.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -219,13 +221,15 @@ mosquitto_sub -t rfid/controller/events
     - The cluster file was uploaded correctly
     - The scheduler is using that cluster configuration
 
-2. ##### Tag moved to the other cold room
+2. ### Tag moved to the other cold room
     Now take the tag and move it to the other antenna. Since these antennas are in the same facility, a 
     moved event will be generated. It may take a few moments for the event to be generated as the 
     algorithm uses time-weighted RSSI averages to determine tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag's location 
-    has changed to the other cold room.  
+    has changed to the other cold room.
+
     Verify the receipt of the MQTT event message.
+    ![QSR H1000 Output 2](./QSR_H1000_Out_2.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -248,13 +252,14 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-3. ##### Tag departure from the second cold room
+3. ### Tag departure from the second cold room
     Now take the tag and hide it such that it can't be seen by either antenna.  After the departure 
     threshold time limit has passed (default being 30 seconds), a departed event should be generated 
     for the tag that was removed.  From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
     page, confirm that the tag state of the removed tag has changed to DEPARTED_EXIT.  
     
     Verify the receipt of the MQTT event message.
+    ![QSR H1000 Output 3](./QSR_H1000_Out_3.png)
     ```json  
     {
       "jsonrpc": "2.0",

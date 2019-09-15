@@ -188,13 +188,15 @@ tag events as produced by the RSP Controller.
 mosquitto_sub -t rfid/controller/events
 ```
 
-1. ##### Tag arrival in BackStock
+1. ### Tag arrival in BackStock
     At this point, remove one tag from hiding and place it nearby the BackStock sensor. 
     When the tag is read initially, an arrival event will be generated on the rfid/controller/events topic.
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now PRESENT
-    and the location is at the BackStock sensor.  
+    and the location is at the BackStock sensor.
+
     Verify the receipt of the MQTT event message.
+    ![Retail H3000 Output 1](./Retail_H3000_Out_1.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -223,13 +225,15 @@ mosquitto_sub -t rfid/controller/events
     - The cluster file was uploaded correctly
     - The scheduler is using that cluster configuration
 
-2. ##### Tag departure from BackStock and arrival in SalesFloor
+2. ### Tag departure from BackStock and arrival in SalesFloor
     Now move the tag from the BackStock sensor to the SalesFloor sensor. Since these sensors are at different 
     locations within the same facility, a "moved" event will be generated.  It may take a few moments for the 
     event to be generated as the algorithm uses time-weighted RSSI averages to determine the tag location. From 
     the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
-    locations to the second sensor and that the tag state has changed to EXITING.  
+    locations to the second sensor and that the tag state has changed to EXITING.
+
     Verify the receipt of the MQTT event message.
+    ![Retail H3000 Output 2](./Retail_H3000_Out_2.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -252,7 +256,7 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-3. ##### Tag departs
+3. ### Tag departs
     Hide the tag so that no sensor is able to read it to emulate the tag actually being gone.
     After the departure threshold time limit has passed (default being 30 seconds), a departed 
     event should be generated from the SalesFloor sensor.  From the 
@@ -260,6 +264,7 @@ mosquitto_sub -t rfid/controller/events
     changes to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
+    ![Retail H3000 Output 3](./Retail_H3000_Out_3.png)
     ```json  
     {
       "jsonrpc": "2.0",

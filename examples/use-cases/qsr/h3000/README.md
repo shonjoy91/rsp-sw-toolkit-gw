@@ -188,13 +188,15 @@ tag events as produced by the RSP Controller.
 mosquitto_sub -t rfid/controller/events
 ```
 
-1. ##### Tag arrival in Receiving-Exiting
+1. ### Tag arrival in Receiving-Exiting
     At this point, remove one tag from hiding and place it nearby the Receiving-Exiting sensor. 
     When the tag is read initially, an arrival event will be generated on the rfid/controller/events topic.
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tag is now in the EXITING
-    state and the location is at the Receiving-Exiting sensor.  
+    state and the location is at the Receiving-Exiting sensor.
+
     Verify the receipt of the MQTT event message.
+    ![QSR H3000 Output 1](./QSR_H3000_Out_1.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -223,13 +225,15 @@ mosquitto_sub -t rfid/controller/events
     - The cluster file was uploaded correctly
     - The scheduler is using that cluster configuration
 
-2. ##### Tagged item is moved to DryGoods (departure from Receiving-Exiting and arrival in DryGoods)
+2. ### Tagged item is moved to DryGoods (departure from Receiving-Exiting and arrival in DryGoods)
     Now move the tag from the Receiving-Exiting sensor to the DryGoods sensor. Since these sensors are in 
     the same facility, a 'moved' event will be generated. It may take a few moments for the event(s) to be 
     generated as the algorithm uses time-weighted RSSI averages to determine the tag location. From the 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page, confirm that the tag has changed 
-    locations to the second sensor (DryGoods) and that the tag state has changed to PRESENT.  
+    locations to the second sensor (DryGoods) and that the tag state has changed to PRESENT.
+
     Verify the receipt of the MQTT event message.
+    ![QSR H3000 Output 2](./QSR_H3000_Out_2.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -252,12 +256,14 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-3. ##### Tagged item is staged for trashing (departure from DryGoods and arrival in Receiving-Exiting)
+3. ### Tagged item is staged for trashing (departure from DryGoods and arrival in Receiving-Exiting)
     Now move the tag back to the Receiving-Exiting sensor.  Again, since the two sensors are in the same 
     facility, there will be another "moved" event, this time ending up at Receiving-Exiting. Again, this can 
     take a few moments to occur. From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
-    page, confirm that the location changes back to Receiving-Exiting and the tag's state changes to EXITING.  
+    page, confirm that the location changes back to Receiving-Exiting and the tag's state changes to EXITING.
+
     Verify the receipt of the MQTT event message.
+    ![QSR H3000 Output 3](./QSR_H3000_Out_3.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -280,13 +286,14 @@ mosquitto_sub -t rfid/controller/events
     }
     ```
 
-4. ##### Tagged item is taken out to trash (departure from Receiving-Exiting)
+4. ### Tagged item is taken out to trash (departure from Receiving-Exiting)
     Hide the tag so that no sensor is able to read it to emulate the tag actually being gone. After the departure 
     threshold time limit has passed (default being 30 seconds), a departed event should be generated from the 
     Receiving-Exiting sensor.  From the [inventory](http://localhost:8080/web-admin/inventory-main.html) 
     page, confirm that the state changes to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
+    ![QSR H3000 Output 4](./QSR_H3000_Out_4.png)
     ```json
     {
       "jsonrpc": "2.0",
