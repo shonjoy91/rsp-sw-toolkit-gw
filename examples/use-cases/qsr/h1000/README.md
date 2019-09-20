@@ -34,7 +34,13 @@ or an equivalent setup.
 box or some aluminum foil.  You can also hide the tags under a laptop or computer.  Make sure no tags are 
 visible to the sensor in order to see the complete use case scenario.
 
-6. The antennas are positioned in an optimal setting.  Face them away from each other, point them in different 
+6. One RFID tag has been separated out for testing.  From the hidden tags, separate out one tag to use for this 
+use case.  Make sure to choose a tag that is labeled with its EPC value, so that it will be easy to reference 
+when you run through the tag movement/tracking exercise later.  Hide this tag as well, but keep it hidden 
+separately from the other tags.  This will prevent all of the other tags from accidentally being introduced to 
+the system when pulling out the tag for testing.
+
+7. The antennas are positioned in an optimal setting.  Face them away from each other, point them in different 
 directions, and space them at least 3-5 feet apart.
 ![H1000 Physical Setup](../../resources/H1000_Physical_Setup.png)
 
