@@ -23,7 +23,8 @@ transitions to DryGoods, and then departs out the exit (Receiving-Exiting).
 1. You have an [H3000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h3000-integrated-rfid-reader-development-kit/), 
 or an equivalent setup.
 
-2. You have completed the setup described in the Getting Started Guide.
+2. You have completed the setup described in the 
+[Getting Started Guide](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux).
 
 3. The Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) is running.
 
