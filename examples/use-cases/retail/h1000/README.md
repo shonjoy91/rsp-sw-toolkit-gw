@@ -69,7 +69,7 @@ __NOTE: In the following instructions, these two placeholders will be used__
 
 ### Cluster Configuration
 1. Edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
-YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/), by replacing the sensor device id in the 
+YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/), by replacing the sensor device id in the 
 sensor_groups with the ID of the sensor included with the Devkit.  This cluster configuration file is an example 
 that establishes:
     - A single facility (Retail_Store_8402)
