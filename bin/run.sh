@@ -4,6 +4,20 @@
 #- SPDX-License-Identifier: BSD-3-Clause
 #----------------------------------------------------------------
 
+#----------------------------------------------------------------
+# Check if service is already running
+#
+SERVICE=" intel.rfid.controller"
+if ps ax | grep $SERVICE | grep -v grep > /dev/null
+then
+    echo "$SERVICE service already running"
+    exit 1
+else
+    echo "$SERVICE is not running"
+fi
+
+#----------------------------------------------------------------
+
 home_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 keep_going="true"
