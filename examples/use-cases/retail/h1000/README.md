@@ -129,6 +129,9 @@ using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) 
 
     ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
 
+    The cluster configuration file can be found at 
+    YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitQsrCluster.json.
+
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensor reading 
 according to the cluster configuration by pressing the FROM_CONFIG button.
 

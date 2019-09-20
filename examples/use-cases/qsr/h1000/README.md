@@ -117,7 +117,7 @@ button to upload the use case behavior to the RSP Controller.
     ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
 
     The behavior file can be found at 
-    YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrBehaviorExit_PORTS_2.json.  
+    YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrBehaviorExit_PORTS_2.json.
 
     __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
     because the cluster file references that behavior id, and that behavior must already be known by the 
@@ -127,6 +127,9 @@ button to upload the use case behavior to the RSP Controller.
 using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) page.
 
     ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
+
+    The cluster configuration file can be found at 
+    YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/qsr/h1000/DevkitQsrCluster.json.
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensor reading 
 according to the cluster configuration by pressing the FROM_CONFIG button.
