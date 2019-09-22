@@ -45,16 +45,18 @@ directions, and space them at least 3-5 feet apart.
 ![H1000 Physical Setup](../../resources/H1000_Physical_Setup.png)
 
 ## Terminology and Concepts
-|Term|Definition|
-|:------|:------|
-|Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label. ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg)|
-|Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events|
-|Alias| An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory|
-|Facility |This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility|
-|Behavior |A collection of low-level RFID settings that dictates how the sensor operates|
-|Cluster |A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior)|
-|Tag State|A particular condition that describes the tag's current status.  The most common states for tags are present, exiting, and departed|
-|Tag Event |This is generated when a tag transitions between states.  The most common events are arrival, departed, and moved|
+| Term | Definition |
+| :------ | :------ |
+| Project Directory | This is the directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/).  This directory contains this file and the files needed to do this use-case.  In the following instructions, the default location will be used. |
+| Deploy Directory | This is the directory where the Intel&reg; RSP Controller Application gets deployed (the default location is ~/deploy/).  In the following instructions, the default location will be used. |
+| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label. ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
+| Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events |
+| Alias | An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory |
+| Facility | This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility |
+| Behavior | A collection of low-level RFID settings that dictates how the sensor operates |
+| Cluster | A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior) |
+| Tag State| A particular condition that describes the tag's current status.  The most common states for tags are present, exiting, and departed |
+| Tag Event | This is generated when a tag transitions between states.  The most common events are arrival, departed, and moved |
 
 
 ## Configure / Control the Intel&reg; RSP Controller Application
@@ -66,16 +68,9 @@ file specifies
 - Which personalities (if any) should be assigned to the sensors
 - Which behavior settings should be used
 
-__NOTE: In the following instructions, these two placeholders will be used__
-
-| Placeholder | Meaning |
-| --- | --- |
-| __YOUR_PROJECT_DIRECTORY__ | Directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/) |
-| __YOUR_DEPLOY_DIRECTORY__ | Directory where the Intel&reg; RSP Controller Application was deployed (the default location is ~/deploy/) |
-
 ### Cluster Configuration
 1. Edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
-YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/), by replacing the sensor device id in the 
+~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/), by replacing the sensor device id in the 
 sensor_groups with the ID of the sensor included with the Devkit.  This cluster configuration file is an example 
 that establishes:
     - A single facility (Retail_Store_8402)
@@ -118,7 +113,7 @@ button to upload the use case behavior to the RSP Controller.
     ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
     
     The behavior file can be found at 
-    YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitRetailBehaviorExit_PORTS_2.json.  
+    ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitRetailBehaviorExit_PORTS_2.json.  
 
     __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
     because the cluster file references that behavior id, and that behavior must already be known by the 
@@ -130,7 +125,7 @@ using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) 
     ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
 
     The cluster configuration file can be found at 
-    YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitQsrCluster.json.
+    ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/DevkitQsrCluster.json.
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensor reading 
 according to the cluster configuration by pressing the FROM_CONFIG button.
@@ -164,7 +159,7 @@ command responses.
     ```bash
     #-- change directory to the examples folder 
     #-- so the example commands work correctly
-    cd YOUR_PROJECT_DIRECTORY/rsp-sw-toolkit-gw/examples
+    cd ~/projects/rsp-sw-toolkit-gw/examples
     
     #-- stop the scheduler
     mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_INACTIVE.json
@@ -343,13 +338,13 @@ you ran the installer script.
 
 2. Run the following commands to clear out the old data and configurations
     ```bash
-    cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/cache/
+    cd ~/deploy/rsp-sw-toolkit-gw/cache/
     rm -rf *.json
     ```
 
 3. Start the RSP Controller by running the following commands
     ```bash
-    cd YOUR_DEPLOY_DIRECTORY/rsp-sw-toolkit-gw/
+    cd ~/deploy/rsp-sw-toolkit-gw/
     ./run.sh
     ```
 
