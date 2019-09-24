@@ -404,28 +404,31 @@
     <script src="header.js"></script>
 
     <div id="sensor_commands" class="w3-bar w3-blue">
+
         <div class="w3-bar-item">
-            <div class="w3-large w3-padding-small w3-button" onclick="forceDisconnect();">
-                <i class="fa fa-unlink"> </i> Force All Disconnect
+                <div class="w3-bar-block w3-blue w3-dropdown-hover">
+                    <button class="w3-button"><i class="fa fa-bars w3-xlarge"></i></button>
+                    <div class="w3-dropdown-content style">
+                        <script type="text/javascript">
+                            for (var i in commands) {
+                                document.write('<div><button class="w3-button" onclick=\'doSimpleGet("');
+                                document.write(commands[i]);
+                                document.write('");\'>');
+                                document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
+                                document.write(commands[i]);
+                                document.write('</button></div>');
+                            }
+                        </script>
+                    </div>
+                </div>
             </div>
-        </div>
+
         <div class="w3-bar-item">
             <div id="sensor_commands_device_id" class="w3-padding-small w3-large">
                 Select a sensor ...
             </div>
         </div>
-        <script type="text/javascript">
-            for (var i in commands) {
-                document.write('<div class="w3-bar-item">');
-                document.write('<button class="w3-button" onclick=\'doSimpleGet("');
-                document.write(commands[i]);
-                document.write('");\'>');
-                document.write('<i class="fa fa-greater-than"></i>&nbsp;&nbsp;')
-                document.write(commands[i]);
-                document.write('</button></div>');
-            }
 
-        </script>
     </div>
 
     <div id="table_header" class="w3-row w3-padding w3-grey">
