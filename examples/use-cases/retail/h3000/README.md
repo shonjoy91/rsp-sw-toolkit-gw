@@ -49,9 +49,9 @@ directions, and space them at least 3-5 feet apart.
 | :------ | :------ |
 | Project Directory | This is the directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/).  This directory contains this file and the files needed to do this use-case.  In the following instructions, the default location will be used. |
 | Deploy Directory | This is the directory where the Intel&reg; RSP Controller Application gets deployed (the default location is ~/deploy/).  In the following instructions, the default location will be used. |
-| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label. ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
+| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label.  Based on the following image, the sensor ID would be RSP-1508e4.  ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
 | Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events. |
-| Alias | An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory. The alias allows you to give meaningful names (like BackStock or FittingRoom) for the locations as opposed to using sensor and antenna IDs. |
+| Alias | An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory. The alias allows you to give meaningful names (like BackStock or FittingRoom1) for the locations as opposed to using sensor and antenna IDs.  The default value is the sensor ID followed by a hyphen followed by the antenna port number, for example RSP-1508e4-0. |
 | Facility | This is used to define zones that consist of one or more sensors.  A typical deployment/location will consist of one facility. |
 | Behavior | A collection of low-level RFID settings that dictates how the sensor operates. |
 | Cluster | A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior). |
@@ -63,26 +63,99 @@ To configure and use the RSP Controller, one of the main components is the clust
 file specifies 
 - How sensors should be grouped together
 - The facility(ies) to be used
-- What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting)
+- What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting using meaningful names)
 - Which personalities (if any) should be assigned to the sensors
 - Which behavior settings should be used
 
-__NOTE: In the following instructions, these two placeholders will be used__
-
 ### Cluster Configuration
-1. Edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at 
-~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/), by replacing the sensor device ids in the 
-sensor_groups with the IDs of the sensors included with the Devkit.  This cluster configuration file is an example 
-that establishes:
-    - A single facility (Retail_Store_8402)
-    - Two different aliases for each of the sensors (BackStock and SalesFloor) in order to generate more 
-      descriptive location names
-    - An EXIT personality in order to detect when an item leaves the SalesFloor location
-    - The appropriate behaviors for reading the RFID tags
+You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/) with new values to set up this use case: we want a single facility; two different aliases, one for each sensor (BackStock and SalesFloor); an EXIT personality for the sensor labeled as SalesFloor; and the appropriate behaviors.
+1. Open the file in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
 
-2. Save the updated cluster file.
+2. Edit the various fields to configure the clusters.  The following steps explain each line of the cluster.  
+See the following for the first cluster:
+    1. __id__: This is a unique ID used to identify this cluster.  You can leave the default value.
+    2. __personality__: Since this first location will be internal to the store and doesn't need to be treated specially, we don't need to assign it any personality, so we will give it a value of null.
+        ```json
+        "personality": null,
+        ```
+    3. __facility_id__: For most purposes, a single facility is needed to encompass a deployment at a store.  We will give it the value of our imaginary store's ID.
+        ```json
+        "facility_id": "Retail_Store_8402",
+        ```
+    4. __aliases__: This is the central configuration piece for setting meaningful names for locations.  For the first cluster in this use case, we're looking to set a single location: the BackStock location.  The sensors for this use-case are H3000 sensors, which have two linear antennas built into the same unit for enhanced performance.  Since these two antennas are at the same location, we will set the alias for each to the same value in order to treat them together as a singular location.  
 
-3. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
+        __NOTE: If a value is not specified for a port, then the default alias is used (see the "Alias" term in the [Terminology and Concepts section](#terminology-and-concepts).__
+        ```json
+        "aliases": [ "BackStock", "BackStock" ],
+        ```
+    5. __behavior_id__: Behaviors are the central configuration piece for the low level RFID configuration settings.  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id to DevkitRetailBehaviorDeepScan_PORTS_1.
+        ```json
+        "behavior_id": "DevkitRetailBehaviorDeepScan_PORTS_1",
+        ```
+    6. __sensor_groups__: This is where you set which sensors will be governed by the settings that we just configured.  This is a list of sensor groupings.  All sensors in each group will run at the same time, and each group will run in sequence.  Thus, if you have sensors that would interfere with each other (they cover the same area, they are facing each other, etc.), then you can place them in different groups so that they aren't running at the same time.  Since this use-case is very simple, we will have one sensor group with  only a single sensor in it.  __A sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).  
+
+        __NOTE: The sensor ID is case sensitive, so make sure the "RSP" portion is capitalized and any other alphabetical characters are lowercase.__
+        ```json
+        "sensor_groups": [["RSP-150003"]],
+        ```  
+    Now see the following for the second cluster:
+    1. __id__: Again, this is the unique ID used to identify this cluster.  You can leave the default value.
+    2. __personality__: Since this cluster is being used to configure an "edge/boundary" location from where tags may leave the facility, we want to set the personality to EXIT.  This will generate a "departed" event whenever a tag is removed from this cluster's location.
+        ```json
+        "personality": "EXIT",
+        ```
+    3. __facility_id__: Again, since we're using a single facility, we'll set the same value here as the first cluster: the value of our imaginary store's ID.
+        ```json
+        "facility_id": "Retail_Store_8402",
+        ```
+    4. __aliases__: For this second cluster, we'll be setting a single location again: the SalesFloor location.  Again, we are using an H3000 sensor here, so we will configure both of its antennas to have the same name in order to treat them as the same location.  
+
+        __NOTE: If a value is not specified for a port, then the default alias is used (see the "Alias" term in the [Terminology and Concepts section](#terminology-and-concepts).__
+        ```json
+        "aliases": [ "SalesFloor", "SalesFloor" ],
+        ```
+    5. __behavior_id__: We'll use another custom behavior for this cluster by setting the behavior_id to DevkitRetailBehaviorExit_PORTS_1.
+        ```json
+        "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
+        ```
+    6. __sensor_groups__: Again, we have just a single sensor, so we'll end up with one sensor group with one sensor in it.  __Remember, a sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).  
+
+        __NOTE: The sensor ID is case sensitive, so make sure the "RSP" portion is capitalized and any other alphabetical characters are lowercase.__
+        ```json
+        "sensor_groups": [["RSP-150001"]],
+        ```
+
+3. If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:
+    ```json
+    {
+      "id": "RetailUseCaseClusterConfigExample",
+      "clusters": [
+        {
+          "id": "BackStockCluster",
+          "personality": null,
+          "facility_id": "Retail_Store_8402",
+          "aliases": [ "BackStock", "BackStock" ],
+          "behavior_id": "ClusterDeepScan_PORTS_1",
+          "sensor_groups": [["RSP-150005"]],
+          "tokens": []
+        }, {
+          "id": "SalesFloorExitCluster",
+          "personality": "EXIT",
+          "facility_id": "Retail_Store_8402",
+          "aliases": [ "SalesFloor", "SalesFloor" ],
+          "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
+          "sensor_groups": [["RSP-150003"]],
+          "tokens": []
+        }
+      ]
+    }
+    ```
+
+4. Save and close the updated cluster configuration file.
+
+5. (Optional) This would be a good time to label your physical sensors with their sensor IDs and the aliases that you set in the cluster configuration file.  This will help make it easier to follow and understand the output when you go through the tag movement/tracking exercise.
+
+6. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
 the same configuration tasks.
 
     - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
@@ -129,7 +202,7 @@ using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) 
     ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
 
     The cluster configuration file can be found at 
-    ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/DevkitQsrCluster.json.
+    ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/DevkitRetailCluster.json.
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
 according to the cluster configuration by pressing the FROM_CONFIG button.
@@ -194,6 +267,9 @@ tag events as produced by the RSP Controller.
 #-- monitor the upstream events topic
 mosquitto_sub -t rfid/controller/events
 ```
+
+__NOTE:__  All of the output seen below is based on the default values from the included configuration files.  
+If you changed the default values, your results may differ slightly.
 
 1. ### Tag arrival in BackStock
     At this point, remove one tag from hiding and place it nearby the BackStock sensor. 

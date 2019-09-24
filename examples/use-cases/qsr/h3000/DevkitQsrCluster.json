@@ -3,21 +3,18 @@
   "clusters": [
     {
       "id": "DryGoodsCluster",
-      "personality": null,
-      "facility_id": "QSR_Store_8402",
-      "aliases": [ "DryGoods", "DryGoods" ],
-      "behavior_id": "DevkitQsrBehaviorMobility_PORTS_1",
-      "sensor_groups": [["RSP-150003"]],
-      "tokens": []
+      "personality": ,
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
     }, {
       "id": "Receiving-ExitingCluster",
-      "personality": "EXIT",
-      "facility_id": "QSR_Store_8402",
-      "aliases": [ "Receiving-Exiting", "Receiving-Exiting" ],
-      "behavior_id": "DevkitQsrBehaviorExit_PORTS_1",
-      "sensor_groups": [["RSP-150001"]],
-      "tokens": []
+      "personality": "",
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
     }
   ]
 }
-

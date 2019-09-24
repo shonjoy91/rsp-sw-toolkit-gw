@@ -3,13 +3,11 @@
   "clusters": [
     {
       "id": "ColdAreaCluster",
-      "personality": "EXIT",
-      "facility_id": "QSR_Store_8402",
-      "aliases": [ "Freezer", "Refridgerator" ],
-      "behavior_id": "DevkitQsrBehaviorExit_PORTS_2",
-      "sensor_groups": [["RSP-150004"]],
-      "tokens": []
+      "personality": "",
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
     }
   ]
 }
-

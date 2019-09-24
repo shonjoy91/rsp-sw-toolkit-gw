@@ -3,21 +3,18 @@
   "clusters": [
     {
       "id": "BackStockCluster",
-      "personality": null,
+      "personality": ,
       "facility_id": "Retail_Store_8402",
-      "aliases": [ "BackStock", "BackStock" ],
-      "behavior_id": "ClusterDeepScan_PORTS_1",
-      "sensor_groups": [["RSP-150005"]],
-      "tokens": []
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
     }, {
       "id": "SalesFloorExitCluster",
-      "personality": "EXIT",
-      "facility_id": "Retail_Store_8402",
-      "aliases": [ "SalesFloor", "SalesFloor" ],
-      "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
-      "sensor_groups": [["RSP-150003"]],
-      "tokens": []
+      "personality": "",
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
     }
   ]
 }
-
