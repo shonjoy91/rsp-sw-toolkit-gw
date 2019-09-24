@@ -12,6 +12,7 @@ import com.intel.rfid.api.gpio.GPIOConnectRequest;
 import com.intel.rfid.api.gpio.GPIOConnectResponse;
 import com.intel.rfid.api.sensor.ConnectRequest;
 import com.intel.rfid.api.sensor.ConnectResponse;
+import com.intel.rfid.api.sensor.GatewayStatusUpdate;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.exception.RspControllerException;
@@ -20,6 +21,7 @@ import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.jmdns.JmDNSService;
+import com.intel.rfid.mqtt.Mqtt;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -115,13 +117,20 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
                  mapper.writeValueAsString(_rsp.result));
     }
 
-    public void send(RspControllerStatusUpdateNotification _not) {
+    public void send(RspControllerStatusUpdateNotification _status) {
         try {
-            mqttDownstream.publishControllerStatus(mapper.writeValueAsBytes(_not));
-            log.info("Published {}", _not);
+            // for backwards compatibility with name change from gateway to controller
+            mqttDownstream.publishControllerStatus(mapper.writeValueAsBytes(_status));
+            log.info("Published {} {}", _status.getMethod(), _status.params.status);
+
+            // for backwards compatibility with name change from gateway to controller
+            GatewayStatusUpdate gsu = new GatewayStatusUpdate(_status);
+            mqttDownstream.publishGatewayStatus(mapper.writeValueAsBytes(gsu));
+            log.info("Published {} {}", gsu.getMethod(), gsu.params.status);
+
         } catch (RspControllerException | JsonProcessingException _e) {
             log.error("failed to send controller status update {} {}",
-                      _not.params.status, _e.getMessage());
+                      _status.params.status, _e.getMessage());
         }
     }
 

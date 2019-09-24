@@ -4,8 +4,10 @@
  */
 package com.intel.rfid.downstream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intel.rfid.api.data.MqttStatus;
+import com.intel.rfid.api.gpio.GPIOConnectResponse;
 import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 import com.intel.rfid.controller.ConfigManager;
 import com.intel.rfid.controller.RspControllerStatus;
@@ -13,6 +15,8 @@ import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.mqtt.Mqtt;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.io.IOException;
 
 public class MqttDownstream extends Mqtt {
 
@@ -24,6 +28,9 @@ public class MqttDownstream extends Mqtt {
     public static final String DATA_TOPIC = TOPIC_PREFIX + "/data";
     public static final String RESPONSE_TOPIC = TOPIC_PREFIX + "/response";
     public static final String RSP_STATUS_TOPIC = TOPIC_PREFIX + "/rsp_status";
+    public static final String CONTROLLER_STATUS_TOPIC = TOPIC_PREFIX + "/controller_status";
+    @Deprecated
+    public static final String GATEWAY_STATUS_TOPIC = TOPIC_PREFIX + "/gw_status";
 
     public static final String GPIO_COMMAND_TOPIC = GPIO_PREFIX + "/command";
     public static final String GPIO_CONNECT_TOPIC = GPIO_PREFIX + "/connect";
@@ -57,10 +64,10 @@ public class MqttDownstream extends Mqtt {
         super.onConnect();
         try {
             String deviceId = ConfigManager.instance.getRspControllerDeviceId();
-            RspControllerStatusUpdateNotification gsu = new RspControllerStatusUpdateNotification(deviceId,
+            RspControllerStatusUpdateNotification update = new RspControllerStatusUpdateNotification(deviceId,
                                                                                                   RspControllerStatus.RSP_CONTROLLER_STARTED);
-            publishControllerStatus(mapper.writeValueAsBytes(gsu));
-            log.info("Published {}", RspControllerStatus.RSP_CONTROLLER_STARTED);
+            publishControllerStatus(mapper.writeValueAsBytes(update));
+            log.info("Published {}", update.params.status);
         } catch (Exception e) {
             log.warn("Error publishing {}", RspControllerStatus.RSP_CONTROLLER_STARTED.label, e);
         }
@@ -96,7 +103,11 @@ public class MqttDownstream extends Mqtt {
     }
 
     public void publishControllerStatus(byte[] _msg) throws RspControllerException {
-        publish(COMMAND_TOPIC, _msg, DEFAULT_QOS);
+        publish(CONTROLLER_STATUS_TOPIC, _msg, DEFAULT_QOS);
+    }
+
+    public void publishGatewayStatus(byte[] _msg) throws RspControllerException {
+        publish(GATEWAY_STATUS_TOPIC, _msg, DEFAULT_QOS);
     }
 
     public void publishGPIOConnectResponse(String _deviceId, byte[] _msg) throws RspControllerException {
