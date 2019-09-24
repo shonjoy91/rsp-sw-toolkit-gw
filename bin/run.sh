@@ -36,6 +36,15 @@ ADDITIONAL_OPTS="-server"
 CLASSPATH="-classpath ${home_dir}/lib/*:${home_dir}/config"
 MAIN_CLASS="com.intel.rfid.controller.Main"
 
+# check if a controller process is running yet
+PID=$(pgrep -f $MAIN_CLASS)
+if [[ $? -eq 0 ]]; then
+    echo "Found an instance of $MAIN_CLASS running already with pid: $PID"
+    exit
+fi
+
 pushd ${home_dir}
 
 exec java ${JAVA_OPTS} ${ADDITIONAL_OPTS} ${CLASSPATH} ${MAIN_CLASS} "$@"
+
+popd
