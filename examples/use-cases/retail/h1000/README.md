@@ -116,11 +116,13 @@ You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json)
     }
     ```
 
-4. Save and close the updated cluster configuration file.
+4. Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
 
-5. (Optional) This would be a good time to label your physical antennas with the aliases that you set in the cluster configuration file.  This will help make it easier to follow and understand the output when you go through the tag movement/tracking exercise.
+5. Save and close the updated cluster configuration file.
 
-6. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
+6. (Optional) This would be a good time to label your physical antennas with the aliases that you set in the cluster configuration file.  This will help make it easier to follow and understand the output when you go through the tag movement/tracking exercise.
+
+7. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
 the same configuration tasks.
 
     - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)

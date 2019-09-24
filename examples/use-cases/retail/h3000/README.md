@@ -136,26 +136,27 @@ See the following for the first cluster:
           "facility_id": "Retail_Store_8402",
           "aliases": [ "BackStock", "BackStock" ],
           "behavior_id": "ClusterDeepScan_PORTS_1",
-          "sensor_groups": [["RSP-150005"]],
-          "tokens": []
+          "sensor_groups": [["RSP-150005"]]
         }, {
           "id": "SalesFloorExitCluster",
           "personality": "EXIT",
           "facility_id": "Retail_Store_8402",
           "aliases": [ "SalesFloor", "SalesFloor" ],
           "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
-          "sensor_groups": [["RSP-150003"]],
-          "tokens": []
+          "sensor_groups": [["RSP-150003"]]
         }
       ]
     }
-    ```
+    ```  
+    __Note: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined in Step 7 in the [Prerequisites section](#prerequisites).__
 
-4. Save and close the updated cluster configuration file.
+4. Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
 
-5. (Optional) This would be a good time to label your physical sensors with their sensor IDs and the aliases that you set in the cluster configuration file.  This will help make it easier to follow and understand the output when you go through the tag movement/tracking exercise.
+5. Save and close the updated cluster configuration file.
 
-6. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
+6. (Optional) This would be a good time to label your physical sensors with their sensor IDs and the aliases that you set in the cluster configuration file.  This will help make it easier to follow and understand the output when you go through the tag movement/tracking exercise.
+
+7. Choose one of the following methods to configure and control the RSP Controller. Each method will accomplish 
 the same configuration tasks.
 
     - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
