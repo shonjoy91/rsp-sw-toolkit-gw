@@ -9,10 +9,10 @@ Controller Application as deployed in a typical retail environment.
 3. [Terminology and Concepts](#terminology-and-concepts)
 4. [Configure / Control the Intel&reg; RSP Controller Application](#configure--control-the-intel-rsp-controller-application)
     - [Cluster Configuration](#cluster-configuration)
-5. [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
-6. [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
-7. [Observe Tag Events](#observe-tag-events)
-8. [Starting a Clean Session](#starting-a-clean-session)
+    - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
+    - [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
+5. [Observe Tag Events](#observe-tag-events)
+6. [Starting a Clean Session](#starting-a-clean-session)
 
 ## Goals  
 - Manage a deployment with two separate locations of interest ... BackStock and SalesFloor
