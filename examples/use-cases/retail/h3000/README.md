@@ -73,7 +73,7 @@ file specifies:
 - Which personalities (if any) should be assigned to the sensors
 - Which behavior settings should be used
 
-__The cluster configuration file enable you to scale large deployments efficiently and quickly.__
+__The cluster configuration file enables you to scale large deployments efficiently and quickly.__
 
 ### Cluster Configuration
 You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/) with new values to set up this use case: we want a single facility; two different aliases, one for each sensor (BackStock and SalesFloor); an EXIT personality for the sensor labeled as SalesFloor; and the appropriate behaviors.
