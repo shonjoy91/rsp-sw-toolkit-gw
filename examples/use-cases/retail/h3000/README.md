@@ -31,11 +31,11 @@ or an equivalent setup.
 
 4. The H3000 sensors are connected to the RSP Controller.
 
-5. Select an RFID tag that is labeled with its value.  Place that tag under your computer.  Remove all other tags from the room.  
+5. Select an RFID tag that is labeled with its value (see image below).  Place that tag under your computer.  Remove all other tags from the room.  
 ![sample tag](../../resources/sample_tagx50.png)
 
-6. The sensors are positioned in an optimal setting.  Face them away from each other, point them in different 
-directions, and space them at least 3-5 feet apart.
+6. The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different 
+directions and space them at least 3-5 feet apart (see image below).
 ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
 
 ## Terminology and Concepts
@@ -158,8 +158,8 @@ See the following for the first cluster:
           ]
         }
         ``` 
-    6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.  In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  
-    __A sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).
+    6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.  
+      In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __A sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).
         __NOTE: The sensor ID is case sensitive, so make sure the "RSP" portion is capitalized and any other alphabetical characters are lowercase.__
         ```json
         {
