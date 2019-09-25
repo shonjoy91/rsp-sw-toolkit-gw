@@ -82,8 +82,7 @@ You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json)
 
 1. Open the file in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
 
-2. Edit the various fields to configure the clusters.  The following steps explain each line of the cluster.  
-See the following for the first cluster:
+2. Edit the various fields to configure the clusters.  The following steps explain each line of the clusters:  
     1. __id__: This is a unique ID used to identify the cluster group.  In this use case we will create two clusters, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.    
         ```json
         {
@@ -97,7 +96,7 @@ See the following for the first cluster:
           ]
         }
         ```     
-    2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, we will set the personality to __EXIT__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.
+    2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, so we will set the personality to __EXIT__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.
         ```json
         {
           "id": "RetailUseCaseClusterConfigExample",
@@ -148,7 +147,7 @@ See the following for the first cluster:
           ]
         }
         ```  
-    5. __behavior_id__: Behaviors are the central configuration piece for the low level RFID configuration settings.  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __DevkitRetailBehavior_PORTS_1__.
+    5. __behavior_id__: Behaviors are the central configuration piece for the low level RFID configuration settings (Sensor Power Level, Session Flag, Singulation Algo, Dwell Time, etc.).  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __DevkitRetailBehavior_PORTS_1__.
         ```json
         {
           "id": "RetailUseCaseClusterConfigExample",
@@ -264,8 +263,9 @@ to monitor tag reads and states.
 ___
 
 ### METHOD 2: Using the MQTT Messaging API
-1. Edit [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) 
-replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitRetailCluster.json file. 
+1. Edit the [cluster_set_config_request_use_case_retail.json](./cluster_set_config_request_use_case_retail.json) (located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/) replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited DevkitRetailCluster.json file.  Save and close your file.  
+
+    Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting. 
 
 2. Open a terminal window and subscribe to the RSP Controller's command response topic in order to monitor the 
 command responses.
