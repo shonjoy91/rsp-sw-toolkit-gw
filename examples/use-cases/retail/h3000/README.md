@@ -230,28 +230,22 @@ the different pages by using the menu button found at the top left of each page.
     ![Nav_Menu_Button](../../resources/Nav_Menu.png)
 
 2. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensors from reading 
-tags by pressing the INACTIVE button.
+tags by pressing the __INACTIVE__ button.
 
     ![Scheduler_Inactive_Button](../../resources/Scheduler_Inactive.png)
 
-3. On the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the Unload button 
+3. On the [inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the __Unload__ button 
 to clear out all previous tag history to start a clean session.
 
     ![Inventory_Unload_Button](../../resources/Inventory_Unload.png)
 
-4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the Upload From File
+4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the __Upload From File__
 button to upload all of the use case behaviors to the RSP Controller.
-
     ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
-    
-    The behavior files can be found in the 
-    ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/ directory.  The required files are:
+    The behavior files can be found in the ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/ directory.  The required file is __DevkitRetailBehavior_PORTS_1.json__
 
-    - DevkitRetailBehaviorDeepScan_PORTS_1.json
-    - DevkitRetailBehaviorExit_PORTS_1.json
-
-    __NOTE:__  These files __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
-    because the cluster file references those behavior ids, and the behaviors must already be known by the 
+    __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
+    because the cluster file references this behavior id, and the behavior must already be known by the 
     RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.
 
 5. Upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)) 
@@ -263,7 +257,7 @@ using the [cluster config](http://localhost:8080/web-admin/cluster-config.html) 
     ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/DevkitRetailCluster.json.
 
 6. On the [scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
-according to the cluster configuration by pressing the FROM_CONFIG button.
+according to the cluster configuration by pressing the __FROM_CONFIG__ button.
 
     ![Scheduler_From_Config_Button](../../resources/Scheduler_From_Config.png)
     
@@ -302,10 +296,9 @@ command responses.
     #-- unload the current inventory
     mosquitto_pub -t rfid/controller/command -f api/upstream/inventory_unload_request.json
     
-    #-- load behaviors specific to this exercise
+    #-- load behavior specific to this exercise
     #-- (lowered power levels as sensors are likely to be interfering)
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_DeepScan.json
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request_Exit.json
+    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/behavior_put_request.json
     
     #-- load (set) the cluster configuration
     mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/cluster_set_config_request_use_case_retail.json
