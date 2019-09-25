@@ -8,6 +8,8 @@ import com.intel.rfid.api.data.BooleanResult;
 import com.intel.rfid.api.data.Cluster;
 import com.intel.rfid.api.data.ClusterConfig;
 import com.intel.rfid.api.data.Personality;
+import com.intel.rfid.api.sensor.ConnectRequest;
+import com.intel.rfid.api.sensor.Platform;
 import com.intel.rfid.cluster.ClusterManager;
 import com.intel.rfid.cluster.MockClusterManager;
 import com.intel.rfid.downstream.MockDownstreamManager;
@@ -42,14 +44,34 @@ public class SensorManagerTest {
     @Test
     public void testAliasing() {
 
-        ClusterManager clusterMgr = new ClusterManager();
-        SensorManager sensorMgr = new SensorManager(clusterMgr);
+        MockClusterManager clusterMgr = new MockClusterManager();
+        MockSensorManager sensorMgr = new MockSensorManager(clusterMgr);
 
-        SensorPlatform rsp01 = sensorMgr.establishRSP("RSP-TEST01");
+        String deviceId1 = "RSP-TEST01";
+        String deviceId2 = "RSP-TEST02";
+
+        SensorPlatform rsp01 = sensorMgr.establishRSP(deviceId1);
+        SensorPlatform rsp02 = sensorMgr.establishRSP(deviceId2);
 
         // Check constructed with defaults
         for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
             assertThat(rsp01.getAlias(i)).isEqualTo(rsp01.getDefaultAlias(i));
+        }
+
+        // Check that connecting will affect the aliasing correctly
+        ConnectRequest connectReq1 = new ConnectRequest();
+        connectReq1.params.hostname = deviceId1;
+        connectReq1.params.platform = Platform.H1000;
+        rsp01.onConnect(connectReq1);
+
+        ConnectRequest connectReq2 = new ConnectRequest();
+        connectReq2.params.hostname = deviceId2;
+        connectReq2.params.platform = Platform.H3000;
+        rsp02.onConnect(connectReq2);
+
+        for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
+            assertThat(rsp01.getAlias(i)).isEqualTo(rsp01.getDefaultAlias(i));
+            assertThat(rsp02.getAlias(i)).isEqualTo(deviceId2);
         }
 
         // Check ways to set a default
@@ -146,7 +168,7 @@ public class SensorManagerTest {
         assertThat(sensor.getPersonality()).isEqualTo(personality);
     }
 
-    
+
     @Test
     public void testCaseInsensitive() {
         MockClusterManager clusterMgr = new MockClusterManager();
@@ -167,7 +189,7 @@ public class SensorManagerTest {
         SensorPlatform rsp01 = sensorMgr.getSensor(id01Upper);
         assertThat(rsp00).isEqualTo(rsp01);
         assertThat(rsp00.deviceId).isEqualTo(id01Upper);
-        
+
     }
 
     @Test
@@ -231,4 +253,5 @@ public class SensorManagerTest {
         assertThat(nextRSP.isConnected()).isTrue();
 
     }
+
 }

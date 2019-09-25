@@ -17,4 +17,7 @@ public class MockSensorManager extends SensorManager {
         return (MockSensorPlatform) sensor;
     }
 
+    public void sendConnectResponse(String _responseId, String _deviceId, String _facilityId) {
+        log.info("stubbed sendConnectResponse");
+    }
 }
