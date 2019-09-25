@@ -319,7 +319,7 @@ mosquitto_sub -t rfid/controller/events
 ```
 
 __NOTE:__  All of the output seen below is based on the default values from the included configuration files.  
-If you changed the default values, your results may differ slightly.
+If you changed the default values, your results may differ slightly.  In addition to inventory events, you will see "heartbeat" messages.  You can ignore those for now.
 
 1. ### Tag arrival in BackStock
     At this point, remove one tag from hiding and place it nearby the BackStock sensor. 
