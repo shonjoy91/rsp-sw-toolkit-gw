@@ -84,7 +84,7 @@ You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json)
 
 2. Edit the various fields to configure the clusters.  The following steps explain each line of the cluster.  
 See the following for the first cluster:
-    1. __id__: This is a unique ID used to identify this cluster.  In this use case we will create two clusers, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.    
+    1. __id__: This is a unique ID used to identify the cluster group.  In this use case we will create two clusters, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.    
         ```json
         {
           "id": "RetailUseCaseClusterConfigExample",
