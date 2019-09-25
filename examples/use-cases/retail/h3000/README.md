@@ -159,7 +159,7 @@ See the following for the first cluster:
         }
         ``` 
     6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.<br/><br/>
-      In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __A sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below)<br/>
+      In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __You will need to use your actual sensor's ID in order for the controller application to properly functionality.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below):<br/>
       ![Sensor_Id_Image](./sensor_idx75.png)<br/>
       __NOTE: The sensor ID is case sensitive, so make sure the "RSP" portion is capitalized and any other alphabetical characters are lowercase.__<br/><br/>
       If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:
@@ -185,7 +185,7 @@ See the following for the first cluster:
           ]
         }
         ```  
-    __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined in Step 7 in the [Prerequisites section](#prerequisites).__
+    __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined and illustrated in Step 6 in the [Prerequisites section](#prerequisites).__
 
 3. Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
 
