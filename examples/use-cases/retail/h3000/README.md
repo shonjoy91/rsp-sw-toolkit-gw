@@ -25,8 +25,8 @@ Controller Application as deployed in a typical retail environment.
 - Know when a tagged item has left the store
   - This will be done by setting the personality of a sensor to EXIT to determine tag departures
   
-By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
-transitions to the SalesFloor, and then departs out the front door of the store.
+__By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
+transitions to the SalesFloor, and then departs out the front door of the store.__
 
 ![Retail H3000 Use Case](./Retail_H3000v3a.png)
 
