@@ -3,6 +3,17 @@
 This use case demonstrates configuring the Intel&reg; RSP H3000 Devkit Sensors and Intel&reg; RSP 
 Controller Application as deployed in a typical retail environment.
 
+## Table of Contents
+1. [Goals](#goals)
+2. [Prerequisites](#prerequisites)
+3. [Terminology and Concepts](#terminology-and-concepts)
+4. [Configure / Control the Intel&reg; RSP Controller Application](#configure--control-the-intel-rsp-controller-application)
+    - [Cluster Configuration](#cluster-configuration)
+5. [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)
+6. [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
+7. [Observe Tag Events](#observe-tag-events)
+8. [Starting a Clean Session](#starting-a-clean-session)
+
 ## Goals  
 - Manage a deployment with two separate locations of interest ... BackStock and SalesFloor
   - This will be done by assigning different aliases to the two different sensors
