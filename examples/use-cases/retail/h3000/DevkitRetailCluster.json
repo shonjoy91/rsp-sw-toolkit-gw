@@ -4,7 +4,7 @@
     {
       "id": "BackStockCluster",
       "personality": ,
-      "facility_id": "Retail_Store_8402",
+      "facility_id": "",
       "aliases": [  ],
       "behavior_id": "",
       "sensor_groups": [[""]]

@@ -3,7 +3,7 @@
   "id": "1",
   "method": "behavior_put",
   "params": {
-    "id": "DevkitRetailBehaviorExit_PORTS_1",
+    "id": "DevkitRetailBehavior_PORTS_1",
     "operation_mode": "NonContinuous",
     "link_profile": 1,
     "power_level": 18.0,
