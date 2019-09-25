@@ -6,7 +6,7 @@ Controller Application as deployed in a typical retail environment.
 ## Goals  
 - Manage a deployment with two separate locations of interest ... BackStock and SalesFloor
   - This will be done by assigning different aliases to the two different sensors
-- Know when tagged items come into the store in either location
+- Know when tagged items come into the store from either location
 - Know the location of a tagged item (sensor and facility)
   - This will be done by setting a facility and the aliases for the sensors
 - Know when a tagged item has moved from the BackStock to the SalesFloor or vice-versa
@@ -17,7 +17,7 @@ Controller Application as deployed in a typical retail environment.
 By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
 transitions to the SalesFloor, and then departs out the front door of the store.
 
-![Retail H3000 Use Case](./Retail_H3000.png)
+![Retail H3000 Use Case](./Retail_H3000v3a.png)
 
 ## Prerequisites
 1. You have an [H3000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h3000-integrated-rfid-reader-development-kit/), 
@@ -30,25 +30,16 @@ or an equivalent setup.
 
 4. The H3000 sensors are connected to the RSP Controller.
 
-5. All RFID tags are hidden.  You can hide the tags by enclosing them in some metallic material, like a metal 
-box or some aluminum foil.  You can also hide the tags under a laptop or computer.  Make sure no tags are 
-visible to the sensor in order to see the complete use case scenario.
+5. Select an RFID tag that is labeled with its value.  Place that tag under your computer.  Remove all other tags from the room.  
+![sample tag](../../resources/sample_tagx50.png)
 
-6. One RFID tag has been separated out for testing.  From the hidden tags, separate out one tag to use for this 
-use case.  Make sure to choose a tag that is labeled with its EPC value, so that it will be easy to reference 
-when you run through the tag movement/tracking exercise later.  Hide this tag as well, but keep it hidden 
-separately from the other tags.  This will prevent all of the other tags from accidentally being introduced to 
-the system when pulling out the tag for testing.
-
-7. The sensors are positioned in an optimal setting.  Face them away from each other, point them in different 
+6. The sensors are positioned in an optimal setting.  Face them away from each other, point them in different 
 directions, and space them at least 3-5 feet apart.
 ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
 
 ## Terminology and Concepts
 | Term | Definition |
 | :------ | :------ |
-| Project Directory | This is the directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/).  This directory contains this file and the files needed to do this use-case.  In the following instructions, the default location will be used. |
-| Deploy Directory | This is the directory where the Intel&reg; RSP Controller Application gets deployed (the default location is ~/deploy/).  In the following instructions, the default location will be used. |
 | Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label.  Based on the following image, the sensor ID would be RSP-1508e4.  ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
 | Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events. |
 | Alias | An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory. The alias allows you to give meaningful names (like BackStock or FittingRoom1) for the locations as opposed to using sensor and antenna IDs.  The default value is the sensor ID followed by a hyphen followed by the antenna port number, for example RSP-1508e4-0. |
@@ -57,18 +48,26 @@ directions, and space them at least 3-5 feet apart.
 | Cluster | A grouping of one or more sensors that share the same set of configurations (facility, personality, alias, and behavior). |
 | Tag State | A particular condition that describes the tag's current status.  The most common states for tags are present, exiting, and departed. |
 | Tag Event | This is generated when a tag transitions between states.  The most common events are arrival, departed, and moved. |
+| Project Directory | This is the directory where the cloned rsp-sw-toolkit-gw repo contents reside (the default location is ~/projects/).  This directory contains this file and the files needed to do this use-case.  In the following instructions, the default location will be used. |
+| Deploy Directory | This is the directory where the Intel&reg; RSP Controller Application gets deployed (the default location is ~/deploy/).  In the following instructions, the default location will be used. |
+
 
 ## Configure / Control the Intel&reg; RSP Controller Application
-To configure and use the RSP Controller, one of the main components is the cluster file.  The cluster 
-file specifies 
+To configure and use the RSP Controller, one of the main components is the cluster configuration file.  The cluster configuration
+file specifies: 
 - How sensors should be grouped together
 - The facility(ies) to be used
 - What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting using meaningful names)
 - Which personalities (if any) should be assigned to the sensors
 - Which behavior settings should be used
 
+__The cluster configuration file enable you to scale large deployments efficiently and quickly.__
+
 ### Cluster Configuration
 You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json) file (located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/) with new values to set up this use case: we want a single facility; two different aliases, one for each sensor (BackStock and SalesFloor); an EXIT personality for the sensor labeled as SalesFloor; and the appropriate behaviors.
+
+![Retail H3000 Use Case](./Retail_H3000v3b.png)
+
 1. Open the file in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
 
 2. Edit the various fields to configure the clusters.  The following steps explain each line of the cluster.  
