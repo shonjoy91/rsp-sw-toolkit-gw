@@ -267,7 +267,7 @@ public class ClusterManager {
                     for (String sensorId : groups) {
                         log.debug("sensorId {} deviceId {}", sensorId, _deviceId);
 
-                        if (sensorId.equals(_deviceId)) {
+                        if (sensorId.equalsIgnoreCase(_deviceId)) {
                             return c;
                         }
                     }
@@ -355,7 +355,6 @@ public class ClusterManager {
     }
 
     public void generateClusterPerSensor(List<ClusterRunner> _runners, String _behaviorId) {
-
         // this should not happen
         if (sensorMgr == null) { return; }
         Behavior behavior = getBehavior(_behaviorId);

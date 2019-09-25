@@ -13,6 +13,7 @@ import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.security.ProvisionToken;
+import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.assertj.core.api.ThrowableAssert;
@@ -22,7 +23,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -302,5 +305,31 @@ public class ClusterTest {
         cluster = clusterMgr.findClusterByToken("BackStockDeepScan001UUWWYYBBDDFFE3DA5098692CE27945AA367189B52C58");
         assertThat(cluster).isNotNull();
         assertThat(cluster.id).isEqualTo("BackStock");
+    }
+    
+    @Test
+    public void testCaseInsensitive() {
+        ClusterManager clusterMgr = new ClusterManager();
+        SensorManager sensorMgr = new SensorManager(clusterMgr);
+        clusterMgr.setSensorManager(sensorMgr);
+        
+        String id01Upper = "RSP-15AB2C";
+        String id01Lower = "RSP-15ab2c";
+
+        // test that internal storage is 
+        SensorPlatform rsp00 = sensorMgr.establishRSP(id01Lower);
+
+        List<String> sensorGroup1 = new ArrayList<>();
+        sensorGroup1.add(id01Lower);
+        Cluster cluster = new Cluster();
+        cluster.id = "test_cluster";
+        cluster.sensor_groups.add(sensorGroup1);
+        cluster.aliases.add("alias01");
+        cluster.aliases.add("alias02");
+        clusterMgr.clusterCfg = new ClusterConfig();
+        clusterMgr.clusterCfg.clusters.add(cluster);
+        clusterMgr.alignSensor(rsp00);
+        
+        assertThat(rsp00.getAlias(0)).isEqualTo("alias01");
     }
 }

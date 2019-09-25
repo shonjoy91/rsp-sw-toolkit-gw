@@ -21,6 +21,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,8 +35,8 @@ public class SensorManagerTest {
     }
 
     @AfterClass
-    public static void afterClass() throws IOException {
-        //EnvHelper.afterTests();
+    public static void afterClass() {
+        EnvHelper.afterTests();
     }
 
     @Test
@@ -81,7 +82,9 @@ public class SensorManagerTest {
     }
 
     @Test
-    public void testPersistRestore() {
+    public void testPersistRestore() throws IOException {
+
+        Files.deleteIfExists(SensorManager.CACHE_PATH);
 
         String dev01 = "RSP-000001";
         String facility01 = "facility-01";
@@ -96,7 +99,6 @@ public class SensorManagerTest {
         SensorManager sensorMgr = new SensorManager(clusterMgr);
         List<SensorPlatform> sensors = new ArrayList<>();
         SensorPlatform sensor;
-        //Files.delete(SensorManager.CACHE_PATH);
         // try restoring first to check for any errors from nothing
         sensorMgr.restore();
         sensorMgr.getSensors(sensors);
@@ -144,51 +146,29 @@ public class SensorManagerTest {
         assertThat(sensor.getPersonality()).isEqualTo(personality);
     }
 
-    // String dev01 = "RSP-000001";
-    // String facility01 = "facility-01";
-    // String token01 = "token-01";
-    // Personality personality01 = Personality.EXIT;
-    //
-    // @Test
-    // public void testPersistRestore() {
-    //     ClusterManager clusterMgr = new ClusterManager();
-    //
-    //     SensorManager sensorMgr = new SensorManager(clusterMgr);
-    //     SensorPlatform sensor;
-    //     //Files.delete(SensorManager.CACHE_PATH);
-    //     // try restoring first to check for any errors from nothing
-    //     sensorMgr.restore();
-    //     assert (sensorMgr.getRSPsCopy().size() == 0);
-    //
-    //     sensor = sensorMgr.establishRSP(dev01);
-    //     sensor.setProvisionToken(token01);
-    //     sensor.setFacilityId(facility01);
-    //     sensor.setPersonality(personality01);
-    //
-    //     sensorMgr.establishRSP("UnitTestRSP-112233");
-    //
-    //     sensorMgr.establishRSP("UnitTestRSP-DDEEFF");
-    //
-    //     sensorMgr.persist();
-    //
-    //     assert (Files.exists(SensorManager.CACHE_PATH));
-    //
-    //     sensorMgr = new SensorManager(clusterMgr);
-    //     assert (sensorMgr.getRSPsCopy().size() == 0);
-    //
-    //     sensorMgr.restore();
-    //     assert (sensorMgr.getRSPsCopy().size() == 3);
-    //
-    //     List<SensorPlatform> sensors = new ArrayList<>();
-    //     sensors.addAll(sensorMgr.findRSPs(dev01));
-    //    
-    //     assertTrue(sensors.size() == 1);
-    //     sensor = sensors.get(0);
-    //     assertTrue(sensor.getDeviceId().equals(dev01));
-    //     assertTrue(sensor.getProvisionToken().equals(token01));
-    //     assertTrue(sensor.getFacilityId().equals(facility01));
-    //     assertTrue(sensor.getPersonality() == personality01);
-    // }
+    
+    @Test
+    public void testCaseInsensitive() {
+        MockClusterManager clusterMgr = new MockClusterManager();
+        MockSensorManager sensorMgr = new MockSensorManager(clusterMgr);
+        clusterMgr.setSensorManager(sensorMgr);
+
+        String id01Upper = "RSP-15AB2C";
+        String id01Lower = "RSP-15ab2c";
+
+        // internal storage is UPPER case by default
+        SensorPlatform rsp00 = sensorMgr.establishRSP(id01Lower);
+        HashSet<String> allIds = new HashSet<>();
+        sensorMgr.getDeviceIds(allIds);
+        assertThat(allIds).doesNotContain(id01Lower);
+        assertThat(allIds).contains(id01Upper);
+
+        // referencing / lookup is case insensitive
+        SensorPlatform rsp01 = sensorMgr.getSensor(id01Upper);
+        assertThat(rsp00).isEqualTo(rsp01);
+        assertThat(rsp00.deviceId).isEqualTo(id01Upper);
+        
+    }
 
     @Test
     public void testRemove() throws IOException, InterruptedException, ConfigException {

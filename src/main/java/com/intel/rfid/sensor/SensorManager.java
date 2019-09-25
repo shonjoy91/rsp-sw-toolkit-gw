@@ -70,7 +70,7 @@ public class SensorManager {
     private static final String STATS_FILE_EXTENSION = ".csv";
     private static final Path STATS_PATH = Env.resolveStats(STATS_FILE_PREFIX + STATS_FILE_EXTENSION);
 
-    final Map<String, SensorPlatform> deviceIdToRSP = new TreeMap<>();
+    final Map<String, SensorPlatform> deviceIdToRSP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     protected ClusterManager clusterMgr;
 
     private final Object executorLock = new Object();
@@ -282,8 +282,8 @@ public class SensorManager {
     public SensorPlatform establishRSP(String _deviceId) {
         SensorPlatform sensor;
         synchronized (deviceIdToRSP) {
-            sensor = deviceIdToRSP.computeIfAbsent(_deviceId,
-                                                   k -> new SensorPlatform(_deviceId, this));
+            sensor = deviceIdToRSP.computeIfAbsent(_deviceId.toUpperCase(),
+                                                   k -> new SensorPlatform(_deviceId.toUpperCase(), this));
         }
         return sensor;
     }

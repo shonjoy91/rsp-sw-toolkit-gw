@@ -11,8 +11,8 @@ public class MockSensorManager extends SensorManager {
     public MockSensorPlatform establishRSP(String _deviceId) {
         SensorPlatform sensor;
         synchronized (deviceIdToRSP) {
-            sensor = deviceIdToRSP.computeIfAbsent(_deviceId,
-                                                   k -> new MockSensorPlatform(_deviceId, this));
+            sensor = deviceIdToRSP.computeIfAbsent(_deviceId.toUpperCase(),
+                                                   k -> new MockSensorPlatform(_deviceId.toUpperCase(), this));
         }
         return (MockSensorPlatform) sensor;
     }
