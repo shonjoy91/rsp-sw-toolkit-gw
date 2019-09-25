@@ -72,58 +72,118 @@ You will need to edit the [DevkitRetailCluster.json](./DevkitRetailCluster.json)
 
 2. Edit the various fields to configure the clusters.  The following steps explain each line of the cluster.  
 See the following for the first cluster:
-    1. __id__: This is a unique ID used to identify this cluster.  You can leave the default value.
-    2. __personality__: Since this first location will be internal to the store and doesn't need to be treated specially, we don't need to assign it any personality, so we will give it a value of null.
+    1. __id__: This is a unique ID used to identify this cluster.  In this use case we will create two clusers, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.    
         ```json
-        "personality": null,
+        {
+          "id": "RetailUseCaseClusterConfigExample",
+          "clusters": [
+            {
+              "id": "BackStockCluster"
+            }, {
+              "id": "SalesFloorExitCluster"
+            }
+          ]
+        }
+        ```     
+    2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, we will set the personality to __EXIT__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.
+        ```json
+        {
+          "id": "RetailUseCaseClusterConfigExample",
+          "clusters": [
+            {
+              "id": "BackStockCluster",
+              "personality": null
+            }, {
+              "id": "SalesFloorExitCluster",
+              "personality": "EXIT"
+            }
+          ]
+        }
         ```
-    3. __facility_id__: For most purposes, a single facility is needed to encompass a deployment at a store.  We will give it the value of our imaginary store's ID.
+    3. __facility_id__: For most purposes, a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for both clusters.
         ```json
-        "facility_id": "Retail_Store_8402",
-        ```
-    4. __aliases__: This is the central configuration piece for setting meaningful names for locations.  For the first cluster in this use case, we're looking to set a single location: the BackStock location.  The sensors for this use-case are H3000 sensors, which have two linear antennas built into the same unit for enhanced performance.  Since these two antennas are at the same location, we will set the alias for each to the same value in order to treat them together as a singular location.  
-
-        __NOTE: If a value is not specified for a port, then the default alias is used (see the "Alias" term in the [Terminology and Concepts section](#terminology-and-concepts).__
+        {
+          "id": "RetailUseCaseClusterConfigExample",
+          "clusters": [
+            {
+              "id": "BackStockCluster",
+              "personality": null,
+              "facility_id": "Retail_Store_8402"
+            }, {
+              "id": "SalesFloorExitCluster",
+              "personality": "EXIT",
+              "facility_id": "Retail_Store_8402"
+            }
+          ]
+        }
+        ``` 
+    4. __aliases__: This is the central configuration piece for setting meaningful names for locations.  For the first cluster, we will set the aliases to __BackStock__ and for the second cluster, set the aliases to __SalesFloor__.  For enhanced performance, the H3000 sensors have two linear antennas built into the same unit which cover the same location.  Instead of treating the two antennas as separate locations, we configure them as one location by giving them the same alias value per cluster.            
         ```json
-        "aliases": [ "BackStock", "BackStock" ],
-        ```
-    5. __behavior_id__: Behaviors are the central configuration piece for the low level RFID configuration settings.  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id to DevkitRetailBehaviorDeepScan_PORTS_1.
-        ```json
-        "behavior_id": "DevkitRetailBehaviorDeepScan_PORTS_1",
-        ```
-    6. __sensor_groups__: This is where you set which sensors will be governed by the settings that we just configured.  This is a list of sensor groupings.  All sensors in each group will run at the same time, and each group will run in sequence.  Thus, if you have sensors that would interfere with each other (they cover the same area, they are facing each other, etc.), then you can place them in different groups so that they aren't running at the same time.  Since this use-case is very simple, we will have one sensor group with  only a single sensor in it.  __A sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).  
-
-        __NOTE: The sensor ID is case sensitive, so make sure the "RSP" portion is capitalized and any other alphabetical characters are lowercase.__
-        ```json
-        "sensor_groups": [["RSP-150003"]],
+        {
+          "id": "RetailUseCaseClusterConfigExample",
+          "clusters": [
+            {
+              "id": "BackStockCluster",
+              "personality": null,
+              "facility_id": "Retail_Store_8402",
+              "aliases": [ "BackStock", "BackStock" ]
+            }, {
+              "id": "SalesFloorExitCluster",
+              "personality": "EXIT",
+              "facility_id": "Retail_Store_8402",
+              "aliases": [ "SalesFloor", "SalesFloor" ]
+            }
+          ]
+        }
         ```  
-    Now see the following for the second cluster:
-    1. __id__: Again, this is the unique ID used to identify this cluster.  You can leave the default value.
-    2. __personality__: Since this cluster is being used to configure an "edge/boundary" location from where tags may leave the facility, we want to set the personality to EXIT.  This will generate a "departed" event whenever a tag is removed from this cluster's location.
+    5. __behavior_id__: Behaviors are the central configuration piece for the low level RFID configuration settings.  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __DevkitRetailBehavior_PORTS_1__.
         ```json
-        "personality": "EXIT",
-        ```
-    3. __facility_id__: Again, since we're using a single facility, we'll set the same value here as the first cluster: the value of our imaginary store's ID.
-        ```json
-        "facility_id": "Retail_Store_8402",
-        ```
-    4. __aliases__: For this second cluster, we'll be setting a single location again: the SalesFloor location.  Again, we are using an H3000 sensor here, so we will configure both of its antennas to have the same name in order to treat them as the same location.  
-
-        __NOTE: If a value is not specified for a port, then the default alias is used (see the "Alias" term in the [Terminology and Concepts section](#terminology-and-concepts).__
-        ```json
-        "aliases": [ "SalesFloor", "SalesFloor" ],
-        ```
-    5. __behavior_id__: We'll use another custom behavior for this cluster by setting the behavior_id to DevkitRetailBehaviorExit_PORTS_1.
-        ```json
-        "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
-        ```
-    6. __sensor_groups__: Again, we have just a single sensor, so we'll end up with one sensor group with one sensor in it.  __Remember, a sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).  
-
+        {
+          "id": "RetailUseCaseClusterConfigExample",
+          "clusters": [
+            {
+              "id": "BackStockCluster",
+              "personality": null,
+              "facility_id": "Retail_Store_8402",
+              "aliases": [ "BackStock", "BackStock" ],
+              "behavior_id": "DevkitRetailBehavior_PORTS_1"
+            }, {
+              "id": "SalesFloorExitCluster",
+              "personality": "EXIT",
+              "facility_id": "Retail_Store_8402",
+              "aliases": [ "SalesFloor", "SalesFloor" ],
+              "behavior_id": "DevkitRetailBehavior_PORTS_1"
+            }
+          ]
+        }
+        ``` 
+    6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.
+    
+In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  
+    __A sample sensor ID is used below, but for proper functionality, you will have to use your actual sensor's ID.__  To find the sensor ID of your sensor, see the "Sensor/Device ID" term in the [Terminology and Concepts section](#terminology-and-concepts).
         __NOTE: The sensor ID is case sensitive, so make sure the "RSP" portion is capitalized and any other alphabetical characters are lowercase.__
         ```json
-        "sensor_groups": [["RSP-150001"]],
-        ```
-
+        {
+          "id": "RetailUseCaseClusterConfigExample",
+          "clusters": [
+            {
+              "id": "BackStockCluster",
+              "personality": null,
+              "facility_id": "Retail_Store_8402",
+              "aliases": [ "BackStock", "BackStock" ],
+              "behavior_id": "DevkitRetailBehavior_PORTS_1",
+              "sensor_groups": [["<YOUR_SENSOR_ID>"]]
+            }, {
+              "id": "SalesFloorExitCluster",
+              "personality": "EXIT",
+              "facility_id": "Retail_Store_8402",
+              "aliases": [ "SalesFloor", "SalesFloor" ],
+              "behavior_id": "DevkitRetailBehavior_PORTS_1",
+              "sensor_groups": [["<YOUR_SENSOR_ID>"]]
+            }
+          ]
+        }
+        ```  
 3. If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:
     ```json
     {
@@ -134,15 +194,15 @@ See the following for the first cluster:
           "personality": null,
           "facility_id": "Retail_Store_8402",
           "aliases": [ "BackStock", "BackStock" ],
-          "behavior_id": "ClusterDeepScan_PORTS_1",
-          "sensor_groups": [["RSP-150005"]]
+          "behavior_id": "DevkitRetailBehavior_PORTS_1",
+          "sensor_groups": [["<YOUR_SENSOR_ID>"]]
         }, {
           "id": "SalesFloorExitCluster",
           "personality": "EXIT",
           "facility_id": "Retail_Store_8402",
           "aliases": [ "SalesFloor", "SalesFloor" ],
-          "behavior_id": "DevkitRetailBehaviorExit_PORTS_1",
-          "sensor_groups": [["RSP-150003"]]
+          "behavior_id": "DevkitRetailBehavior_PORTS_1",
+          "sensor_groups": [["<YOUR_SENSOR_ID>"]]
         }
       ]
     }
