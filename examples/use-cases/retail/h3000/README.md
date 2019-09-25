@@ -38,7 +38,7 @@ or an equivalent setup.
 2. You have completed the setup described in the 
 [Getting Started Guide](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux).
 
-3. The Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) is running.
+3. The Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) is [running](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux-run-the-intel-rfid-sensor-platform-controller-application).
 
 4. The H3000 sensors are connected to the RSP Controller.
 
