@@ -127,7 +127,7 @@ public class SensorPlatform
                                                     new ExecutorUtils.NamedThreadFactory(deviceId));
 
         for (int i = 0; i < NUM_ALIASES; i++) {
-            aliases.add(deviceId + "-" + i);
+            aliases.add(getDefaultAlias(i));
         }
     }
 
@@ -235,40 +235,59 @@ public class SensorPlatform
     public static final String ALIAS_KEY_DEVICE_ID = "DEVICE_ID";
 
     public void setAliases(List<String> _aliases) {
-        // these need interpreting so have to loop;
-        for (int i = 0; i < _aliases.size(); i++) {
-            setAlias(i, _aliases.get(i));
+        // NOTE: not
+        if (_aliases == null || _aliases.isEmpty()) {
+            resetAliasesInternal();
+        } else {
+            // these need interpreting so have to loop;
+            for (int i = 0; i < _aliases.size(); i++) {
+                setAliasInternal(i, _aliases.get(i));
+            }
         }
         sensorMgr.notifyConfigUpdate(this);
     }
 
+    /**
+     * NOTE: this method should only be used externally.
+     * Pay attention to the notifyConfigUpdate calls.
+     */
     public void setAlias(int _portIndex, String _alias) {
         setAliasInternal(_portIndex, _alias);
         sensorMgr.notifyConfigUpdate(this);
     }
 
-    public boolean isDefaultAliases() {
-        for (int i = 0; i < aliases.size(); i++) {
-            if (aliases.get(i) != getDefaultAlias(i)){
-                return false;
+    /**
+     * aliases have been added primarily to support H1000, but that makes other models report
+     * tag reads per antenna port which is non-intuitive.
+     * this method is a means to overcome that usage (this base class without explicitly knowing
+     * the platform during construction needs to support all ports ... H1000 usage model)
+     */
+    public void checkAliasesOnConnect() {
+        if (rspInfo == null || rspInfo.platform == null || rspInfo.platform == Platform.H1000) { return; }
+
+        boolean updated = false;
+        for (int port = 0; port < NUM_ALIASES; port++) {
+            if (getAlias(port).equals(getDefaultAlias(port))) {
+                logRSP.info("resetting port alias[{}} from {} to {}",
+                            port, getAlias(port), getDefaultAlias(port));
+                setAliasInternal(port, ALIAS_KEY_DEVICE_ID);
+                updated = true;
             }
         }
-        return true;
+
+        if (updated) {
+            sensorMgr.notifyConfigUpdate(this);
+        }
     }
 
-    public void setDefaultAlias(Platform _platform) {
-        switch (_platform) {
-            case H1000: // 4-port
-                for (int i = 0; i < NUM_ALIASES; i++) {
-                    setAliasInternal(i, deviceId + "-" + i);
-                }
-                break;
-            default: // 2-port
-                setAliasInternal(0, deviceId);
-                setAliasInternal(1, deviceId);
-                break;
+    protected void resetAliasesInternal() {
+        String key = ALIAS_KEY_DEFAULT;
+        if (rspInfo != null && rspInfo.platform != null && rspInfo.platform != Platform.H1000) {
+            key = ALIAS_KEY_DEVICE_ID;
         }
-        sensorMgr.notifyConfigUpdate(this);
+        for (int port = 0; port < NUM_ALIASES; port++) {
+            setAliasInternal(port, key);
+        }
     }
 
     // need a common setter to prevent double notifications
@@ -503,14 +522,12 @@ public class SensorPlatform
         }
     }
 
-    private void onConnect(ConnectRequest _msg) {
+    protected void onConnect(ConnectRequest _msg) {
         logInboundJson(logConnect, _msg.getMethod(), _msg.params);
         try {
             sensorMgr.sendConnectResponse(_msg.getId(), deviceId, facilityId);
             rspInfo = new RspInfo(_msg.params);
-            if ((rspInfo.platform != null) && (isDefaultAliases())){
-                setDefaultAlias(rspInfo.platform);    
-            }
+            checkAliasesOnConnect();
             changeConnectionState(Connection.State.CONNECTING, null);
         } catch (IOException | RspControllerException _e) {
             logRSP.error("error sending connect response", _e);
@@ -583,14 +600,6 @@ public class SensorPlatform
         if (isConnected() && readState == ReadState.STARTED) {
             execute(new ApplyBehaviorRequest(ApplyBehaviorRequest.Action.STOP, currentBehavior));
         }
-    }
-
-    public String getBehaviorId() {
-        String id = null;
-        if (currentBehavior != null) {
-            id = currentBehavior.id;
-        }
-        return id;
     }
 
     public SensorConfigInfo getConfigInfo() {
@@ -707,10 +716,6 @@ public class SensorPlatform
 
     public boolean isReading() {
         return readState == ReadState.STARTED;
-    }
-
-    public ReadState getReadState() {
-        return readState;
     }
 
     private void setReadState(ReadState _next) {

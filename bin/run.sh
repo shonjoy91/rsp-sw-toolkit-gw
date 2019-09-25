@@ -4,20 +4,6 @@
 #- SPDX-License-Identifier: BSD-3-Clause
 #----------------------------------------------------------------
 
-#----------------------------------------------------------------
-# Check if service is already running
-#
-SERVICE=" intel.rfid.controller"
-if ps ax | grep $SERVICE | grep -v grep > /dev/null
-then
-    echo "$SERVICE service already running"
-    exit 1
-else
-    echo "$SERVICE is not running"
-fi
-
-#----------------------------------------------------------------
-
 home_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 keep_going="true"
@@ -35,7 +21,6 @@ while [ $keep_going = "true" ]; do
     fi
 done;
 
-echo "home_dir: $home_dir"
 
 # JAVA_OPTS is a fairly standard way of passing options to the jvm.
 # For example:
@@ -51,14 +36,13 @@ CLASSPATH="-classpath ${home_dir}/lib/*:${home_dir}/config"
 MAIN_CLASS="com.intel.rfid.controller.Main"
 
 # check if a controller process is running yet
-PID=$(pgrep -f $MAIN_CLASS)
+PID=$(pgrep -f ${MAIN_CLASS})
 if [[ $? -eq 0 ]]; then
     echo "Found an instance of $MAIN_CLASS running already with pid: $PID"
     exit
 fi
 
+echo "home_dir: $home_dir"
 pushd ${home_dir}
-
 exec java ${JAVA_OPTS} ${ADDITIONAL_OPTS} ${CLASSPATH} ${MAIN_CLASS} "$@"
-
 popd
