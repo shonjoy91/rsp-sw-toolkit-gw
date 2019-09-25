@@ -240,10 +240,9 @@ to clear out all previous tag history to start a clean session.
     ![Inventory_Unload_Button](../../resources/Inventory_Unload.png)
 
 4. On the [behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the __Upload From File__
-button to upload all of the use case behaviors to the RSP Controller.
+button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/ directory.  The required file is __DevkitRetailBehavior_PORTS_1.json__
     ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
-    The behavior files can be found in the ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/ directory.  The required file is __DevkitRetailBehavior_PORTS_1.json__
-
+ 
     __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration 
     because the cluster file references this behavior id, and the behavior must already be known by the 
     RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.
