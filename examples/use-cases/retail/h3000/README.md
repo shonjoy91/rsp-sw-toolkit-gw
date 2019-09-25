@@ -22,6 +22,7 @@ transitions to the SalesFloor, and then departs out the front door of the store.
 ## Prerequisites
 1. You have an [H3000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h3000-integrated-rfid-reader-development-kit/), 
 or an equivalent setup.
+    - You will need 2 H3000 sensor devices.  Designate one unit as "Sales Floor" and the second unit as "Back Stock" (see image above).  It may be helpful to label them so you can easily reference them later in this tutorial.
 
 2. You have completed the setup described in the 
 [Getting Started Guide](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux).
@@ -205,7 +206,7 @@ See the following for the first cluster:
       ]
     }
     ```  
-    __Note: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined in Step 7 in the [Prerequisites section](#prerequisites).__
+    __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined in Step 7 in the [Prerequisites section](#prerequisites).__
 
 4. Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
 
