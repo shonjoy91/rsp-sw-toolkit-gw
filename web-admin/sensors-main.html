@@ -197,8 +197,10 @@
         var e = establishSensorElement(deviceId, ".connection_state");
         if (state === "CONNECTED") {
             e.className = icons.connected;
+            e.title = "Connected";
         } else {
             e.className = icons.disconnected;
+            e.title = "Disconnected";
         }
     }
 
@@ -206,8 +208,10 @@
         var e = establishSensorElement(deviceId, ".read_state");
         if (state === "STARTED") {
             e.className = icons.reading;
+            e.title = "Reading"
         } else {
             e.className = "";
+            e.title = "";
         }
         establishSensorElement(deviceId, ".behavior").innerHTML = (behavior !== null ? behavior : "&nbsp;");
     }

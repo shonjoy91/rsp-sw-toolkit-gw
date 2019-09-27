@@ -268,10 +268,12 @@
         sensors[deviceId].connection_state = state;
         if (state === "CONNECTED") {
             e.className = icons.connected;
+            e.title = "Connected";
             sendSensorRequest(deviceId, "sensor_get_versions");
             sendSensorRequest(deviceId, "sensor_get_geo_region");
         } else {
             e.className = icons.disconnected;
+            e.title = "Disconnected";
         }
         checkSensorConfigStatus(deviceId);
     }
