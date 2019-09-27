@@ -9,6 +9,15 @@ import java.util.regex.PatternSyntaxException;
 
 public class StringHelper {
 
+    public static String convertCaseRSPId(String _deviceId) {
+        String id = _deviceId;
+        int index = _deviceId.indexOf("RSP-");
+        if(index >= 0) {
+            id = _deviceId.substring(0, (index + 4)) + _deviceId.substring(index + 4).toLowerCase();
+        }
+        return id;
+    }
+
     public static Pattern regexWildcard(String _regex) {
         if (_regex == null || _regex.isEmpty()) {
             return null;

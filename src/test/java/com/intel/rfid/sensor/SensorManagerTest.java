@@ -16,6 +16,7 @@ import com.intel.rfid.downstream.MockDownstreamManager;
 import com.intel.rfid.exception.ConfigException;
 import com.intel.rfid.gpio.MockGPIOManager;
 import com.intel.rfid.helpers.EnvHelper;
+import com.intel.rfid.helpers.StringHelper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -42,6 +43,13 @@ public class SensorManagerTest {
     }
 
     @Test
+    public void testConvertCaseRSPId() {
+        assertThat(StringHelper.convertCaseRSPId("ABCDE__RSP-1A2b3C")).isEqualTo("ABCDE__RSP-1a2b3c");
+        assertThat(StringHelper.convertCaseRSPId("ABCDE__1A2b3C")).isEqualTo("ABCDE__1A2b3C");
+        assertThat(StringHelper.convertCaseRSPId("RSP-AABBCC")).isEqualTo("RSP-aabbcc");
+    }
+
+    @Test
     public void testAliasing() {
 
         MockClusterManager clusterMgr = new MockClusterManager();
@@ -50,8 +58,8 @@ public class SensorManagerTest {
         String deviceId1 = "RSP-TEST01";
         String deviceId2 = "RSP-TEST02";
 
-        SensorPlatform rsp01 = sensorMgr.establishRSP(deviceId1);
-        SensorPlatform rsp02 = sensorMgr.establishRSP(deviceId2);
+        SensorPlatform rsp01 = sensorMgr.establish(deviceId1);
+        SensorPlatform rsp02 = sensorMgr.establish(deviceId2);
 
         // Check constructed with defaults
         for (int i = 0; i < SensorPlatform.NUM_ALIASES; i++) {
@@ -126,20 +134,29 @@ public class SensorManagerTest {
         sensorMgr.getSensors(sensors);
         assertThat(sensors).isEmpty();
 
-        sensor = sensorMgr.establishRSP(dev01);
+        sensor = sensorMgr.establish(dev01);
         sensor.setProvisionToken(token01);
         sensor.setFacilityId(facility01);
         sensor.setPersonality(personality);
         sensor.setAlias(1, alias01);
         sensor.setAlias(3, alias03);
 
-        sensorMgr.establishRSP("UnitTestRSP-112233");
-
-        sensorMgr.establishRSP("UnitTestRSP-DDEEFF");
-
+        sensorMgr.establish("UnitTestRSP-112233");
+        sensorMgr.establish("UnitTestRSP-DDEEFF");
         sensorMgr.persist();
-
         assertThat(Files.exists(SensorManager.CACHE_PATH)).isTrue();
+
+        // lookups and establishes are case insensitive
+        sensor = sensorMgr.getSensor("UnitTestRSP-DDEEFF");
+        assertThat(sensor).isNotNull();
+        assertThat(sensor.getDeviceId()).isEqualTo("UnitTestRSP-ddeeff");
+
+        assertThat(sensorMgr.getSensor("UnitTestRSP-ddeeff")).isNotNull();
+
+        sensor = sensorMgr.establish("UnitTestRSP-DDEEFF");
+        assertThat(sensor).isNotNull();
+        assertThat(sensor.getDeviceId()).isEqualTo("UnitTestRSP-ddeeff");
+
 
         sensorMgr = new SensorManager(clusterMgr);
         sensors.clear();
@@ -179,7 +196,7 @@ public class SensorManagerTest {
         String id01Lower = "RSP-15ab2c";
 
         // internal storage is UPPER case by default
-        SensorPlatform rsp00 = sensorMgr.establishRSP(id01Lower);
+        SensorPlatform rsp00 = sensorMgr.establish(id01Lower);
         HashSet<String> allIds = new HashSet<>();
         sensorMgr.getDeviceIds(allIds);
         assertThat(allIds).doesNotContain(id01Lower);
@@ -200,7 +217,7 @@ public class SensorManagerTest {
         MockGPIOManager gpioMgr = new MockGPIOManager(sensorMgr);
         MockDownstreamManager downstreamMgr = new MockDownstreamManager(sensorMgr, gpioMgr);
 
-        MockSensorPlatform rsp01 = sensorMgr.establishRSP("RSP-TEST01");
+        MockSensorPlatform rsp01 = sensorMgr.establish("RSP-TEST01");
         assertThat(rsp01.isConnected()).isFalse();
         assertThat(downstreamMgr.handlerExistsFor(rsp01)).isFalse();
 

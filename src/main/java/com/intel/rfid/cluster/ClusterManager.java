@@ -126,7 +126,7 @@ public class ClusterManager {
             }
 
             for (String id : sensorIDsInConfig) {
-                SensorPlatform sensor = sensorMgr.establishRSP(id);
+                SensorPlatform sensor = sensorMgr.establish(id);
                 alignSensor(sensor);
             }
         }

@@ -13,7 +13,6 @@ import com.intel.rfid.exception.InvalidTokenException;
 import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.EnvHelper;
 import com.intel.rfid.security.ProvisionToken;
-import com.intel.rfid.sensor.MockSensorManager;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.assertj.core.api.ThrowableAssert;
@@ -23,9 +22,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,12 +106,12 @@ public class ClusterTest {
         SensorManager sensorMgr = new SensorManager(clusterMgr);
         clusterMgr.setSensorManager(sensorMgr);
 
-        SensorPlatform rsp00 = sensorMgr.establishRSP("RSP-150000");
-        SensorPlatform rsp01 = sensorMgr.establishRSP("RSP-150001");
-        SensorPlatform rsp02 = sensorMgr.establishRSP("RSP-150002");
-        SensorPlatform rsp03 = sensorMgr.establishRSP("RSP-150003");
-        SensorPlatform rsp04 = sensorMgr.establishRSP("RSP-150004");
-        SensorPlatform rsp05 = sensorMgr.establishRSP("RSP-150005");
+        SensorPlatform rsp00 = sensorMgr.establish("RSP-150000");
+        SensorPlatform rsp01 = sensorMgr.establish("RSP-150001");
+        SensorPlatform rsp02 = sensorMgr.establish("RSP-150002");
+        SensorPlatform rsp03 = sensorMgr.establish("RSP-150003");
+        SensorPlatform rsp04 = sensorMgr.establish("RSP-150004");
+        SensorPlatform rsp05 = sensorMgr.establish("RSP-150005");
 
         cth.loadConfig(clusterMgr, "clusters/sample_alias_cluster_config.json");
 
@@ -185,7 +182,7 @@ public class ClusterTest {
 
         // Cluster configuration will clobber existing facility and personality
         // when new token comes in
-        SensorPlatform rsp01 = sensorMgr.establishRSP("RSP-TEST01");
+        SensorPlatform rsp01 = sensorMgr.establish("RSP-TEST01");
         rsp01.setFacilityId(FAKE);
         rsp01.setPersonality(Personality.FITTING_ROOM);
         rsp01.setAlias(0, FAKE);
@@ -198,7 +195,7 @@ public class ClusterTest {
         assertThat(rsp01.hasPersonality(Personality.POS)).isFalse();
 
         // exercise some error paths for align sensor
-        SensorPlatform rspNotInConfig = sensorMgr.establishRSP("RSP-noncfg");
+        SensorPlatform rspNotInConfig = sensorMgr.establish("RSP-noncfg");
         rspNotInConfig.setFacilityId(FAKE);
         clusterMgr.alignSensor(rspNotInConfig);
         assertThat(rspNotInConfig.getFacilityId()).isEqualTo(FAKE);
@@ -317,7 +314,7 @@ public class ClusterTest {
         String id01Lower = "RSP-15ab2c";
 
         // test that internal storage is 
-        SensorPlatform rsp00 = sensorMgr.establishRSP(id01Lower);
+        SensorPlatform rsp00 = sensorMgr.establish(id01Lower);
 
         List<String> sensorGroup1 = new ArrayList<>();
         sensorGroup1.add(id01Lower);

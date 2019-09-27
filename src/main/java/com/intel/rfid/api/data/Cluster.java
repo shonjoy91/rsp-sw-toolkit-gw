@@ -4,6 +4,7 @@
  */
 package com.intel.rfid.api.data;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.intel.rfid.security.ProvisionToken;
 
 import java.util.ArrayList;
@@ -15,6 +16,8 @@ public class Cluster {
     public String facility_id;
     public List<String> aliases = new ArrayList<>();
     public String behavior_id;
+    
+    @JsonDeserialize(using = ClusterDeviceIdJsonDeserializer.class)
     public List<List<String>> sensor_groups = new ArrayList<>();
     public List<ProvisionToken> tokens = new ArrayList<>();
 }

@@ -22,14 +22,12 @@ import com.intel.rfid.gpio.GPIOManager;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.PrettyPrinter;
 import com.intel.rfid.jmdns.JmDNSService;
-import com.intel.rfid.mqtt.Mqtt;
 import com.intel.rfid.sensor.SensorManager;
 import com.intel.rfid.sensor.SensorPlatform;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.management.GarbageCollectorMXBean;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -227,7 +225,7 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
                 synchronized (rspMsgHandlers) {
                     RspMsgHandler rspMsgHandler = rspMsgHandlers.get(deviceId);
                     if (rspMsgHandler == null) {
-                        SensorPlatform rsp = sensorMgr.establishRSP(deviceId);
+                        SensorPlatform rsp = sensorMgr.establish(deviceId);
                         rspMsgHandler = new RspMsgHandler(rsp);
                         rspMsgHandlers.put(deviceId, rspMsgHandler);
                         rspMsgHandler.start();

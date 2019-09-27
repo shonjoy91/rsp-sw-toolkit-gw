@@ -105,7 +105,7 @@ public class TestStore {
 
     public MockSensorPlatform establish(String _sensorId, Facility _facility, Personality _personality) {
         MockSensorManager msm = rspController.getMockSensorManager();
-        MockSensorPlatform msp = msm.establishRSP(_sensorId);
+        MockSensorPlatform msp = msm.establish(_sensorId);
 
         msp.setFacilityId(_facility.toString());
         msp.setPersonality(_personality);

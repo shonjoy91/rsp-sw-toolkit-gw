@@ -30,6 +30,7 @@ import com.intel.rfid.helpers.DateTimeHelper;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
 import com.intel.rfid.helpers.Publisher;
+import com.intel.rfid.helpers.StringHelper;
 import com.intel.rfid.security.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,7 +190,7 @@ public class SensorManager {
 
     public void groupForIds(Collection<String> _sensorIds, List<SensorPlatform> _sensors) {
         for (String id : _sensorIds) {
-            _sensors.add(establishRSP(id));
+            _sensors.add(establish(id));
         }
     }
 
@@ -214,7 +215,7 @@ public class SensorManager {
             clusterMgr.validateToken(_provisioningToken);
         }
 
-        SensorPlatform sensor = establishRSP(_deviceId);
+        SensorPlatform sensor = establish(_deviceId);
         sensor.setProvisionToken(_provisioningToken);
         clusterMgr.alignSensor(sensor);
     }
@@ -276,18 +277,29 @@ public class SensorManager {
      * If an RSP with this ID is already managed by this manager, it is returned,
      * and no new instance is created.
      *
+     * Support Mixed Case Sensitivity for device ID: 
+     * The sensors by default have a device ID with lower case characters 
+     * in the mac address portion rather than upper case characters which
+     * are used in the device labeling.
+     * It is important that the code base defaults are the lower case so it matches
+     * the mqtt topics that the sensor subscribes to.
+     *
      * @param _deviceId the RSP's device ID.
      * @return A SensorPlatform instance managed by this manager.
      */
-    public SensorPlatform establishRSP(String _deviceId) {
+    public SensorPlatform establish(String _deviceId) {
         SensorPlatform sensor;
         synchronized (deviceIdToRSP) {
-            sensor = deviceIdToRSP.computeIfAbsent(_deviceId.toUpperCase(),
-                                                   k -> new SensorPlatform(_deviceId.toUpperCase(), this));
+            sensor = deviceIdToRSP.get(_deviceId);
+            if(sensor == null) {
+                String convertedId = StringHelper.convertCaseRSPId(_deviceId);
+                sensor = new SensorPlatform(convertedId, this);
+                deviceIdToRSP.put(convertedId, sensor);
+            }
         }
         return sensor;
     }
-
+    
     public void sendConnectResponse(String _responseId, String _deviceId, String _facilityId)
             throws IOException, RspControllerException {
 
