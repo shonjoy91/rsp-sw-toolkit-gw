@@ -15,6 +15,7 @@ import com.intel.rfid.api.sensor.ConnectResponse;
 import com.intel.rfid.api.sensor.GatewayStatusUpdate;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
+import com.intel.rfid.controller.RspControllerStatus;
 import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.gpio.GPIODevice;
 import com.intel.rfid.gpio.GPIOManager;
@@ -28,9 +29,12 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.GarbageCollectorMXBean;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
+import static com.intel.rfid.api.sensor.GatewayStatusUpdate.SHUTTING_DOWN;
 
 public class DownstreamManager implements MqttDownstream.Dispatch {
 
@@ -123,8 +127,16 @@ public class DownstreamManager implements MqttDownstream.Dispatch {
             mqttDownstream.publishControllerStatus(mapper.writeValueAsBytes(_status));
             log.info("Published {} {}", _status.getMethod(), _status.params.status);
 
+            
             // for backwards compatibility with name change from gateway to controller
-            GatewayStatusUpdate gsu = new GatewayStatusUpdate(_status);
+            // make sure it is a shutting down message (which it should always be at the
+            // time of this code)
+            if (!RspControllerStatus.RSP_CONTROLLER_SHUTTING_DOWN.label.equals(_status.params.status)) {
+                log.warn("unmapped controller to deprecated gateway status: {}", _status.params.status);
+                return;
+            }
+            GatewayStatusUpdate gsu = new GatewayStatusUpdate(_status.params.device_id,
+                                                              SHUTTING_DOWN);
             mqttDownstream.publishGatewayStatus(mapper.writeValueAsBytes(gsu));
             log.info("Published {} {}", gsu.getMethod(), gsu.params.status);
 

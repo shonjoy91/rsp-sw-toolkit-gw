@@ -20,7 +20,6 @@ package com.intel.rfid.api.sensor;
 
 
 import com.intel.rfid.api.JsonNotification;
-import com.intel.rfid.api.upstream.RspControllerStatusUpdateNotification;
 
 @Deprecated
 public class GatewayStatusUpdate extends JsonNotification {
@@ -47,11 +46,5 @@ public class GatewayStatusUpdate extends JsonNotification {
         public long sent_on = System.currentTimeMillis();
         public String device_id;
         public String status;
-    }
-
-    public GatewayStatusUpdate(RspControllerStatusUpdateNotification _update) {
-        params.device_id = _update.params.device_id;
-        params.status = _update.params.status;
-        params.sent_on = _update.params.sent_on;
     }
 }
