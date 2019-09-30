@@ -748,13 +748,9 @@ public class SensorPlatform
     }
 
     private void setInDeepScan() {
-        // check the behavior parameters to determine
-        // if this behavior provides a duty cycle that is
-        // often enough that tag reads should use the weighting decay algorithm
-        inDeepScan = (!currentBehavior.toggle_target_flag)
-                || (currentBehavior.repeat_until_no_tags)
-                || (currentBehavior.getInv_cycles() == 0
-                && currentBehavior.getDwell_time() > DEEP_SCAN_DWELL_TIME_THRESHOLD);
+        // check the behavior id to see if "DeepScan" is in the name
+        inDeepScan = (currentBehavior.id.toLowerCase().contains("deepscan") ||
+                      currentBehavior.id.toLowerCase().contains("deep_scan"));
     }
 
     public ResponseHandler reset() {
