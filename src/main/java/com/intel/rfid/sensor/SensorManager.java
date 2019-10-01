@@ -359,7 +359,7 @@ public class SensorManager {
 
         if (clusterMgr != null) {
             Cluster cluster = clusterMgr.findClusterByDeviceId(_rsp.getDeviceId());
-            if (clusterMgr.findClusterByDeviceId(_rsp.getDeviceId()) != null) {
+            if (cluster != null) {
                 return new BooleanResult(false,
                                          "refusing to remove sensor " + _rsp.getDeviceId() + " used in cluster " + cluster.id);
             }

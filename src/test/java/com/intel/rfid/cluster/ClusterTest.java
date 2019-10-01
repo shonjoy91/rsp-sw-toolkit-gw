@@ -310,7 +310,6 @@ public class ClusterTest {
         SensorManager sensorMgr = new SensorManager(clusterMgr);
         clusterMgr.setSensorManager(sensorMgr);
         
-        String id01Upper = "RSP-15AB2C";
         String id01Lower = "RSP-15ab2c";
 
         // test that internal storage is 

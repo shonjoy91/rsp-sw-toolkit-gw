@@ -267,6 +267,7 @@ public class SensorManagerTest {
         assertThat(downstreamMgr.handlerExistsFor(rsp01)).isTrue();
 
         SensorPlatform nextRSP = sensorMgr.getSensor("RSP-TEST01");
+        assertThat(nextRSP).isNotNull();
         assertThat(nextRSP.isConnected()).isTrue();
 
     }
