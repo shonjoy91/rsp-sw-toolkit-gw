@@ -21,6 +21,7 @@ import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.InventoryDataNotification;
 import com.intel.rfid.api.sensor.LEDState;
 import com.intel.rfid.api.sensor.OemCfgUpdateNotification;
+import com.intel.rfid.api.sensor.Platform;
 import com.intel.rfid.api.sensor.RspControllerVersions;
 import com.intel.rfid.api.sensor.RspInfo;
 import com.intel.rfid.api.sensor.RfPortStatus;
@@ -121,10 +122,15 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
@@ -174,14 +180,56 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         clusterMgr = rspController.getMockClusterManager();
         sensorMgr = rspController.getMockSensorManager();
     }
+    
+    protected String formatClasNameToJson(String _input) {
+        return _input.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+    }
 
     protected void persistJsonApi(String _suffix, Object _obj) throws IOException {
         // convert CamelCase to snake_case and add the (optional) suffix
-        String fileName = _obj.getClass()
-                              .getSimpleName()
-                              .replaceAll("(.)(\\p{Upper})", "$1_$2")
-                              .toLowerCase() + _suffix;
+        //String fileName = _obj.getClass()
+        //                      .getSimpleName()
+        //                      .replaceAll("(.)(\\p{Upper})", "$1_$2")
+        //                      .toLowerCase() + _suffix;
+        String fileName = formatClasNameToJson(_obj.getClass().getSimpleName()) + _suffix;
         writer.writeValue(new File(outDir.toFile(), fileName + ".json"), _obj);
+    }
+    
+    protected TreeSet<String> getExpectedNames(String _package) throws IOException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        assert classLoader != null;
+        String path = _package.replace('.', '/');
+        Enumeration<URL> resources = classLoader.getResources(path);
+        TreeSet<String> names = new TreeSet<>();
+        while (resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+            File pkgDir = new File(resource.getFile());
+            File[] files = pkgDir.listFiles();
+            if(files == null) { continue; }
+            for (File file : files) {
+                String fname = file.getName();
+                // filter for only main classes (no inner classes)
+                if (fname.endsWith(".class") && !fname.contains("$")) {
+                    fname = formatClasNameToJson(fname.substring(0, fname.length() - 6));
+                    names.add(fname);
+                }
+            }
+        }
+        return names;
+    }
+
+    protected TreeSet<String>  getExampleNames() {
+        TreeSet<String> names = new TreeSet<>();
+        File[] files = outDir.toFile().listFiles();
+        if(files == null) { return names; }
+        for(File file : files) {
+            String fname = file.getName();
+            // filter for only main classes (no inner classes)
+            if (fname.endsWith(".json")) {
+                names.add(file.getName().substring(0, file.getName().length() - 5));
+            }
+        }
+        return names;
     }
 
     protected void persistJsonApi(Object _obj) throws IOException {
@@ -195,8 +243,17 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
     }
 
     @Test
+    public void testGetFiles() throws IOException {
+        Set<String> filenames = getExpectedNames("com.intel.rfid.api.upstream");
+        for(String f : filenames) {
+            System.out.println(f);
+        }
+    }
+
+    @Test
     public void generateUpstreamApiExamples() throws IOException, ConfigException {
 
+        
         outDir = Paths.get("/tmp/api/upstream");
         Env.ensurePath(outDir);
 
@@ -410,6 +467,7 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
         rspInfo.configuration_state = "DISCONNECTED";
         rspInfo.hwaddress = "98:4f:ee:15:04:17";
         rspInfo.operational_state = "Idle";
+        rspInfo.platform = Platform.H1000;
         persistJsonApi(new SensorGetStateResponse(sensorGetStateReq.id, rspInfo));
 
         SensorGetVersionsRequest sensorGetVersionsReq = new SensorGetVersionsRequest();
@@ -458,6 +516,15 @@ public class ApiTest implements InventoryManager.UpstreamEventListener {
                 mqttStatus);
         persistJsonApi(rsp);
         persistJsonApi(new UpstreamMqttStatusNotification(mqttStatus));
+
+        
+        // check that all the .java files in the package have corresponding examples
+        Set<String> expectedNames = getExpectedNames("com.intel.rfid.api.upstream");
+        Set<String> exampleNames = getExampleNames();
+        expectedNames.removeAll(exampleNames);
+        assertThat(expectedNames).isEmpty();
+
+        
 
     }
 }

@@ -11,6 +11,7 @@
     "camera" : false,
     "wireless" : false,
     "configuration_state" : "DISCONNECTED",
-    "operational_state" : "Idle"
+    "operational_state" : "Idle",
+    "platform" : "H1000"
   }
 }
