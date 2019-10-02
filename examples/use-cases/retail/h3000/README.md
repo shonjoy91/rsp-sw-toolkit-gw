@@ -48,14 +48,14 @@ or an equivalent setup.
 
 6. Remove all other tags from the room.  
 
-7. The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different 
-directions and space them at least 3-5 feet apart (see image below).
-![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
+7. <div id="phys_setup"></div>The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different directions and space them at least 3-5 feet apart (see image below).  
+
+    ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
 
 ## Terminology and Concepts
 | Term | Definition |
 | :------ | :------ |
-| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "RSP-" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label.  Based on the following image, the sensor ID would be RSP-1508e4.  ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
+| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "__RSP-__" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label.  Based on the following image, the sensor ID would be RSP-1508e4.  ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
 | Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events. |
 | Alias | An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory. The alias allows you to give meaningful names (like BackStock or FittingRoom1) for the locations as opposed to using sensor and antenna IDs.  The default value is the sensor ID followed by a hyphen followed by the antenna port number, for example RSP-1508e4-0. |
 | Facility | This is used to define zones that consist of one or more sensors.  A typical deployment/location/store will be configured as one facility. |
@@ -99,7 +99,7 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
           ]
         }
         ```     
-    2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, so we will set the personality to __EXIT__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.
+    2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, so we will set the personality to __EXIT (MUST BE CAPITALIZED)__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.  
         ```json
         {
           "id": "RetailUseCaseClusterConfigExample",
@@ -171,10 +171,10 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
           ]
         }
         ``` 
-    6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.<br/><br/>
-      In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __You will need to use your actual sensor's ID in order for the controller application to function properly.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below):<br/>
+    6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.<br/><br/><div id="sensor_naming"></div>
+      In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __You will need to use your actual sensor's ID in order for the controller application to function properly.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below):<br/><br/>
       ![Sensor_Id_Image](../../resources/sensor_idx75.png)<br/>
-      __NOTE: The last six characters of the sensor ID can only consist of numeric characters zero through nine and alpha characters A through F [0-9,A-F].__<br/><br/>
+      __NOTE: Sensor ID = "RSP-XXXXXX" where XXXXXX is the last six characters of the device MAC address.  The last six characters can only consist of numeric values zero through nine and alpha characters A through F [0-9,A-F].  See image above.__<br/><br/><div id="sample_cluster"></div>
       If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:
         ```json
         {
@@ -186,19 +186,19 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
               "facility_id": "Retail_Store_8402",
               "aliases": [ "BackStock", "BackStock" ],
               "behavior_id": "behavior_PORTS_1",
-              "sensor_groups": [["<YOUR_SENSOR_ID>"]]
+              "sensor_groups": [["RSP-XXXXXX"]]
             }, {
               "id": "SalesFloorExitCluster",
               "personality": "EXIT",
               "facility_id": "Retail_Store_8402",
               "aliases": [ "SalesFloor", "SalesFloor" ],
               "behavior_id": "behavior_PORTS_1",
-              "sensor_groups": [["<YOUR_SENSOR_ID>"]]
+              "sensor_groups": [["RSP-XXXXXX"]]
             }
           ]
         }
         ```  
-    __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined and illustrated in Step 7 in the [Prerequisites section](#prerequisites).__
+        __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined and illustrated in [Step 7 in the Prerequisites section](#phys_setup).__
 
 3. (Optional) Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
 
@@ -251,8 +251,17 @@ using the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) 
 
     The cluster configuration file can be found at __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/retail_cluster_config.json__.
 
-    The cluster IDs (BackStockCluser and SalesFloorExitCluser) will be displayed.  If you click on the cluster ID name, you should see the values that you set in the cluster configuration file.
-    ![Cluster_Config_Upload_Button](../../resources/Cluster_after_load.png)
+    The cluster IDs (BackStockCluster and SalesFloorExitCluster) will be displayed.  If you click on the cluster ID name, you should see the values that you set in the cluster configuration file.
+
+    ![Cluster_Config_Upload_Button](../../resources/Cluster_after_load.png)  
+    __TROUBLESHOOTING:  If your Cluster Config page does not look like the image above then:__
+    - Verify you successfully loaded the behavior file in the previous step.
+    - Verify your cluster config file is valid.
+        - Ensure your cluster config file has proper JSON formatting using the [JSON Linting tool](https://jsonlint.com/).
+        - Make sure the values for the Sensor IDs follow the "RSP-XXXXXX" [naming convention](#sensor_naming).
+        - Make sure to capitalize the word "EXIT" for the cluster with the EXIT personality.
+        - Make sure the only differences between your cluster config file and the [sample seen above](#sample_cluster) are your Sensor IDs.
+    - Try maximizng your browser window.
 <br/><br/>
 6. On the [Scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
 according to the cluster configuration by pressing the __FROM_CONFIG__ button.
@@ -269,9 +278,9 @@ and aliases) and are reading tags.  Your sensor page should look like the follow
 
     ![Sensor_After_Confile_File_Load](../../resources/Sensors_after_load.png)
   
-     ![Sensor_Connected_Icon](../../resources/Sensor_Connected_Icon_vsm.png) Sensor is connected.  
-     ![Sensor_NotConnected_Icon](../../resources/Sensor_Disconnected_Icon_vsm.png)  Sensor is disconnected.  
-     ![Sensor_Reading_Icon](../../resources/Sensor_Reading_Icon_vsm.png)  Sensor is reading tags.
+     ![Sensor_Connected_Icon](../../resources/Sensor_Connected_Icon_vsm.png) Connected  
+     ![Sensor_NotConnected_Icon](../../resources/Sensor_Disconnected_Icon_vsm.png)  Disconnected  
+     ![Sensor_Reading_Icon](../../resources/Sensor_Reading_Icon_vsm.png)  Reading tags
    
    __TROUBLESHOOTING:  If your sensor page does not look like the image above then:__
      - __Make sure the cluster configuration file is valid.  Check the steps you performed in the [Configure / Control the Intel&reg; RSP Controller Application](#configure--control-the-intel-rsp-controller-application) section.__
