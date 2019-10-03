@@ -122,12 +122,17 @@
             paramsCol.appendChild(newAliasParam(cluster, "alias_port_" +x, val));
         }
 
-        paramsRow = newParamsRow(paramsDiv);
-        paramsCol = newParamsCol(paramsRow);
-        newSensorGroupParam(paramsCol, cluster);
+        if(cluster.sensor_groups.length > 0) {
+            paramsRow = newParamsRow(paramsDiv);
+            paramsCol = newParamsColSize(paramsRow, "m12");
+            newSensorGroupParam(paramsCol, cluster);
+        }
 
-        paramsCol = newParamsCol(paramsRow);
-        newProvisionTokenParam(paramsCol, cluster);
+        if(cluster.tokens.length > 0) {
+            paramsRow = newParamsRow(paramsDiv);
+            paramsCol = newParamsColSize(paramsRow, "m12");
+            newProvisionTokenParam(paramsCol, cluster);
+        }
 
         // insert the cluster in alphabetical order
         var container = document.getElementById("clusters_container");
@@ -161,8 +166,8 @@
             var e;
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l12");
-            e.innerHTML = cluster.sensor_groups[x].toString();
+            e.classList.add("m12");
+            e.innerHTML = cluster.sensor_groups[x].join(", ");  
             r.append(e);
         }
     }
@@ -192,13 +197,14 @@
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l2");
+            e.classList.add("m4");
             e.innerHTML = "username";
             r.append(e);
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l10");
+            e.classList.add("m8");
+            e.style.wordBreak = "break-word";
             e.innerHTML = token.username;
             r.append(e);
 
@@ -208,13 +214,14 @@
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l2");
+            e.classList.add("m4");
             e.innerHTML = "token";
             r.append(e);
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l10");
+            e.classList.add("m8");
+            e.style.wordBreak = "break-word";
             e.innerHTML = token.token;
             r.append(e);
 
@@ -224,13 +231,15 @@
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l3");
+            e.classList.add("m4");
+            e.style.wordBreak = "break-word";
             e.innerHTML = "generatedTimestamp";
             r.append(e);
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l9");
+            e.classList.add("m8");
+            e.style.wordBreak = "break-word";
             e.innerHTML = token.generatedTimestamp;
             r.append(e);
 
@@ -240,13 +249,15 @@
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l3");
+            e.classList.add("m4");
+            e.style.wordBreak = "break-word";
             e.innerHTML = "expirationTimestamp";
             r.append(e);
 
             e = document.createElement("div");
             e.classList.add("w3-col");
-            e.classList.add("l9");
+            e.classList.add("m8");
+            e.style.wordBreak = "break-word";
             e.innerHTML = token.expirationTimestamp;
             r.append(e);
         }
@@ -320,10 +331,15 @@
     }
 
     function newParamsCol(parent) {
+        return newParamsColSize(parent, "m6")
+    }
+
+    function newParamsColSize(parent, size) {
         var e;
         e = document.createElement("div");
         // e.classList.add("w3-row-padding");
-        e.classList.add("w3-half");
+        e.classList.add("w3-col");
+        e.classList.add(size);
         parent.appendChild(e);
         return e;
     }
@@ -544,38 +560,7 @@
 
 </script>
 
-<style>
-    .fixed_header {
-        height: 120px;
-    }
-
-
-    .fixed_content {
-        margin-top: 120px;
-    }
-
-</style>
 <body onload="init()">
-
-<!-- Header -->
-<div class="fixed_header w3-black">
-    <script src="header.js"></script>
-    <div id="page_commands" class="w3-bar w3-blue w3-padding">
-        <div class="w3-bar-item w3-large" id="cluster_cfg_id"></div>
-<!--        <div class="w3-bar-item w3-button w3-large" onclick="addCluster()">-->
-<!--            <i class="fa fa-plus-square" title="Add Cluster"> </i>-->
-<!--        </div>-->
-        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
-            <i class="fa fa-upload" title="Upload From File"> </i> Upload From File
-        </div>
-        <div class="w3-bar-item w3-button w3-large" onclick="download()">
-            <i class="fa fa-download" title="Download To File"> </i> Download To File
-        </div>
-        <div class="w3-bar-item w3-button w3-large" onclick="deleteClusterConfig()">
-            <i class="fa fa-trash" title="Delete Cluster Config"> </i> Delete Cluster Config
-        </div>
-    </div>
-</div>
 
 <div id="modal_overlay" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
@@ -592,7 +577,26 @@
     </div>
 </div>
 
-<div id="clusters_container" class="fixed_content">
+<div id="header" class="w3-black">
+    <script src="header.js"></script>
+    <div id="page_commands" class="w3-bar w3-blue">
+        <div class="w3-bar-item w3-large" id="cluster_cfg_id"></div>
+<!--        <div class="w3-bar-item w3-button w3-large" onclick="addCluster()">-->
+<!--            <i class="fa fa-plus-square" title="Add Cluster"> </i>-->
+<!--        </div>-->
+        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
+            <i class="fa fa-upload" title="Upload From File"> </i> Upload From File
+        </div>
+        <div class="w3-bar-item w3-button w3-large" onclick="download()">
+            <i class="fa fa-download" title="Download To File"> </i> Download To File
+        </div>
+        <div class="w3-bar-item w3-button w3-large" onclick="deleteClusterConfig()">
+            <i class="fa fa-trash" title="Delete Cluster Config"> </i> Delete Cluster Config
+        </div>
+    </div>
+</div>
+
+<div id="clusters_container">
 </div>
 
 </body>

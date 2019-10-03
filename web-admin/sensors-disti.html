@@ -308,7 +308,7 @@
         newRow.className = "w3-row w3-padding";
 
         var col = document.createElement("div");
-        col.className = "col_1";
+        col.className = "w3-col l2";
         col.appendChild(document.createTextNode(deviceId));
         // add 2 spaces
         col.appendChild(document.createTextNode('\u00A0\u00A0'));
@@ -317,10 +317,10 @@
         col.appendChild(iCnx);
         newRow.appendChild(col);
 
-        newRow.appendChild(createStandardColumn("col_2", deviceId + ".app_version"));
-        newRow.appendChild(createStandardColumn("col_3", deviceId + ".platform_support_version"));
-        newRow.appendChild(createStandardColumn("col_4", deviceId + ".region"));
-        newRow.appendChild(createStandardColumn("col_5", deviceId + ".status"));
+        newRow.appendChild(createStandardColumn("w3-col l2", deviceId + ".app_version"));
+        newRow.appendChild(createStandardColumn("w3-col l2", deviceId + ".platform_support_version"));
+        newRow.appendChild(createStandardColumn("w3-col l2", deviceId + ".region"));
+        newRow.appendChild(createStandardColumn("w3-col l4", deviceId + ".status"));
 
         var table = document.getElementById("table_data");
         var child = null;
@@ -354,56 +354,37 @@
 
 </script>
 
-<style>
-    .content {
-        margin-top: 150px;
-    }
-
-    .col_1, .col_2, .col_3, .col_4, .col_5 {
-        float: left;
-    }
-
-    .col_1, .col_2, .col_3, .col_4 {
-        width: 15%;
-    }
-
-    .col_5 {
-        width: 40%;
-    }
-
-</style>
-
 <body onload="init()">
 
 <!-- Header -->
-<div class="fixed_header w3-black">
+<div class="w3-black">
     <script src="header.js"></script>
 
     <div id="available_configuration" class="w3-row w3-padding w3-border w3-blue w3-large">
-        <div class="col_1">Target Configuration</div>
-        <div class="col_2" id="repo_app_version"><i class="fas fa-spinner fa-pulse"></i></div>
-        <div class="col_3" id="repo_platform_support"><i class="fas fa-spinner fa-pulse"></i></div>
-        <div class="col_4 w3-hover-white" id="selected_region" style="cursor: default" onClick="toggleRegionView()">
+        <div class="w3-col l2">Target Configuration</div>
+        <div class="w3-col l2" id="repo_app_version"><i class="fas fa-spinner fa-pulse"></i></div>
+        <div class="w3-col l2" id="repo_platform_support"><i class="fas fa-spinner fa-pulse"></i></div>
+        <div class="w3-col l2 w3-hover-white" id="selected_region" style="cursor: default" onClick="toggleRegionView()">
             Select a region
         </div>
-        <div class="col_5">&nbsp;</div>
+        <div class="w3-col l4">&nbsp;</div>
     </div>
     <div id="regions_view" class="w3-hide w3-teal w3-border">
         <div class="w3-container w3-center w3-xxlarge w3-padding">!!! Changing regions has legal ramifications ... !!!</div>
         <div class="w3-container w3-padding" id="regions_container"></div>
     </div>
     <div id="table_header" class="w3-row w3-padding w3-grey">
-        <div class="col_1">Device</div>
-        <div class="col_2">Version rfid-rsp</div>
-        <div class="col_3">Version platform-support</div>
-        <div class="col_4">Region</div>
-        <div class="col_5">Status</div>
+        <div class="w3-col l2">Device</div>
+        <div class="w3-col l2">Version rfid-rsp</div>
+        <div class="w3-col l2">Version platform-support</div>
+        <div class="w3-col l2">Region</div>
+        <div class="w3-col l4">Status</div>
     </div>
 
 </div>
 
 <!-- Content -->
-<div id="table_data" class="fixed_content">
+<div id="table_data">
 
 </div>
 

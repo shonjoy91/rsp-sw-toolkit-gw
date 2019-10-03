@@ -226,9 +226,8 @@
     function handleConfig(deviceId, facilityId, personality, aliases) {
         establishSensorElement(deviceId, ".facility").innerHTML = facilityId;
         establishSensorElement(deviceId, ".personality").innerHTML = (personality !== null ? personality : "&nbsp;");
-        establishSensorElement(deviceId, ".aliases").innerHTML = aliases;
+        establishSensorElement(deviceId, ".aliases").innerHTML = aliases.join(", ");
     }
-
 
     function updateAlerts(deviceId) {
         var e = establishSensorElement(deviceId, ".alerts");
@@ -265,6 +264,7 @@
         return e;
     }
 
+
     function createSensorRow(deviceId) {
 
         var newRow;
@@ -273,10 +273,10 @@
 
         newRow = document.createElement("div");
         newRow.id = deviceId + ".row";
-        newRow.className = "w3-row w3-padding";
+        newRow.className = "w3-row w3-padding w3-border-bottom";
 
         col = document.createElement("div");
-        col.className = "col_1";
+        col.className = "w3-col m2";
 
         e = document.createElement("span");
         e.innerHTML = deviceId;
@@ -301,12 +301,12 @@
 
         newRow.appendChild(col);
 
-        newRow.appendChild(createStandardColumn("col_2", deviceId + ".behavior"));
-        newRow.appendChild(createStandardColumn("col_3", deviceId + ".facility"));
-        newRow.appendChild(createStandardColumn("col_4", deviceId + ".personality"));
-        newRow.appendChild(createStandardColumn("col_5", deviceId + ".aliases"));
+        newRow.appendChild(createStandardColumn("w3-col m2", deviceId + ".behavior"));
+        newRow.appendChild(createStandardColumn("w3-col m2", deviceId + ".facility"));
+        newRow.appendChild(createStandardColumn("w3-col m1", deviceId + ".personality"));
+        newRow.appendChild(createStandardColumn("w3-col m4", deviceId + ".aliases"));
 
-        col = createStandardColumn("col_6", deviceId + ".alerts");
+        col = createStandardColumn("w3-col m1", deviceId + ".alerts");
         col.onclick = showAlertsClosure(deviceId);
         col.classList.add("w3-hover-white");
         col.classList.add("w3-center");
@@ -328,11 +328,13 @@
         } else {
             table.insertBefore(newRow, child);
         }
+
     }
 
     function createStandardColumn(className, id) {
         var col = document.createElement("div");
         col.className = className;
+        col.style.wordBreak = "break-word";
         col.id = id;
         col.innerHTML = "&nbsp;";
         col.appendChild(document.createTextNode('\u00A0\u00A0'));
@@ -376,35 +378,25 @@
 
 </script>
 
-<style>
-    .col_1, .col_2, .col_3, .col_4, .col_5, .col_6 {
-        float: left;
-        position: relative;
-    }
-
-    .col_1, .col_4 {
-        width: 12%;
-    }
-
-    .col_2, .col_3 {
-        width: 18%;
-    }
-
-    .col_6 {
-        width: 5%;
-    }
-
-    .col_5 {
-        width: 35%;
-    }
-
-</style>
-
 <body onload="init()">
 
+<div id="modal_overlay" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
+        <div class="w3-bar w3-blue">
+            <div class="w3-bar-item" id="modal_device_id"></div>
+            <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
+            <div class="w3-bar-item" id="modal_label"></div>
+            <div class="w3-bar-item">
+                <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="modal_content"></div>
+    </div>
+</div>
 
-<!-- Header -->
-<div class="fixed_header w3-black">
+<div id="header" class="w3-black">
     <script src="header.js"></script>
 
     <div id="sensor_commands" class="w3-bar w3-blue">
@@ -440,34 +432,18 @@
 
     </div>
 
-    <div id="table_header" class="w3-row w3-padding w3-grey">
-        <div class="col_1">Device</div>
-        <div class="col_2">Behavior</div>
-        <div class="col_3">Facility</div>
-        <div class="col_4">Personality</div>
-        <div class="col_5">Aliases</div>
-        <div class="col_6">Alerts</div>
-    </div>
 </div>
 
-<div id="modal_overlay" class="w3-modal">
-    <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
-        <div class="w3-bar w3-blue">
-            <div class="w3-bar-item" id="modal_device_id"></div>
-            <div class="w3-bar-item"><i class="fa fa-greater-than"></i></div>
-            <div class="w3-bar-item" id="modal_label"></div>
-            <div class="w3-bar-item">
-                <button class="w3-button w3-display-topright" onclick='closeResultsModal();'>
-                    <i class="fa fa-times"></i>
-                </button>
-            </div>
-        </div>
-        <div id="modal_content"></div>
-    </div>
+<div id="table_header" class="w3-row w3-padding w3-grey">
+    <div class="w3-col m2">Device</div>
+    <div class="w3-col m2">Behavior</div>
+    <div class="w3-col m2">Facility</div>
+    <div class="w3-col m1">Personality</div>
+    <div class="w3-col m4">Aliases</div>
+    <div class="w3-col m1">Alerts</div>
 </div>
 
-
-<div id="table_data" class="fixed_content">
+<div id="table_data">
 </div>
 
 </body>

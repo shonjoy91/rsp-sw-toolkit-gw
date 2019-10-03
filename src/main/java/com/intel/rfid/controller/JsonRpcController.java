@@ -725,11 +725,14 @@ public class JsonRpcController
             return;
         }
 
-        handler.waitForResponse(5, TimeUnit.SECONDS);
-        if (handler.getResult() != null) {
-            sendOK(_reqId, handler.getResult());
+        if (handler.waitForResponse()) {
+            if (handler.getResult() != null) {
+                sendOK(_reqId, handler.getResult());
+            } else {
+                sendErr(_reqId, JsonRpcError.Type.INTERNAL_ERROR, handler.getError());
+            }
         } else {
-            sendErr(_reqId, JsonRpcError.Type.INTERNAL_ERROR, handler.getError());
+            sendErr(_reqId, JsonRpcError.Type.INTERNAL_ERROR, "timed out waiting for a response");
         }
 
     }

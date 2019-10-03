@@ -19,8 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class ResponseHandler {
 
     public static final long DEFAULT_WAIT_TIMEOUT_MILLIS = 3500;
-    // Sensor resets take longer to complete, so give 15 seconds before timing out
-    public static final long SENSOR_RESET_TIMEOUT_MILLIS = 15000;
+    public static final long LONG_RUNNING_COMMANDS_TIMEOUT = 15000;
 
     private static final String REQ_ID_NONE = "none";
     protected String deviceId;
@@ -28,6 +27,7 @@ public class ResponseHandler {
     private JsonNode errorNode;
     private final CountDownLatch latch = new CountDownLatch(1);
     private JsonRequest request;
+    private long waitTimeout= DEFAULT_WAIT_TIMEOUT_MILLIS;
 
     private String requestId;
 
@@ -37,11 +37,14 @@ public class ResponseHandler {
         requestId = _trxId;
     }
 
-    // use these constructors to create an "instant" response handler
-    public ResponseHandler(String _deviceId, JsonRpcError.Type _errType, String _msg) {
-        this(_deviceId, REQ_ID_NONE, _errType, _msg);
+    // use this constructor to adjust the response timeout
+    // i.e. for long running commands such as a reset
+    public ResponseHandler(String _deviceId, String _trxId, long _waitTimeout) {
+        this(_deviceId, _trxId);
+        waitTimeout = _waitTimeout;
     }
-
+    
+    // use these constructors to create an "instant" response handler
     public ResponseHandler(String _deviceId, String _trxId, JsonRpcError.Type _errType, String _msg) {
         this(_deviceId, _trxId);
         if (JsonRpcError.Type.NO_ERROR.equals(_errType)) {
@@ -55,6 +58,10 @@ public class ResponseHandler {
             errorNode = error;
         }
         latch.countDown();
+    }
+
+    public ResponseHandler(String _deviceId, JsonRpcError.Type _errType, String _msg) {
+        this(_deviceId, REQ_ID_NONE, _errType, _msg);
     }
 
     public void setRequest(JsonRequest request) {
@@ -104,7 +111,7 @@ public class ResponseHandler {
     // returns the result of waiting on the latch count to go to 0
     // true - if latch reached 0, false means a timeout
     public boolean waitForResponse() throws InterruptedException {
-        return waitForResponse(DEFAULT_WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        return waitForResponse(waitTimeout, TimeUnit.MILLISECONDS);
     }
 
     public boolean waitForResponse(long l, TimeUnit timeUnit) throws InterruptedException {

@@ -37,7 +37,7 @@
       "id": "SalesFloorFittingRoom",
       "facility_id": "SalesFloor",
       "behavior_id": "ClusterFittingRoom_PORTS_1",
-      "personality": "FITTING_ROOM",
+      "personality": "Fitting_rooM",
       "sensor_groups": [
         ["RSP-150010"]
       ]

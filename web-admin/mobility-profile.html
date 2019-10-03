@@ -544,30 +544,18 @@
 </script>
 
 <style>
-    .fixed_header {
-        height: 120px;
+    .imgbox {
+        display: grid;
+        max-width: 600px;
+        margin: 5px;
     }
-
-
-    .fixed_content {
-        margin-top: 120px;
+    .imgcenter {
+        max-width: 100%;
+        max-height: 100vh;
+        margin: auto;
     }
-
 </style>
 <body onload="init()">
-
-<!-- Header -->
-<div class="fixed_header w3-black">
-    <script src="header.js"></script>
-    <div id="page_commands" class="w3-bar w3-blue w3-padding">
-        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
-            <i class="fa fa-upload"> </i> Upload From File
-        </div>
-        <div class="w3-bar-item w3-right w3-button" onclick="showInfo()">
-            <i class="fas fa-info-circle w3-xlarge"></i>
-        </div>
-    </div>
-</div>
 
 <div id="modal_overlay" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
@@ -621,17 +609,9 @@
             <tr>
                 <th class="w3-center" style="vertical-align: baseline"><h4>Algorithm</h4></th>
                 <td>
-<!--                    y-intercept = threshold - (slope * holdoff);-->
-<!--                    <br>-->
-<!--                    // weight used in the RSSI comparison-->
-<!--                    <br>-->
-<!--                    weight = (slope * (System.currentTimeMillis() - _lastReadMillis)) + y-intercept;-->
-<!--                    <br>-->
-<!--                    // weight cannot be more than the absolute threshold-->
-<!--                    <br>-->
-<!--                    if (weight > threshold) { weight = threshold; }-->
-<!--                    <br>-->
-                    <img src="mobility-profile.png" width="604" height="482" alt="mobility profile equation">
+                    <div class="imgbox">
+                        <img class="imgcenter" src="mobility-profile.png" alt="graph of weighted rssi decay formual">
+                    </div>
                 </td>
             </tr>
         </table>
@@ -639,8 +619,21 @@
     </div>
 </div>
 
+<!-- Header -->
+<div class="w3-black">
+    <script src="header.js"></script>
+    <div id="page_commands" class="w3-bar w3-blue w3-padding">
+        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
+            <i class="fa fa-upload"> </i> Upload From File
+        </div>
+        <div class="w3-bar-item w3-right w3-button" onclick="showInfo()">
+            <i class="fas fa-info-circle w3-xlarge"></i>
+        </div>
+    </div>
+</div>
 
-<div id="mobility_profile_container" class="fixed_content">
+
+<div id="mobility_profile_container">
 </div>
 
 </body>

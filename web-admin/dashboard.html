@@ -129,7 +129,7 @@
 
     function onSchedulerSummary(scheduler_summary) {
 
-        if(checkResponseError(scheduler_summary)) { return;}
+        if (checkResponseError(scheduler_summary)) { return;}
 
         for (var i in scheduler_summary.available_states) {
             var curState = scheduler_summary.available_states[i];
@@ -156,167 +156,309 @@
 
 </script>
 
+<style>
+    .widget {
+        border: 16px solid black;
+        min-height: 0px;
+    }
+
+    @media only screen and (min-width: 980px) {
+        .widget {
+            min-height: 360px;
+        }
+    }
+</style>
+
 <body onload="init()">
 
-<!-- Header -->
-<script src="header.js"></script>
-
-
-<div class="w3-row-padding w3-margin-top">
-
-    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar w3-xxlarge">
-            <div class="w3-bar-item"><i class="fa fa-rss"></i></div>
-            <div class="w3-bar-item w3-right">Sensors</div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Reading</div>
-            <div class="w3-bar-item w3-right" id="sensors_reading"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Connected</div>
-            <div class="w3-bar-item w3-right" id="sensors_connected"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Disconnected</div>
-            <div class="w3-bar-item w3-right" id="sensors_disconnected"></div>
-        </div>
-    </div>
-
-    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar w3-xxlarge">
-            <div class="w3-bar-item"><i class="fa fa-tags"></i></div>
-            <div class="w3-bar-item w3-right">Tag States</div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Present</div>
-            <div class="w3-bar-item w3-right" id="tag_states_present"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Exiting</div>
-            <div class="w3-bar-item w3-right" id="tag_states_exiting"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Departed Exit</div>
-            <div class="w3-bar-item w3-right" id="tag_states_departed_exit"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Departed POS</div>
-            <div class="w3-bar-item w3-right" id="tag_states_departed_pos"></div>
-        </div>
-    </div>
-
-    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar w3-xxlarge">
-            <div class="w3-bar-item"><i class="fa fa-tags"></i></div>
-            <div class="w3-bar-item w3-right">Tag Reads</div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Reads Per Second</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_reads_per_second"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">less than 01 min</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_within_last_01_min"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">from 01 min to 05 min</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_from_01_to_05_min"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">from 05 min to 30 min</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_from_05_to_30_min"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">from 30 min to 60 min</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_from_30_to_60_min"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">from 60 min to 24 hours</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_from_60_min_to_24_hr"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">more than 24 hours</div>
-            <div class="w3-bar-item w3-right" id="tag_reads_more_than_24_hr"></div>
-        </div>
-    </div>
-
+<div id="header">
+    <script src="header.js"></script>
 </div>
 
 <div class="w3-row-padding w3-margin-top">
 
-    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar">
-            <div class="w3-bar-item w3-xxlarge"><i class="fa fa-cloud-upload-alt"></i></div>
-            <div class="w3-bar-item w3-right" title="Communication channel between Controller and Cloud">
-                <span class="w3-xxlarge">Upstream MQTT</span>
-                <br>(Controller &lt;---&gt; Cloud)
+    <div class="w3-col l4 w3-blue widget">
+
+        <div class="w3-row w3-padding">
+            <div class="w3-col s2 w3-xlarge"><i class="fa fa-rss"></i></div>
+            <div class="w3-col s10 w3-xlarge">
+                <div class="w3-container">
+                    <div class="w3-right">Sensors</div>
+                </div>
             </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Connection State</div>
-            <div class="w3-bar-item w3-right" id="upstream_connection_state"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Reading</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="sensors_reading"></div>
+                </div>
+            </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Broker URI</div>
-            <div class="w3-bar-item w3-right" id="upstream_broker_uri"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Connected</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="sensors_connected"></div>
+                </div>
+            </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Subscribe Topics</div>
-            <div class="w3-bar-item w3-right" id="upstream_subscribes"></div>
-        </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Publish Topics</div>
-            <div class="w3-bar-item w3-right" id="upstream_publishes"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Disconnected</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="sensors_disconnected"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar">
-            <div class="w3-bar-item w3-xxlarge"><i class="fa fa-download"></i></div>
-            <div class="w3-bar-item w3-right" title="Communication channel between Controller and Sensor">
-                <span class="w3-xxlarge">Downstream MQTT</span>
-                <br>(Controller &lt;---&gt; Sensor)
+    <div class="w3-col l4 w3-blue widget">
+        <div class="w3-row w3-padding">
+            <div class="w3-col s2 w3-xlarge"><i class="fa fa-tags"></i></div>
+            <div class="w3-col s10 w3-xlarge">
+                <div class="w3-container">
+                    <div class="w3-right">Tag States</div>
+                </div>
             </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Connection State</div>
-            <div class="w3-bar-item w3-right" id="downstream_connection_state"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Present</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_states_present"></div>
+                </div>
+            </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Broker URI</div>
-            <div class="w3-bar-item w3-right" id="downstream_broker_uri"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Exiting</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_states_exiting"></div>
+                </div>
+            </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Subscribe Topics</div>
-            <div class="w3-bar-item w3-right" id="downstream_subscribes"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Departed Exit</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_states_departed_exit"></div>
+                </div>
+            </div>
         </div>
-        <div class="w3-bar">
-            <div class="w3-bar-item">Publish Topics</div>
-            <div class="w3-bar-item w3-right" id="downstream_publishes"></div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Departed POS</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_states_departed_pos"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="w3-third w3-blue" style="border:16px solid black; min-height:360px">
-        <div class="w3-bar w3-xxlarge">
-            <div class="w3-bar-item"><i class="far fa-calendar-alt"></i></div>
-            <div class="w3-bar-item w3-right">Scheduler</div>
+    <div class="w3-col l4 w3-blue widget">
+        <div class="w3-row w3-padding">
+            <div class="w3-col s2 w3-xlarge"><i class="fa fa-tags"></i></div>
+            <div class="w3-col s10 w3-xlarge">
+                <div class="w3-container">
+                    <div class="w3-right">Tag Reads</div>
+                </div>
+            </div>
         </div>
-        <div class="w3-bar-block">
-            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('INACTIVE');">
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">Reads Per Second</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_reads_per_second"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">less than 01 min</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_within_last_01_min"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">from 01 min to 05 min</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_from_01_to_05_min"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">from 05 min to 30 min</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_from_05_to_30_min"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">from 30 min to 60 min</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_from_30_to_60_min"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">from 60 min to 24 hours</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_from_60_min_to_24_hr"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col s8">more than 24 hours</div>
+            <div class="w3-col s4">
+                <div class="w3-container">
+                    <div class="w3-right" id="tag_reads_more_than_24_hr"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="w3-row-padding w3-margin-top">
+    <div class="w3-col l4 w3-blue widget">
+        <div class="w3-row w3-padding">
+            <div class="w3-col s2 w3-xlarge"><i class="fa fa-cloud-upload-alt"></i></div>
+            <div class="w3-col s10 " title="Communication channel between Controller and Cloud">
+                <div class="w3-container">
+                    <div class="w3-right">
+                        <span class="w3-xlarge">Upstream MQTT</span>
+                        <br>
+                        <span>(Controller &lt;---&gt; Cloud)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Connection State</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="upstream_connection_state"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Broker URI</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="upstream_broker_uri"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Subscribe Topics</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="upstream_subscribes"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Publish Topics</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="upstream_publishes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w3-col l4 w3-blue widget">
+        <div class="w3-row w3-padding">
+            <div class="w3-col s2 w3-xlarge"><i class="fa fa-download"></i></div>
+            <div class="w3-col s10 " title="Communication channel between Controller and Sensor">
+                <div class="w3-container">
+                    <div class="w3-right">
+                        <span class="w3-xlarge">Downstream MQTT</span>
+                        <br>
+                        <span>(Controller &lt;---&gt; Sensor)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Connection State</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="downstream_connection_state"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Broker URI</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="downstream_broker_uri"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Subscribe Topics</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="downstream_subscribes"></div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l3">Publish Topics</div>
+            <div class="w3-col l9">
+                <div class="w3-container">
+                    <div class="w3-right" id="downstream_publishes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w3-col l4 w3-blue widget">
+
+        <div class="w3-row w3-padding">
+            <div class="w3-col s2 w3-xlarge"><i class="fa fa-calendar-alt"></i></div>
+            <div class="w3-col s10 w3-xlarge">
+                <div class="w3-container">
+                    <div class="w3-right">Scheduler</div>
+                </div>
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l12">
+            <div class="w3-button" onclick="setScheduleRunState('INACTIVE');">
                 INACTIVE <span id="scheduler_selected_INACTIVE"></span>
             </div>
-            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('ALL_ON');">
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l12">
+                <div class="w3-button" onclick="setScheduleRunState('ALL_ON');">
                 ALL_ON <span id="scheduler_selected_ALL_ON"></span>
             </div>
-            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('ALL_SEQUENCED');">
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l12">
+                <div class="w3-button" onclick="setScheduleRunState('ALL_SEQUENCED');">
                 ALL_SEQUENCED <span id="scheduler_selected_ALL_SEQUENCED"></span>
             </div>
-            <div class="w3-bar-item w3-button" onclick="setScheduleRunState('FROM_CONFIG');">
+            </div>
+        </div>
+        <div class="w3-row w3-padding-small">
+            <div class="w3-col l12">
+                <div class="w3-button" onclick="setScheduleRunState('FROM_CONFIG');">
                 FROM_CONFIG <span id="scheduler_selected_FROM_CONFIG"></span>
+            </div>
             </div>
         </div>
     </div>
+</div>
 
 </div>
 

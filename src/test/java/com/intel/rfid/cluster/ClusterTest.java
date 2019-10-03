@@ -78,7 +78,7 @@ public class ClusterTest {
         assertThat(cluster.sensor_groups).isEmpty();
 
     }
-
+    
     @Test
     public void testExpiredToken() {
 
@@ -327,5 +327,10 @@ public class ClusterTest {
         clusterMgr.alignSensor(rsp00);
         
         assertThat(rsp00.getAlias(0)).isEqualTo("alias01");
+
+
+        // personality seems to be an issue from DX test cases
+        
+
     }
 }

@@ -222,9 +222,7 @@ public class ClusterManager {
         if (cluster.personality != _sensor.getPersonality()) {
             _sensor.setPersonality(cluster.personality);
         }
-        if (cluster.aliases != null) {
-            _sensor.setAliases(cluster.aliases);
-        }
+        _sensor.setAliases(cluster.aliases);
     }
 
     public Cluster getCluster(String _clusterId) {

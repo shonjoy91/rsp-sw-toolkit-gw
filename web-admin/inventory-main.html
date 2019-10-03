@@ -85,14 +85,14 @@
 
         newRow = document.createElement("div");
         newRow.id = epc + ".row";
-        newRow.className = "w3-row w3-padding";
+        newRow.className = "w3-row w3-padding w3-border-bottom";
         
-        newRow.appendChild(createStandardColumn("col_1", epc + ".epc"));
-        newRow.appendChild(createStandardColumn("col_2", epc + ".tid"));
-        newRow.appendChild(createStandardColumn("col_3", epc + ".state"));
-        newRow.appendChild(createStandardColumn("col_4", epc + ".location"));
-        newRow.appendChild(createStandardColumn("col_5", epc + ".last_read_on"));
-        newRow.appendChild(createStandardColumn("col_6", epc + ".facility_id"));
+        newRow.appendChild(createStandardColumn("w3-col l3", epc + ".epc"));
+        newRow.appendChild(createStandardColumn("w3-col l3", epc + ".tid"));
+        newRow.appendChild(createStandardColumn("w3-col l1", epc + ".state"));
+        newRow.appendChild(createStandardColumn("w3-col l1", epc + ".location"));
+        newRow.appendChild(createStandardColumn("w3-col l2", epc + ".last_read_on"));
+        newRow.appendChild(createStandardColumn("w3-col l2", epc + ".facility_id"));
 
         var table = document.getElementById("table_data");
         var child = null;
@@ -120,6 +120,7 @@
     function createStandardColumn(className, id) {
         var col = document.createElement("div");
         col.className = className;
+        col.style.wordBreak = "break-word";
         col.id = id;
         col.innerHTML = "&nbsp;";
         col.appendChild(document.createTextNode('\u00A0\u00A0'));
@@ -137,55 +138,7 @@
 
 </script>
 
-<style>
-    .col_1, .col_2, .col_3, .col_4, .col_5, .col_6 {
-        float: left;
-        position: relative;
-    }
-
-    .col_1, .col_2 {
-        width: 25%;
-    }
-
-    .col_3, .col_4, .col_6 {
-        width: 10%;
-    }
-
-    .col_5 {
-        width: 20%;
-    }
-    
-</style>
-
-
 <body onload="init()">
-
-
-<div class="fixed_header w3-black">
-    <script src="header.js"></script>
-
-    <div class="w3-bar w3-blue">
-        <div class="w3-bar-item">
-            <div class="w3-large w3-padding-small w3-button" onclick="unload();">
-                <i class="fa fa-trash"> </i> Unload
-            </div>
-        </div>
-        <div class="w3-bar-item">
-            <label class="w3-opacity" for="epc_filter_pattern"><b>EPC Filter Pattern</b></label>
-            <input type="text" id="epc_filter_pattern"/>
-            <button class="w3-large w3-padding-small w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i> Apply</button>
-        </div>
-    </div>
-
-    <div id="table_header" class="w3-row w3-padding w3-grey">
-        <div class="col_1">EPC</div>
-        <div class="col_2">TID</div>
-        <div class="col_3">State</div>
-        <div class="col_4">Location</div>
-        <div class="col_5">Last Read</div>
-        <div class="col_6">Facility</div>
-    </div>
-</div>
 
 <div id="modal_overlay" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
@@ -203,10 +156,34 @@
     </div>
 </div>
 
+<div id="header" class="w3-black">
+    <script src="header.js"></script>
 
-<div id="table_data" class="fixed_content">
+    <div class="w3-bar w3-blue">
+        <div class="w3-bar-item">
+            <div class="w3-large w3-padding-small w3-button" onclick="unload();">
+                <i class="fa fa-trash"> </i> Unload
+            </div>
+        </div>
+        <div class="w3-bar-item">
+            <label class="w3-opacity" for="epc_filter_pattern"><b>EPC Filter Pattern</b></label>
+            <input type="text" id="epc_filter_pattern"/>
+            <button class="w3-large w3-padding-small w3-button" onclick="sendEpcFilterPattern();"><i class="fas fa-sync"></i> Apply</button>
+        </div>
+    </div>
 </div>
 
+<div id="table_header" class="w3-row w3-padding w3-grey">
+    <div class="w3-col l3">EPC</div>
+    <div class="w3-col l3">TID</div>
+    <div class="w3-col l1">State</div>
+    <div class="w3-col l1">Location</div>
+    <div class="w3-col l2">Last Read</div>
+    <div class="w3-col l2">Facility</div>
+</div>
+
+<div id="table_data">
+</div>
 
 </body>
 

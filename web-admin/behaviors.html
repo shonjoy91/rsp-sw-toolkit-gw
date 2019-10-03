@@ -294,7 +294,9 @@
         var e;
         e = document.createElement("div");
         // e.classList.add("w3-row-padding");
-        e.classList.add("w3-quarter");
+        // e.classList.add("w3-quarter");
+        e.classList.add("w3-col");
+        e.classList.add("l3");
         parent.appendChild(e);
         return e;
     }
@@ -579,28 +581,7 @@
 
 </script>
 
-<style>
-    .fixed_header {
-        height: 120px;
-    }
-
-
-    .fixed_content {
-        margin-top: 120px;
-    }
-
-</style>
 <body onload="init()">
-
-<!-- Header -->
-<div class="fixed_header w3-black">
-    <script src="header.js"></script>
-    <div id="page_commands" class="w3-bar w3-blue w3-padding">
-        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
-            <i class="fa fa-upload"> </i> Upload From File
-        </div>
-    </div>
-</div>
 
 <div id="modal_overlay" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-card-4 w3-white w3-row">
@@ -617,7 +598,17 @@
     </div>
 </div>
 
-<div id="behaviors_container" class="fixed_content">
+<!-- Header -->
+<div id="header" class="w3-black">
+    <script src="header.js"></script>
+    <div id="page_commands" class="w3-bar w3-blue w3-padding">
+        <div class="w3-bar-item w3-button w3-large" onclick="initiateUpload()">
+            <i class="fa fa-upload"> </i> Upload From File
+        </div>
+    </div>
+</div>
+
+<div id="behaviors_container">
 </div>
 
 </body>

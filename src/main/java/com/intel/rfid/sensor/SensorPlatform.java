@@ -68,11 +68,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.intel.rfid.api.sensor.ApplyBehaviorRequest.Action.START;
 
 public class SensorPlatform
-        implements Comparable<SensorPlatform> {
+    implements Comparable<SensorPlatform> {
 
     public static final long LOST_COMMS_THRESHOLD = 90000;
-    // Threshold used to determine whether the behavior is DEEP_SCAN
-    public static final int DEEP_SCAN_DWELL_TIME_THRESHOLD = 10000;
     public static final String UNKNOWN_FACILITY_ID = "UNKNOWN";
     public static final String DEFAULT_FACILITY_ID = "DEFAULT_FACILITY";
 
@@ -121,7 +119,7 @@ public class SensorPlatform
         deviceId = _deviceId;
         sensorMgr = _sensorMgr;
         logRSP = LoggerFactory.getLogger(
-                String.format("%s.%s", getClass().getSimpleName(), deviceId));
+            String.format("%s.%s", getClass().getSimpleName(), deviceId));
         // only have a single thread because reading commands should never be in parallel
         readExecutor = Executors.newFixedThreadPool(1,
                                                     new ExecutorUtils.NamedThreadFactory(deviceId));
@@ -235,7 +233,6 @@ public class SensorPlatform
     public static final String ALIAS_KEY_DEVICE_ID = "DEVICE_ID";
 
     public void setAliases(List<String> _aliases) {
-        // NOTE: not
         if (_aliases == null || _aliases.isEmpty()) {
             resetAliasesInternal();
         } else {
@@ -263,13 +260,16 @@ public class SensorPlatform
      * the platform during construction needs to support all ports ... H1000 usage model)
      */
     public void checkAliasesOnConnect() {
-        if (rspInfo == null || rspInfo.platform == null || rspInfo.platform == Platform.H1000) { return; }
+        if (rspInfo == null || 
+            rspInfo.platform == null ||
+            rspInfo.platform == Platform.H1000 ||
+            rspInfo.platform == Platform.UNKNOWN) { return; }
 
         boolean updated = false;
         for (int port = 0; port < NUM_ALIASES; port++) {
             if (getAlias(port).equals(getDefaultAlias(port))) {
-                logRSP.info("resetting port alias[{}} from {} to {}",
-                            port, getAlias(port), getDefaultAlias(port));
+                logRSP.info("checkAliasesOnConnect setting port alias[{}] from {} to {}",
+                            port, getAlias(port), ALIAS_KEY_DEVICE_ID);
                 setAliasInternal(port, ALIAS_KEY_DEVICE_ID);
                 updated = true;
             }
@@ -280,11 +280,32 @@ public class SensorPlatform
         }
     }
 
+    /**
+     * resets all of the aliases regardless of 
+     * any current alias assignments.
+     */
     protected void resetAliasesInternal() {
-        String key = ALIAS_KEY_DEFAULT;
-        if (rspInfo != null && rspInfo.platform != null && rspInfo.platform != Platform.H1000) {
-            key = ALIAS_KEY_DEVICE_ID;
+
+        Platform platform = Platform.UNKNOWN;
+        if (rspInfo != null && rspInfo.platform != null) {
+            platform = rspInfo.platform;
         }
+
+        String key;
+        switch (platform) {
+            case H3000:
+            case H4000:
+            case RSP9000:
+            case RSP9003:
+                key = ALIAS_KEY_DEVICE_ID;
+                break;
+            case H1000:
+            case UNKNOWN:
+            default:
+                key = ALIAS_KEY_DEFAULT;
+                break;
+        }
+
         for (int port = 0; port < NUM_ALIASES; port++) {
             setAliasInternal(port, key);
         }
@@ -299,9 +320,9 @@ public class SensorPlatform
 
         // figure out the intended alias
         String interpretedAlias;
-        if (_alias == null || _alias.isEmpty() || ALIAS_KEY_DEFAULT.equals(_alias)) {
+        if (_alias == null || _alias.isEmpty() || ALIAS_KEY_DEFAULT.equalsIgnoreCase(_alias)) {
             interpretedAlias = getDefaultAlias(_portIndex);
-        } else if (ALIAS_KEY_DEVICE_ID.equals(_alias)) {
+        } else if (ALIAS_KEY_DEVICE_ID.equalsIgnoreCase(_alias)) {
             interpretedAlias = deviceId;
         } else {
             interpretedAlias = _alias;
@@ -750,7 +771,7 @@ public class SensorPlatform
     private void setInDeepScan() {
         // check the behavior id to see if "DeepScan" is in the name
         inDeepScan = (currentBehavior.id.toLowerCase().contains("deepscan") ||
-                      currentBehavior.id.toLowerCase().contains("deep_scan"));
+            currentBehavior.id.toLowerCase().contains("deep_scan"));
     }
 
     public ResponseHandler reset() {
@@ -820,14 +841,27 @@ public class SensorPlatform
 
         ResponseHandler rh;
 
-        if (_req instanceof ApplyBehaviorRequest) {
-            rh = new StartStopHandler(deviceId, _req.getId(),
-                                      ((ApplyBehaviorRequest) _req).params.action);
-        } else if (_req instanceof SetFacilityIdRequest) {
-            rh = new SetFacilityHandler(deviceId, _req.getId(),
-                                        ((SetFacilityIdRequest) _req).params);
-        } else {
-            rh = new ResponseHandler(deviceId, _req.getId());
+        switch (_req.getMethod()) {
+            case ApplyBehaviorRequest.METHOD_NAME:
+                rh = new StartStopHandler(deviceId, _req.getId(),
+                                          ((ApplyBehaviorRequest) _req).params.action);
+                break;
+            case SetFacilityIdRequest.METHOD_NAME:
+                rh = new SetFacilityHandler(deviceId, _req.getId(),
+                                            ((SetFacilityIdRequest) _req).params);
+                break;
+            case SetGeoRegionRequest.METHOD_NAME:
+                rh = new ResponseHandler(deviceId, _req.getId(), TimeUnit.MINUTES.toMillis(5));
+                break;
+            case GetBISTResultsRequest.METHOD_NAME:
+            case RebootRequest.METHOD_NAME:
+            case ResetRequest.METHOD_NAME:
+            case SoftwareUpdateRequest.METHOD_NAME:
+            case GetGeoRegionRequest.METHOD_NAME:
+                rh = new ResponseHandler(deviceId, _req.getId(), ResponseHandler.LONG_RUNNING_COMMANDS_TIMEOUT);
+                break;
+            default:
+                rh = new ResponseHandler(deviceId, _req.getId());
         }
 
         // be sure to put the handler in before sending the message
@@ -872,7 +906,7 @@ public class SensorPlatform
 
     private static final String FMT = "%-10s %-12s %-10s %-25s %-18s %-12s %s";
     public static final String HDR = String
-            .format(FMT, "device", "connect", "reading", "behavior", "facility", "personality", "aliases");
+        .format(FMT, "device", "connect", "reading", "behavior", "facility", "personality", "aliases");
 
     @Override
     public String toString() {

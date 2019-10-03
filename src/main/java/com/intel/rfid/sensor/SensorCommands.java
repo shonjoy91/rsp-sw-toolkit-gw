@@ -392,7 +392,7 @@ public class SensorCommands implements CLICommander.Support {
 
             case RESET:
                 // Give reset command extra time to respond
-                timeoutMillis = ResponseHandler.SENSOR_RESET_TIMEOUT_MILLIS;
+                timeoutMillis = ResponseHandler.LONG_RUNNING_COMMANDS_TIMEOUT;
                 rcc = new RspCommandCallback(RESET) {
                     public ResponseHandler callCommand(SensorPlatform _rsp) {
                         return _rsp.reset();
