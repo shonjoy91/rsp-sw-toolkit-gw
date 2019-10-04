@@ -411,7 +411,11 @@ process_command () {
     elif [ "$METHOD" = "get_bist_results" ]; then
         send_bist_results_response ${response_args[@]}
 
-    elif [ "$METHOD" = "set_device_alert" ]; then
+    elif [ "$METHOD" = "ack_alert" ]; then
+        # Do nothing
+        send_command_response ${response_args[@]} true
+
+    elif [ "$METHOD" = "set_alert_threshold" ]; then
         # Extract the alert number
         IFS=':' read -ra ARRAY <<< "${CMD[3]}"
         number=${ARRAY[2]}
