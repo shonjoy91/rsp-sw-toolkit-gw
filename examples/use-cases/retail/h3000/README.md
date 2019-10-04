@@ -261,7 +261,7 @@ using the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) 
         - Make sure the values for the Sensor IDs follow the "RSP-XXXXXX" [naming convention](#sensor_naming).
         - Make sure to capitalize the word "EXIT" for the cluster with the EXIT personality.
         - Make sure the only differences between your cluster config file and the [sample seen above](#sample_cluster) are your Sensor IDs.
-    - Try maximizng your browser window.
+    - Try maximizing your browser window.
 <br/><br/>
 6. On the [Scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
 according to the cluster configuration by pressing the __FROM_CONFIG__ button.
@@ -445,7 +445,7 @@ If you changed the default values, your results may differ slightly.  In additio
 ## Summary
 ![GoldStar](../../resources/goldstar-sm.png) Congratulations!  You have completed this tutorial that demonstrates how to configure the Intel&reg; RSP solution for a typical retail deployment.
 
-By applying the cluster configuration setting, you should have seen how to track a tag across various locations and how it generates diffent events.  You should now have the knowledge and ability to scale for a larger deployent by adding additional sensors. 
+By applying the cluster configuration setting, you should have seen how to track a tag across various locations and how it generates different events.  You should now have the knowledge and ability to scale for a larger deployment by adding additional sensors. 
 
 ### Next Steps
 - [Start a clean session](#starting-a-clean-session) and try a different method to configure the RSP Controller:  
