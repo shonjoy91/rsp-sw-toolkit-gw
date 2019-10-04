@@ -120,7 +120,8 @@ get_state
 get_sw_version
 reboot
 reset
-set_device_alert
+set_alert_threshold
+ack_alert
 set_facility_id
 set_geo_region
 set_led
