@@ -48,7 +48,7 @@ or an equivalent setup.
 
 6. Remove all other tags from the room.  
 
-7. <div id="phys_setup"></div>The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different directions and space them at least 3-5 feet apart (see image below).  
+7. <div id="phys_setup"></div>The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different directions, and space them at least 3-5 feet apart (see image below).  
 
     ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
 
@@ -114,7 +114,7 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
           ]
         }
         ```
-    3. __facility_id__: For most purposes, a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for both clusters.
+    3. __facility_id__: For most purposes, just a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for both clusters.
         ```json
         {
           "id": "RetailUseCaseClusterConfigExample",
@@ -233,7 +233,7 @@ to clear out all previous tag history to start a clean session.
     ![Inventory_Unload_Button](../../resources/Inventory_Unload.png)
 <br/><br/>
 4. On the [Behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the __Upload From File__
-button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__ directory.  The required file is __behavior_PORTS_1.json__ .  
+button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__ directory.  The required file is __behavior_PORTS_1.json__.  
     ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
  
     __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration file 
@@ -244,8 +244,7 @@ button to upload all of the use case behaviors to the RSP Controller.  The behav
     
     ![Behaviors_after_load](../../resources/Behaviors_after_load.png)
 <br/><br/>
-5. Upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)) 
-using the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) page.
+5. On the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) page, use the __Upload From File__ button to upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)).
 
     ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
 
