@@ -15,7 +15,7 @@
   "threshold_multiplier": 2,
   "dwell_time": 1000,
   "inv_cycles": 0,
-  "toggle_target_flag": false,
+  "toggle_target_flag": true,
   "repeat_until_no_tags": false,
   "perform_select": false,
   "perform_post_match": false,

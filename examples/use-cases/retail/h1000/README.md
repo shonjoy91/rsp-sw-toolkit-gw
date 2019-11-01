@@ -267,7 +267,7 @@ to monitor tag reads and states.
 ___
 
 ### METHOD 2: Using the MQTT Messaging API
-1. Edit the mqtt_set_cluster_config.json (located at __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__) replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited retail_cluster_config.json file.  Save and close your file.  
+1. Edit the mqtt_set_cluster_config.json (located at __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/__) replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited retail_cluster_config.json file.  Save and close your file.  
 
     (Optional) Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting. 
 
@@ -305,8 +305,8 @@ command responses.
 ___
 
 ## Observe Tag Events
-Open a terminal window and subscribe to the RSP Controller events MQTT topic in order to monitor tag events as 
-produced by the RSP Controller.
+Open a new terminal window and subscribe to the RSP Controller events MQTT topic in order to monitor 
+tag events as produced by the RSP Controller.
 
 ```bash
 #-- monitor the upstream events topic
@@ -314,17 +314,17 @@ mosquitto_sub -t rfid/controller/events
 ```
 
 __NOTE:__  All of the output seen below is based on the default values from the included configuration files.  
-If you changed the default values, your results may differ slightly.
+If you changed the default values, your results may differ slightly.  In addition to inventory events, you will see "heartbeat" messages.  You can ignore those for now.
 
 1. ### Tag arrivals in the first fitting room
-    At this point, remove two tags from hiding and place them nearby one of the two antennas. When the tags 
+    At this point, remove your two tags from hiding and place them nearby one of the two antennas. When the tags 
     are read initially, an arrival event will be generated on the rfid/controller/events topic for each tag. 
     Verify from the Web Admin 
     [inventory](http://localhost:8080/web-admin/inventory-main.html) page that the tags are now EXITING
     and the location is at the first antenna's alias (either FittingRoom1 or FittingRoom2).
 
     Verify the receipt of the MQTT event message.
-    ![Retail H1000 Output 1](./Retail_H1000_Out_1.png)
+    ![Retail H1000 Output 1](../../resources/Retail_H1000_Out_1.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -369,7 +369,7 @@ If you changed the default values, your results may differ slightly.
     the removed tag has changed to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
-    ![Retail H1000 Output 2](./Retail_H1000_Out_2.png)
+    ![Retail H1000 Output 2](../../resources/Retail_H1000_Out_2.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -400,7 +400,7 @@ If you changed the default values, your results may differ slightly.
     has changed to the other fitting room.
 
     Verify the receipt of the MQTT event message.
-    ![Retail H1000 Output 3](./Retail_H1000_Out_3.png)
+    ![Retail H1000 Output 3](../../resources/Retail_H1000_Out_3.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -430,7 +430,7 @@ If you changed the default values, your results may differ slightly.
     page, confirm that the tag state of the removed tag has changed to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
-    ![Retail H1000 Output 4](./Retail_H1000_Out_4.png)
+    ![Retail H1000 Output 4](../../resources/Retail_H1000_Out_4.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -452,6 +452,17 @@ If you changed the default values, your results may differ slightly.
       }
     }
     ```
+
+## Summary
+![GoldStar](../../resources/goldstar-sm.png) Congratulations!  You have completed this tutorial that demonstrates how to configure the Intel&reg; RSP solution for a typical retail deployment.
+
+By applying the cluster configuration setting, you should have seen how to track a tag across various locations and how it generates different events.  You should now have the knowledge and ability to scale for a larger deployment by adding additional sensors. 
+
+### Next Steps
+- [Start a clean session](#starting-a-clean-session) and try a different method to configure the RSP Controller:  
+  - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)  
+  - [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)  
+- Additional information is available in the [Intel&reg; RSP Get Started Guide Next Steps section](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux-next-steps)
 
 ## Starting a Clean Session
 If you would like to start another use case, try another configuration method, or would like to run 
