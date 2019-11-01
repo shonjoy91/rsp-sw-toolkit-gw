@@ -29,7 +29,7 @@ Controller Application as deployed in a typical retail environment.
 __By the end of the example, you will be able to track tags as they move in and out of the different 
 fitting rooms.__
 
-![Retail H1000 Use Case](../../resources/Retail_H1000v2a.png)
+![Retail H1000 Use Case](../../resources/Retail_H1000v2a.PNG)
 
 ## Prerequisites
 1. You have an [H1000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h1000-rfid-reader-development-kit/), 
@@ -82,7 +82,7 @@ __The cluster configuration file enables you to scale large deployments efficien
 ### Cluster Configuration
 You will need to edit the __retail_cluster_config.json__ file __(located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h1000/)__ with new values to set up this use case: we want a single facility; two different aliases, one for each antenna (FittingRoom1 and FittingRoom2); an EXIT personality for the sensor; and the appropriate behavior.
 
-![Retail H1000 Use Case](../../resources/Retail_H1000v2b.png)
+![Retail H1000 Use Case](../../resources/Retail_H1000v2b.PNG)
 
 1. Open the file in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
 
