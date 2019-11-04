@@ -88,28 +88,21 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
 
 2. Edit the various fields to configure the clusters.  The following steps explain each line of the cluster:  
     1. __id__: This is a unique ID used to identify the cluster group.  In this use case we will create one cluster to encompass both fitting rooms, similar to what you see below.  You can keep the existing default value from the sample cluster file.    
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "FittingRoomsCluster"
-            }
-          ]
-        }
-        ```     
+
+      [![cluster_id](../../resources/retail_h1000_cluster_config_id_80x.png)](../../resources/retail_h1000_cluster_config_filled.json)
+
     2. __personality__: Since we want to know when tags leave any of our locations in this cluster, we want to set the personality to EXIT.  This will generate a "departed" event whenever a tag is removed from any of the locations.    
-        ```json
+        <pre>
         {
           "id": "RetailUseCaseClusterConfigExample",
           "clusters": [
             {
               "id": "FittingRoomsCluster",
-              "personality": "EXIT"
+              <mark>"personality": "EXIT"</mark>
             }
           ]
         }
-        ```     
+        </pre>     
     3. __facility_id__: For most purposes, just a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for our cluster.    
         ```json
         {
