@@ -217,7 +217,7 @@ button to upload all of the use case behaviors to the RSP Controller.  The behav
 
     Your list of behaviors should now include "behavior_PORTS_2":
     
-    ![Behaviors_after_load](../../resources/Behaviors_after_load.png)
+    ![Behaviors_after_load](../../resources/retail_H1000_behaviors_after_load.png)
 <br/><br/>
 5. On the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) page, use the __Upload From File__ button to upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)).
 
@@ -227,7 +227,7 @@ button to upload all of the use case behaviors to the RSP Controller.  The behav
 
     The cluster ID (FittingRoomsCluster) will be displayed.  If you click on the cluster ID name, you should see the values that you set in the cluster configuration file.
 
-    ![Cluster_Config_Upload_Button](../../resources/Cluster_after_load.png)  
+    ![Cluster_Config_Upload_Button](../../resources/retail_H1000_cluster_after_load.png)  
     __TROUBLESHOOTING:  If your Cluster Config page does not look like the image above then:__
     - Verify you successfully loaded the behavior file in the previous step.
     - Verify your cluster config file is valid.
@@ -244,13 +244,13 @@ according to the cluster configuration by pressing the __FROM_CONFIG__ button.
     
     The __Cluster Id__, __Behavior__ name and __Sensor__ ID will be displayed on the page (see image below).
 
-    ![Scheduler_After_Confile_File_Load](../../resources/Scheduler_From_Config_after_load.png)
+    ![Scheduler_After_Confile_File_Load](../../resources/retail_H1000_scheduler_from_config_after_load.png)
 <br/><br/>
 7. On the [Sensors](http://localhost:8080/web-admin/sensors-main.html) page, confirm that the sensor has 
 been configured as specified in the cluster configuration file (has the correct behavior, facility, personality, 
 and aliases) and is reading tags.  Your sensor page should look like the following except with your respective sensor ID.
 
-    ![Sensor_After_Confile_File_Load](../../resources/Sensors_after_load.png)
+    ![Sensor_After_Confile_File_Load](../../resources/retail_H1000_sensors_after_cluster.png)
   
      ![Sensor_Connected_Icon](../../resources/Sensor_Connected_Icon_vsm.png) Connected  
      ![Sensor_NotConnected_Icon](../../resources/Sensor_Disconnected_Icon_vsm.png)  Disconnected  
