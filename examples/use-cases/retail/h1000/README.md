@@ -91,25 +91,25 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
       [![cluster_id](../../resources/retail_h1000_cluster_config_id.png)](../../resources/retail_h1000_cluster_config_filled.json)
 
     2. __personality__: Since we want to know when tags leave any of our locations in this cluster, we want to set the personality to EXIT.  This will generate a "departed" event whenever a tag is removed from any of the locations.
-      [![personality](../../resources/retail_h1000_cluster_config_personality.png)](../../resources/retail_h1000_cluster_config_filled.json)
+      [![cluster_personality](../../resources/retail_h1000_cluster_config_personality.png)](../../resources/retail_h1000_cluster_config_filled.json)
 
     3. __facility_id__: For most purposes, just a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for our cluster.
-      [![facility](../../resources/retail_h1000_cluster_config_facility.png)](../../resources/retail_h1000_cluster_config_filled.json)
+      [![cluster_facility](../../resources/retail_h1000_cluster_config_facility.png)](../../resources/retail_h1000_cluster_config_filled.json)
 
     4. __aliases__: This attribute is used for setting meaningful names for locations.  In this use case, we're looking to set two locations: the FittingRoom1 location, and the FittingRoom2 location.  We'll assign the antenna hooked up to the first port to be the FittingRoom1 location, and the antenna hooked up to the second port to be the FittingRoom2 location.  
 
         __NOTE: The order of the aliases matters.  The first alias will get assigned to the antenna hooked up to the first port, the second alias will be assigned to the antenna hooked up to the second port, etc.  If a value is not specified for a port, then the default alias is used (see the "Alias" term in the [Terminology and Concepts section](#terminology-and-concepts)).__  
-        [![aliases](../../resources/retail_h1000_cluster_config_aliases.png)](../../resources/retail_h1000_cluster_config_filled.json)
+        [![cluster_aliases](../../resources/retail_h1000_cluster_config_aliases.png)](../../resources/retail_h1000_cluster_config_filled.json)
 
     5. __behavior_id__: Behaviors are used to configure the low level RFID settings (Sensor Power Level, Session Flag, Singulation Algo, Dwell Time, etc.).  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for the cluster to __behavior_PORTS_2__.    
-        [![aliases](../../resources/retail_h1000_cluster_config_behavior.png)](../../resources/retail_h1000_cluster_config_filled.json)
+        [![cluster_behavior](../../resources/retail_h1000_cluster_config_behavior.png)](../../resources/retail_h1000_cluster_config_filled.json)
         
     6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in the cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.<br/><br/><div id="sensor_naming"></div>
       In this use-case, we will have one sensor group with a single sensor in it.  __You will need to use your actual sensor's ID in order for the controller application to function properly.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below):<br/><br/>
       ![Sensor_Id_Image](../../resources/sensor_idx75.png)<br/>
       __NOTE: Sensor ID = "RSP-XXXXXX" where XXXXXX is the last six characters of the device MAC address.  The last six characters can only consist of numeric values zero through nine and alpha characters A through F [0-9,A-F].  See image above.__<br/><br/><div id="sample_cluster"></div> 
       If done correctly, your cluster configuration file should now look like the following, except with your correct sensor ID:  
-        [![aliases](../../resources/retail_h1000_cluster_config_sensor.png)](../../resources/retail_h1000_cluster_config_filled.json)
+        [![cluster_sensor](../../resources/retail_h1000_cluster_config_sensor.png)](../../resources/retail_h1000_cluster_config_filled.json)
 
 3. (Optional) Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
 
