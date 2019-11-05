@@ -1,0 +1,20 @@
+{
+  "id": "RetailUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "BackStockCluster",
+      "personality": null,
+      "facility_id": "Retail_Store_8402",
+      "aliases": [ "BackStock", "BackStock" ],
+      "behavior_id": "behavior_PORTS_1",
+      "sensor_groups": [["RSP-XXXXXX"]]
+    }, {
+      "id": "SalesFloorExitCluster",
+      "personality": "EXIT",
+      "facility_id": "Retail_Store_8402",
+      "aliases": [ "SalesFloor", "SalesFloor" ],
+      "behavior_id": "behavior_PORTS_1",
+      "sensor_groups": [["RSP-XXXXXX"]]
+    }
+  ]
+}
