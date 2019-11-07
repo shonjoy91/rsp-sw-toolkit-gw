@@ -48,7 +48,7 @@ or an equivalent setup.
 
 6. Remove all other tags from the room.  
 
-7. <div id="phys_setup"></div>The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different directions and space them at least 3-5 feet apart (see image below).  
+7. <div id="phys_setup"></div>The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different directions, and space them at least 3-5 feet apart (see image below).  
 
     ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
 
@@ -83,121 +83,30 @@ You will need to edit the __retail_cluster_config.json__ file __(located at ~/pr
 
 ![Retail H3000 Use Case](../../resources/Retail_H3000v3b.png)
 
-1. Open the file in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
+1. Open the __retail_cluster_config.json__ file __(located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/)__ in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
 
 2. Edit the various fields to configure the clusters.  The following steps explain each line of the clusters:  
-    1. __id__: This is a unique ID used to identify the cluster group.  In this use case we will create two clusters, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.    
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "BackStockCluster"
-            }, {
-              "id": "SalesFloorExitCluster"
-            }
-          ]
-        }
-        ```     
+    1. __id__: This is a unique ID used to identify the cluster group.  In this use case we will create two clusters, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.  
+    [![cluster_id](../../resources/retail_h3000_cluster_config_id.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    
     2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, so we will set the personality to __EXIT (MUST BE CAPITALIZED)__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.  
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "BackStockCluster",
-              "personality": null
-            }, {
-              "id": "SalesFloorExitCluster",
-              "personality": "EXIT"
-            }
-          ]
-        }
-        ```
-    3. __facility_id__: For most purposes, a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for both clusters.
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "BackStockCluster",
-              "personality": null,
-              "facility_id": "Retail_Store_8402"
-            }, {
-              "id": "SalesFloorExitCluster",
-              "personality": "EXIT",
-              "facility_id": "Retail_Store_8402"
-            }
-          ]
-        }
-        ``` 
-    4. __aliases__: This attribute is used for setting meaningful names for locations.  For the first cluster, we will set the aliases to __BackStock__ and for the second cluster, set the aliases to __SalesFloor__.  For enhanced performance, the H3000 sensors have two linear antennas built into the same unit which cover the same location.  Instead of treating the two antennas as separate locations, we configure them as one location by giving them the same alias value per cluster.            
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "BackStockCluster",
-              "personality": null,
-              "facility_id": "Retail_Store_8402",
-              "aliases": [ "BackStock", "BackStock" ]
-            }, {
-              "id": "SalesFloorExitCluster",
-              "personality": "EXIT",
-              "facility_id": "Retail_Store_8402",
-              "aliases": [ "SalesFloor", "SalesFloor" ]
-            }
-          ]
-        }
-        ```  
-    5. __behavior_id__: Behaviors are used to configure the low level RFID settings (Sensor Power Level, Session Flag, Singulation Algo, Dwell Time, etc.).  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __behavior_PORTS_1__.
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "BackStockCluster",
-              "personality": null,
-              "facility_id": "Retail_Store_8402",
-              "aliases": [ "BackStock", "BackStock" ],
-              "behavior_id": "behavior_PORTS_1"
-            }, {
-              "id": "SalesFloorExitCluster",
-              "personality": "EXIT",
-              "facility_id": "Retail_Store_8402",
-              "aliases": [ "SalesFloor", "SalesFloor" ],
-              "behavior_id": "behavior_PORTS_1"
-            }
-          ]
-        }
-        ``` 
+    [![cluster_personality](../../resources/retail_h3000_cluster_config_personality.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    
+    3. __facility_id__: For most purposes, just a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for both clusters.  
+    [![cluster_facility](../../resources/retail_h3000_cluster_config_facility.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    
+    4. __aliases__: This attribute is used for setting meaningful names for locations.  For the first cluster, we will set the aliases to __BackStock__ and for the second cluster, set the aliases to __SalesFloor__.  For enhanced performance, the H3000 sensors have two linear antennas built into the same unit which cover the same location.  Instead of treating the two antennas as separate locations, we configure them as one location by giving them the same alias value per cluster.  
+    [![cluster_aliases](../../resources/retail_h3000_cluster_config_aliases.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    
+    5. __behavior_id__: Behaviors are used to configure the low level RFID settings (Sensor Power Level, Session Flag, Singulation Algo, Dwell Time, etc.).  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __behavior_PORTS_1__.  
+    [![cluster_behavior](../../resources/retail_h3000_cluster_config_behavior.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    
     6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.<br/><br/><div id="sensor_naming"></div>
       In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __You will need to use your actual sensor's ID in order for the controller application to function properly.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below):<br/><br/>
       ![Sensor_Id_Image](../../resources/sensor_idx75.png)<br/>
       __NOTE: Sensor ID = "RSP-XXXXXX" where XXXXXX is the last six characters of the device MAC address.  The last six characters can only consist of numeric values zero through nine and alpha characters A through F [0-9,A-F].  See image above.__<br/><br/><div id="sample_cluster"></div>
-      If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:
-        ```json
-        {
-          "id": "RetailUseCaseClusterConfigExample",
-          "clusters": [
-            {
-              "id": "BackStockCluster",
-              "personality": null,
-              "facility_id": "Retail_Store_8402",
-              "aliases": [ "BackStock", "BackStock" ],
-              "behavior_id": "behavior_PORTS_1",
-              "sensor_groups": [["RSP-XXXXXX"]]
-            }, {
-              "id": "SalesFloorExitCluster",
-              "personality": "EXIT",
-              "facility_id": "Retail_Store_8402",
-              "aliases": [ "SalesFloor", "SalesFloor" ],
-              "behavior_id": "behavior_PORTS_1",
-              "sensor_groups": [["RSP-XXXXXX"]]
-            }
-          ]
-        }
-        ```  
+      If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:  
+      [![cluster_sensor](../../resources/retail_h3000_cluster_config_sensor.png)](../../resources/retail_h3000_cluster_config_filled.json)  
         __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined and illustrated in [Step 7 in the Prerequisites section](#phys_setup).__
 
 3. (Optional) Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
@@ -233,7 +142,7 @@ to clear out all previous tag history to start a clean session.
     ![Inventory_Unload_Button](../../resources/Inventory_Unload.png)
 <br/><br/>
 4. On the [Behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the __Upload From File__
-button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__ directory.  The required file is __behavior_PORTS_1.json__ .  
+button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__ directory.  The required file is __behavior_PORTS_1.json__.  
     ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
  
     __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration file 
@@ -244,8 +153,7 @@ button to upload all of the use case behaviors to the RSP Controller.  The behav
     
     ![Behaviors_after_load](../../resources/Behaviors_after_load.png)
 <br/><br/>
-5. Upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)) 
-using the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) page.
+5. On the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) page, use the __Upload From File__ button to upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)).
 
     ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
 

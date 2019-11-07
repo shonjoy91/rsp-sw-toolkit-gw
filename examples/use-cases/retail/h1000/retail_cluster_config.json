@@ -1,0 +1,13 @@
+{
+  "id": "RetailUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "FittingRoomsCluster",
+      "personality": "",
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
+    }
+  ]
+}
