@@ -1,0 +1,20 @@
+{
+  "id": "QsrUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "FreezerCluster",
+      "personality": null,
+      "facility_id": "QSR_Store_8402",
+      "aliases": ["Freezer", "Freezer" ],
+      "behavior_id": "behavior_PORTS_2",
+      "sensor_groups": [["RSP-XXXXXX"]]
+    }, {
+      "id": "Receiving-ExitingCluster",
+      "personality": "EXIT",
+      "facility_id": "QSR_Store_8402",
+      "aliases": [ "Receiving-Exiting", "Receiving-Exiting" ],
+      "behavior_id": "behavior_PORTS_2",
+      "sensor_groups": [["RSP-XXXXXX"]]
+    }
+  ]
+}
