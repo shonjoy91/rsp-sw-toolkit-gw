@@ -1,0 +1,13 @@
+{
+  "id": "RetailUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "FittingRoomsCluster",
+      "personality": "EXIT",
+      "facility_id": "Retail_Store_8402",
+      "aliases": [ "FittingRoom1", "FittingRoom2" ],
+      "behavior_id": "behavior_PORTS_2",
+      "sensor_groups": [["RSP-XXXXXX"]]
+    }
+  ]
+}

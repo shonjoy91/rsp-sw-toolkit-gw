@@ -13,23 +13,24 @@ Controller Application as deployed in a typical retail environment.
     - [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)
 5. [Observe Tag Events](#observe-tag-events)
 6. [Summary](#summary)
-6. [Starting a Clean Session](#starting-a-clean-session)
+7. [Next Steps](#next-steps)
+8. [Starting a Clean Session](#starting-a-clean-session)
 
 ## Goals  
-- Manage a deployment with two separate locations of interest ... BackStock and SalesFloor
-  - This will be done by assigning different aliases to the two different sensors
-- Know when tagged items come into the store from either location
-- Know the location of a tagged item (sensor and facility)
-  - This will be done by setting a facility and the aliases for the sensors
-- Know when a tagged item has moved from the BackStock to the SalesFloor or vice-versa
-  - Using different aliases for the different sensors will generate events when tags move between them
-- Know when a tagged item has left the store
-  - This will be done by setting the personality of a sensor to EXIT to determine tag departures
+- Manage a deployment with two separate locations of interest ... BackStock and SalesFloor.
+  - This will be done by assigning different aliases to the two different sensors.
+- Know when tagged items come into the store from either location.
+- Know the location of a tagged item (sensor and facility).
+  - This will be done by setting a facility and the aliases for the sensors.
+- Know when a tagged item has moved from the BackStock to the SalesFloor or vice-versa.
+  - Using different aliases for the different sensors will generate events when tags move between them.
+- Know when a tagged item has left the store.
+  - This will be done by setting the personality of a sensor to EXIT to determine tag departures.
   
 __By the end of the example, you will be able to track a tag as it arrives into the BackStock, 
 transitions to the SalesFloor, and then departs out the front door of the store.__
 
-![Retail H3000 Use Case](../../resources/Retail_H3000v3a.png)
+![Retail H3000 Use Case](../../resources/retail/h3000/3dStore_image1.png)
 
 ## Prerequisites
 1. You have an [H3000 DevKit](https://www.atlasrfidstore.com/intel-rsp-h3000-integrated-rfid-reader-development-kit/), 
@@ -37,25 +38,25 @@ or an equivalent setup.
     - You will need 2 H3000 sensor devices.  Designate one unit as "Sales Floor" and the second unit as "Back Stock" (see image above).  It may be helpful to label them so you can easily reference them later in this tutorial.
 
 2. You have completed the setup described in the 
-[Get Started Guide](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux).
+[Get Started with Intel® RFID Sensor Platform on Linux* Guide](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux).
 
 3. The Intel&reg; RSP Controller application (hereafter referred to as RSP Controller) is [running](https://software.intel.com/en-us/get-started-with-intel-rfid-sensor-platform-on-linux-run-the-intel-rfid-sensor-platform-controller-application).
 
 4. The H3000 sensors are connected to the RSP Controller.
 
 5. Select an RFID tag that is labeled with its value (see image below).  __Place that tag under your computer.__    
-![sample tag](../../resources/sample_tagx50a.png)
+![sample tag](../../resources/common_images/sample_tag.png)
 
 6. Remove all other tags from the room.  
 
 7. <div id="phys_setup"></div>The sensors need to be positioned in an optimal setting.  Face them away from each other, point them in different directions, and space them at least 3-5 feet apart (see image below).  
 
-    ![H3000 Physical Setup](../../resources/H3000_Physical_Setup.png)
+    ![H3000 Physical Setup](../../resources/common_images/H3000_Physical_Setup.png)
 
 ## Terminology and Concepts
 | Term | Definition |
 | :------ | :------ |
-| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "__RSP-__" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label.  Based on the following image, the sensor ID would be RSP-1508e4.  ![Hx000 MAC](../../resources/Hx000-MAC-75.jpg) |
+| Sensor/Device ID | This is the unique identifier for each sensor.  The ID consists of "__RSP-__" followed by the last 6 characters of that sensor's MAC address.  The MAC Address is located on the sensor's label.  Based on the following image, the sensor ID would be RSP-1508e4.  ![Hx000 MAC](../../resources/common_images/sensor_mac.png) |
 | Personality | This is an optional attribute that can be assigned to the sensors. It is utilized by the RSP Controller to generate specific types of tag events. |
 | Alias | An alias can be used to identify a specific sensor/antenna-port combination.  This tuple is used to identify the location of tags in the inventory. The alias allows you to give meaningful names (like BackStock or FittingRoom1) for the locations as opposed to using sensor and antenna IDs.  The default value is the sensor ID followed by a hyphen followed by the antenna port number, for example RSP-1508e4-0. |
 | Facility | This is used to define zones that consist of one or more sensors.  A typical deployment/location/store will be configured as one facility. |
@@ -68,45 +69,44 @@ or an equivalent setup.
 
 
 ## Configure / Control the Intel&reg; RSP Controller Application
-To configure and use the RSP Controller, one of the main components is the cluster configuration file.  The cluster configuration
-file specifies: 
-- How sensors should be grouped together
-- The facility(ies) to be used
-- What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting using meaningful names)
-- Which personalities (if any) should be assigned to the sensors
-- Which behavior settings should be used
+To configure and use the RSP Controller, one of the main components is the cluster configuration file.  The cluster configuration file specifies: 
+- How sensors should be grouped together.
+- The facility(ies) to be used.
+- What aliases should be assigned to the sensors' antenna ports (for unique/custom location reporting using meaningful names).
+- Which personalities (if any) should be assigned to the sensors.
+- Which behavior settings should be used.
 
 __The cluster configuration file enables you to scale large deployments efficiently and quickly.__
 
 ### Cluster Configuration
 You will need to edit the __retail_cluster_config.json__ file __(located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/)__ with new values to set up this use case: we want a single facility; two different aliases, one for each sensor (BackStock and SalesFloor); an EXIT personality for the sensor labeled as SalesFloor; and the appropriate behaviors.
 
-![Retail H3000 Use Case](../../resources/Retail_H3000v3b.png)
+![Retail H3000 Use Case](../../resources/retail/h3000/3dStore_image2.png)
 
 1. Open the __retail_cluster_config.json__ file __(located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/)__ in your favorite editor.  You will see that the file is JSON formatted and consists of a cluster configuration ID and a list of clusters.  You will need to insert the appropriate values for each cluster.
 
 2. Edit the various fields to configure the clusters.  The following steps explain each line of the clusters:  
     1. __id__: This is a unique ID used to identify the cluster group.  In this use case we will create two clusters, one for the Back Stock and one for the Sales Floor, similar to what you see below.  You can keep the existing default values from the sample cluster file.  
-    [![cluster_id](../../resources/retail_h3000_cluster_config_id.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    [![cluster_id](../../resources/retail/h3000/cluster_config_id.png)](retail_cluster_config_filled.json)
     
     2. __personality__: The location for the first cluster (BackStockCluster) will be internal to the store and doesn't need to be assigned any personality, so we will give it a value of __null__.  The location for the second cluster (SalesFloorExitCluster) is being used to configure an "edge/boundary" location from where tags may leave the facility, so we will set the personality to __EXIT (MUST BE CAPITALIZED)__.  This will generate a "departed" event whenever a tag is removed from this cluster's location.  
-    [![cluster_personality](../../resources/retail_h3000_cluster_config_personality.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    [![cluster_personality](../../resources/retail/h3000/cluster_config_personality.png)](retail_cluster_config_filled.json)
     
     3. __facility_id__: For most purposes, just a single facility is needed to encompass a deployment at a store.  We will set the facility_id to __Retail_Store_8402__ for both clusters.  
-    [![cluster_facility](../../resources/retail_h3000_cluster_config_facility.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    [![cluster_facility](../../resources/retail/h3000/cluster_config_facility.png)](retail_cluster_config_filled.json)
     
     4. __aliases__: This attribute is used for setting meaningful names for locations.  For the first cluster, we will set the aliases to __BackStock__ and for the second cluster, set the aliases to __SalesFloor__.  For enhanced performance, the H3000 sensors have two linear antennas built into the same unit which cover the same location.  Instead of treating the two antennas as separate locations, we configure them as one location by giving them the same alias value per cluster.  
-    [![cluster_aliases](../../resources/retail_h3000_cluster_config_aliases.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    [![cluster_aliases](../../resources/retail/h3000/cluster_config_aliases.png)](retail_cluster_config_filled.json)
     
-    5. __behavior_id__: Behaviors are used to configure the low level RFID settings (Sensor Power Level, Session Flag, Singulation Algo, Dwell Time, etc.).  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __behavior_PORTS_1__.  
-    [![cluster_behavior](../../resources/retail_h3000_cluster_config_behavior.png)](../../resources/retail_h3000_cluster_config_filled.json)
+    5. __behavior_id__: Behaviors are used to configure the low level RFID settings (Sensor Power Level, Session Flag, Singulation Algo, Dwell Time, etc.).  The RSP Controller comes with some preset behavior files, but for this use-case, we will use a custom one by setting the behavior_id for both clusters to __behavior_PORTS_2__.  
+    [![cluster_behavior](../../resources/retail/h3000/cluster_config_behavior.png)](retail_cluster_config_filled.json)
     
     6. __sensor_groups__: This is where you identify which specific sensors are grouped together.  These sensor groups will be governed by the settings that we just configured in their respective cluster.  All sensors in each group will run at the same time.  If there are multiple sensor groups per cluster, each group will run sequentially.  In a large deployment, you may have many sensors that could interfere with each other (they cover the same area, they are facing each other, etc.).  You can place them in different groups so that they aren't running at the same time.<br/><br/><div id="sensor_naming"></div>
       In this use-case, for each cluster, we will have one sensor group with a single sensor in it.  __You will need to use your actual sensor's ID in order for the controller application to function properly.__  To find the sensor ID of your sensor, see the label on the back of your sensor (see image below):<br/><br/>
-      ![Sensor_Id_Image](../../resources/sensor_idx75.png)<br/>
+      ![Sensor_Id_Image](../../resources/common_images/sensor_id_label.png)<br/>
       __NOTE: Sensor ID = "RSP-XXXXXX" where XXXXXX is the last six characters of the device MAC address.  The last six characters can only consist of numeric values zero through nine and alpha characters A through F [0-9,A-F].  See image above.__<br/><br/><div id="sample_cluster"></div>
       If done correctly, your cluster configuration file should now look like the following, except with your correct sensor IDs:  
-      [![cluster_sensor](../../resources/retail_h3000_cluster_config_sensor.png)](../../resources/retail_h3000_cluster_config_filled.json)  
+      [![cluster_sensor](../../resources/retail/h3000/cluster_config_sensor.png)](retail_cluster_config_filled.json)  
         __NOTE: In this instance, although the sensors are in different groups, they are also in different clusters.  Since clusters are independent of each other, both sensors will end up running at the same time, so make sure to space the sensors apart and make them face away from each other as outlined and illustrated in [Step 7 in the Prerequisites section](#phys_setup).__
 
 3. (Optional) Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting.
@@ -129,39 +129,39 @@ are connected. This can be seen on the [Dashboard](http://localhost:8080/web-adm
 page or the [Sensors](http://localhost:8080/web-admin/sensors-main.html) page.  You can navigate between 
 the different pages by using the menu button found at the top left of each page.
 
-    ![Nav_Menu_Button](../../resources/Nav_Menu.png)
+    ![Nav_Menu_Button](../../resources/common_images/RSP_Controller_WebAdmin_Dashboard_Nav.png)
 <br/><br/>
 2. On the [Scheduler](http://localhost:8080/web-admin/scheduler.html) page, stop the sensors from reading 
 tags by pressing the __INACTIVE__ button.
 
-    ![Scheduler_Inactive_Button](../../resources/Scheduler_Inactive.png)
+    ![Scheduler_Inactive_Button](../../resources/common_images/RSP_Controller_WebAdmin_Scheduler_Inactivate.png)
 <br/><br/>
 3. On the [Inventory](http://localhost:8080/web-admin/inventory-main.html) page, press the __Unload__ button 
 to clear out all previous tag history to start a clean session.
 
-    ![Inventory_Unload_Button](../../resources/Inventory_Unload.png)
+    ![Inventory_Unload_Button](../../resources/common_images/RSP_Controller_WebAdmin_Inventory_Unload.png)
 <br/><br/>
 4. On the [Behaviors](http://localhost:8080/web-admin/behaviors.html) page, use the __Upload From File__
-button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__ directory.  The required file is __behavior_PORTS_1.json__.  
-    ![Behaviors_Upload_Button](../../resources/Behaviors_Upload.png)
+button to upload all of the use case behaviors to the RSP Controller.  The behavior file can be found in the __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__ directory.  The required file is __behavior_PORTS_2.json__.  
+    ![Behaviors_Upload_Button](../../resources/common_images/RSP_Controller_WebAdmin_Behavior_Upload.png)
  
     __NOTE:__  This file __MUST__ be loaded to the RSP Controller __BEFORE__ the cluster configuration file 
     because the cluster configuration file references this behavior id, and the behavior must already be known by the 
     RSP Controller. Otherwise the loading of the cluster configuration file will fail validation.  
 
-    Your list of behaviors should now include "behavior_PORTS_1":
+    Your list of behaviors should now include __"behavior_PORTS_2"__:
     
-    ![Behaviors_after_load](../../resources/Behaviors_after_load.png)
+    ![Behaviors_after_load](../../resources/common_images/RSP_Controller_WebAdmin_Behavior_behavior_PORTS_2_Uploaded.png)
 <br/><br/>
 5. On the [Cluster Config](http://localhost:8080/web-admin/cluster-config.html) page, use the __Upload From File__ button to upload the __EDITED__ cluster configuration file (see the [Cluster Configuration section](#cluster-configuration)).
 
-    ![Cluster_Config_Upload_Button](../../resources/Cluster_Config_Upload.png)
+    ![Cluster_Config_Upload_Button](../../resources/common_images/RSP_Controller_WebAdmin_Cluster_Upload.png)
 
     The cluster configuration file can be found at __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/retail_cluster_config.json__.
 
     The cluster IDs (BackStockCluster and SalesFloorExitCluster) will be displayed.  If you click on the cluster ID name, you should see the values that you set in the cluster configuration file.
 
-    ![Cluster_Config_Upload_Button](../../resources/Cluster_after_load.png)  
+    ![Cluster_Config_Upload_Button](../../resources/retail/h3000/cluster_after_load.png)  
     __TROUBLESHOOTING:  If your Cluster Config page does not look like the image above then:__
     - Verify you successfully loaded the behavior file in the previous step.
     - Verify your cluster config file is valid.
@@ -174,21 +174,21 @@ button to upload all of the use case behaviors to the RSP Controller.  The behav
 6. On the [Scheduler](http://localhost:8080/web-admin/scheduler.html) page, start the sensors reading 
 according to the cluster configuration by pressing the __FROM_CONFIG__ button.
 
-    ![Scheduler_From_Config_Button](../../resources/Scheduler_From_Configv2.png)
+    ![Scheduler_From_Config_Button](../../resources/common_images/RSP_Controller_WebAdmin_Scheduler_FromConfig.png)
     
     The __Cluster Id__, __Behavior__ name and __Sensor__ ID will be displayed on the page (see image below).
 
-    ![Scheduler_After_Confile_File_Load](../../resources/Scheduler_From_Config_after_load.png)
+    ![Scheduler_After_Confile_File_Load](../../resources//retail/h3000/scheduler_after_load.png)
 <br/><br/>
 7. On the [Sensors](http://localhost:8080/web-admin/sensors-main.html) page, confirm that the sensors have 
 been configured as specified in the cluster configuration file (have the correct behavior, facility, personality, 
 and aliases) and are reading tags.  Your sensor page should look like the following except with your respective sensor IDs.
 
-    ![Sensor_After_Confile_File_Load](../../resources/Sensors_after_load.png)
+    ![Sensor_After_Confile_File_Load](../../resources/retail/h3000/sensors_after_load.png)
   
-     ![Sensor_Connected_Icon](../../resources/Sensor_Connected_Icon_vsm.png) Connected  
-     ![Sensor_NotConnected_Icon](../../resources/Sensor_Disconnected_Icon_vsm.png)  Disconnected  
-     ![Sensor_Reading_Icon](../../resources/Sensor_Reading_Icon_vsm.png)  Reading tags
+     ![Sensor_Connected_Icon](../../resources/common_images/sensor_icon_connected.png) Connected  
+     ![Sensor_NotConnected_Icon](../../resources/common_images/sensor_icon_disconnected.png)  Disconnected  
+     ![Sensor_Reading_Icon](../../resources/common_images/sensor_icon_reading.png)  Reading tags
    
    __TROUBLESHOOTING:  If your sensor page does not look like the image above then:__
      - __Make sure the cluster configuration file is valid.  Check the steps you performed in the [Configure / Control the Intel&reg; RSP Controller Application](#configure--control-the-intel-rsp-controller-application) section.__
@@ -201,57 +201,118 @@ to monitor tag reads and states.
 9. Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
+
 ### METHOD 2: Using the MQTT Messaging API
-1. Edit the mqtt_set_cluster_config.json (located at __~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/__) replacing "CONTENTS_OF_CLUSTER_CONFIG_GO_HERE" with the contents of the edited retail_cluster_config.json file.  Save and close your file.  
+1. Edit the __mqtt_set_cluster_config.json__ file  (located at ~/projects/rsp-sw-toolkit-gw/examples/use-cases/retail/h3000/) replacing __CONTENTS_OF_CLUSTER_CONFIG_GO_HERE__ with the contents of your edited __qsr_cluster_config.json file__ (Make sure you completed the [Cluster Configuration](#cluster-configuration) section).   
 
-    (Optional) Now that the file is complete, it would be a good idea to pass the contents of the file through a JSON linter (such as https://jsonlint.com/, which is a convenient online JSON linting tool) to ensure your file has proper JSON formatting. 
+    Copy and paste the contents of the mqtt_set_cluster_config.json file through a JSON linter (such as https://jsonlint.com/) to ensure your file has proper JSON formatting. 
 
-2. Open a new terminal window and subscribe to the RSP Controller's command response topic in order to monitor the 
-command responses.
+    Save and close the __mqtt_set_cluster_config.json__ file. 
+
+2. Open a terminal window and subscribe to the RSP Controller's command response topic in order to monitor the 
+command responses.  For the purposes of this exercise, we will call this the __"Response Terminal"__.
     ```bash
     #-- monitor the rpc command responses
     mosquitto_sub -t rfid/controller/response
     ```
 
-3. Open another new terminal to send JsonRPC commands over MQTT to configure and control the RSP Controller.  __Make sure you do step #2 above to monitor the command response status when you execute these commands.__
+3. Open another terminal to send JSON-RPC commands over MQTT to configure and control the RSP Controller.  For the purposes of this exercise, we will call this the __"Command Terminal"__.
     ```bash
     #-- change directory to the examples folder 
     #-- so the example commands work correctly
     cd ~/projects/rsp-sw-toolkit-gw/examples
-    
-    #-- stop the scheduler
-    mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_INACTIVE.json
-    
-    #-- unload the current inventory
-    mosquitto_pub -t rfid/controller/command -f api/upstream/inventory_unload_request.json
-    
-    #-- load behavior specific to this exercise
-    #-- (lowered power levels as sensors are likely to be interfering)
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/mqtt_set_behavior.json
-    
-    #-- load (set) the cluster configuration
-    mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/mqtt_set_cluster_config.json
-    
-    #-- activate the scheduler in custom configuration mode
-    mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
     ```
 
-4. Continue to the [Observe Tag Events section](#observe-tag-events).
+4. Inactivate the sensors by stopping the RSP Controller Scheduler.<br>
+   Execute the following in the __Command Terminal__:
+   ```bash
+   #-- stop the scheduler
+   mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_INACTIVE.json
+   ```
+
+   You should see the following output in the __Response Terminal__:
+   ```bash
+   {"jsonrpc":"2.0","id":"24","result":{"run_state":"INACTIVE","available_states":["INACTIVE","ALL_ON","ALL_SEQUENCED","FROM_CONFIG"],"clusters":[]}}
+   ```
+
+   RSP Sensor(s) LED indicator should show solid yellow color.
+
+4. Unload the inventory data.<br>
+   Execute the following in the __Command Terminal__:
+   ```bash
+   #-- unload the current inventory
+   mosquitto_pub -t rfid/controller/command -f api/upstream/inventory_unload_request.json
+   ```
+
+   You should see the following output in the __Response Terminal__:
+   ```bash
+   {"jsonrpc":"2.0","id":"16","result":null}
+   ```
+
+5. Load the rfid behavior settings specific to this exercise.<br>
+   Execute the following in the __Command Terminal__:
+   ```bash
+   #-- (lowered power levels as sensors are likely to be interfering)
+   mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/mqtt_set_behavior.json
+   ```
+
+   You should see the following output in the __Response Terminal__:
+   ```bash
+   {"jsonrpc":"2.0","id":"1","result":[{"id":"behavior_PORTS_2","operation_mode":"NonContinuous","link_profile":1,"power_level":18.0,"selected_state":"Any","session_flag":"S0","target_state":"A","q_algorithm":"Dynamic","fixed_q_value":10,"start_q_value":7,"min_q_value":3,"max_q_value":15,"retry_count":0,"threshold_multiplier":2,"dwell_time":1000,"inv_cycles":0,"toggle_target_flag":false,"repeat_until_no_tags":false,"perform_select":false,"perform_post_match":false,"filter_duplicates":false,"auto_repeat":false,"delay_time":0,"toggle_mode":"OnInvCycle"}]}
+   ```
+
+6. Load (set) the cluster configuration.<br>
+   Execute the following in the __Command Terminal__:
+   ```bash
+   #-- load (set) the cluster configuration
+   mosquitto_pub -t rfid/controller/command -f use-cases/retail/h3000/mqtt_set_cluster_config.json
+   ```
+
+   You should see the following output in the __Response Terminal__:
+   ```bash
+   {"jsonrpc":"2.0","id":"4","result":{"id":"RetailUseCaseClusterConfigExample","clusters":[{"id":"BackStockCluster","personality":null,"facility_id":"Retail_Store_8402","aliases":["BackStock","BackStock"],"behavior_id":"behavior_PORTS_2","sensor_groups":[["RSP-150659"]],"tokens":[]},{"id":"SalesFloorExitCluster","personality":"EXIT","facility_id":"Retail_Store_8402","aliases":["SalesFloor","SalesFloor"],"behavior_id":"behavior_PORTS_2","sensor_groups":[["RSP-150994"]],"tokens":[]}]}}
+   ```
+
+7. Activate the scheduler in to utilize the settings in the cluster configuraiton.<br>
+   Execute the following in the __Command Terminal__:
+   ```bash
+   #-- activate the scheduler in custom configuration mode
+   mosquitto_pub -t rfid/controller/command -f api/upstream/scheduler_set_run_state_request_FROM_CONFIG.json
+   ```
+
+   You should see the following output in the __Response Terminal__:
+   ```bash
+   {"jsonrpc":"2.0","id":"24","result":{"run_state":"FROM_CONFIG","available_states":["INACTIVE","ALL_ON","ALL_SEQUENCED","FROM_CONFIG"],"clusters":[{"id":"BackStockCluster","personality":null,"facility_id":null,"aliases":[],"behavior_id":"behavior_PORTS_2","sensor_groups":[],"tokens":[]},{"id":"SalesFloorExitCluster","personality":null,"facility_id":null,"aliases":[],"behavior_id":"behavior_PORTS_2","sensor_groups":[],"tokens":[]}]}}
+   ```
+   RSP Sensor(s) LED indicator will show solid blue or blinking blue color when reading rfid tags.
+
+   __TROUBLESHOOTING:__  
+    - If you see an error message when you try to execute any of the commands than:
+        - Verify you are in the correct path or directory.  By default, the sample commands are located in the ~/projects/rsp-sw-toolkit-gw/examples directory.  Your directory may differ if you selected a different location.
+        - Verify the command was entered correctly.
+       
+    - If you see an error in the response message (i.e. UNKNOWN error or PARSE_ERROR) or the response message does not match the examples above, verify your mqtt_set_cluster_config.json and mqtt_set_behavior.json files are valid.
+        - Make sure your modified cluster configuration file is correct and the JSON format is valid.  See the [Cluster Configuration](#cluster-configuration) section.
+        - Ensure you edited the mqtt_set_cluster_config.json file as described in [step 1](#method-2-using-the-mqtt-messaging-api).
+  
+
+8. Continue to the [Observe Tag Events section](#observe-tag-events).
 ___
 
 ## Observe Tag Events
-Open a new terminal window and subscribe to the RSP Controller events MQTT topic in order to monitor 
+1. Open a new terminal window and subscribe to the RSP Controller events MQTT topic in order to monitor 
 tag events as produced by the RSP Controller.
 
-```bash
-#-- monitor the upstream events topic
-mosquitto_sub -t rfid/controller/events
-```
+   ```bash
+   #-- monitor the upstream events topic
+   mosquitto_sub -t rfid/controller/events
+   ```
 
-__NOTE:__  All of the output seen below is based on the default values from the included configuration files.  
-If you changed the default values, your results may differ slightly.  In addition to inventory events, you will see "heartbeat" messages.  You can ignore those for now.
+   __NOTE:__  All of the output seen below is based on the default values from the included configuration files.  
+   
+   If you changed the default values, your results may differ slightly.  In addition to inventory events, you will see "heartbeat" messages.  You can ignore those for now.
 
-1. ### Tag arrival in BackStock
+2. ### Tag arrival in BackStock
     At this point, remove your tag from hiding and place it about a foot away from the BackStock sensor. 
     When the tag is read initially, an arrival event will be generated on the rfid/controller/events topic.
     Verify from the Web Admin 
@@ -259,7 +320,7 @@ If you changed the default values, your results may differ slightly.  In additio
     and the location is at the BackStock sensor.
 
     Verify the receipt of the MQTT event message.
-    ![Retail H3000 Output 1](../../resources/Retail_H3000_Out_1.png)
+    ![Retail H3000 Output 1](../../resources/retail/h3000/out_1.png)
     ```json
     {
       "jsonrpc": "2.0",
@@ -288,7 +349,7 @@ If you changed the default values, your results may differ slightly.  In additio
     - The cluster file was uploaded correctly
     - The scheduler is using that cluster configuration
 
-2. ### Tag departure from BackStock and arrival in SalesFloor
+3. ### Tag departure from BackStock and arrival in SalesFloor
     Now move the tag from the BackStock sensor to the SalesFloor sensor. Since these sensors are at different 
     locations within the same facility, a "moved" event will be generated.  It may take a few moments for the 
     event to be generated as the algorithm uses time-weighted RSSI averages to determine the tag location. From 
@@ -296,7 +357,7 @@ If you changed the default values, your results may differ slightly.  In additio
     locations to the second sensor and that the tag state has changed to EXITING.
 
     Verify the receipt of the MQTT event message.
-    ![Retail H3000 Output 2](../../resources/Retail_H3000_Out_2.png)
+    ![Retail H3000 Output 2](../../resources/retail/h3000/out_2.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -319,7 +380,7 @@ If you changed the default values, your results may differ slightly.  In additio
     }
     ```
 
-3. ### Tag departs
+4. ### Tag departs
     Hide the tag so that no sensor is able to read it (place under your computer again) to emulate the tag actually being gone.
     After the departure threshold time limit has passed (default being 30 seconds), a departed 
     event should be generated from the SalesFloor sensor.  From the 
@@ -327,7 +388,7 @@ If you changed the default values, your results may differ slightly.  In additio
     changes to DEPARTED_EXIT.
 
     Verify the receipt of the MQTT event message.
-    ![Retail H3000 Output 3](../../resources/Retail_H3000_Out_3.png)
+    ![Retail H3000 Output 3](../../resources/retail/h3000/out_3.png)
     ```json  
     {
       "jsonrpc": "2.0",
@@ -351,11 +412,11 @@ If you changed the default values, your results may differ slightly.  In additio
     ```
 
 ## Summary
-![GoldStar](../../resources/goldstar-sm.png) Congratulations!  You have completed this tutorial that demonstrates how to configure the Intel&reg; RSP solution for a typical retail deployment.
+![GoldStar](../../resources/common_images/goldstar-sm.png) Congratulations!  You have completed this tutorial that demonstrates how to configure the Intel&reg; RSP solution for a typical retail deployment.
 
 By applying the cluster configuration setting, you should have seen how to track a tag across various locations and how it generates different events.  You should now have the knowledge and ability to scale for a larger deployment by adding additional sensors. 
 
-### Next Steps
+## Next Steps
 - [Start a clean session](#starting-a-clean-session) and try a different method to configure the RSP Controller:  
   - [METHOD 1: Using the Web Admin](#method-1-using-the-web-admin)  
   - [METHOD 2: Using the MQTT Messaging API](#method-2-using-the-mqtt-messaging-api)  
@@ -363,17 +424,20 @@ By applying the cluster configuration setting, you should have seen how to track
 
 ## Starting a Clean Session
 If you would like to start another use case, try another configuration method, or would like to run 
-your own scenario, then you will want to start with a clean session for the RSP Controller so that 
+your own scenario, than you will want to start with a clean session for the RSP Controller so that 
 old data and configurations do not pollute your next exercise.  In order to do this, follow these steps:
 
 1. Stop the RSP Controller.  If you used the installer to install the RSP Controller, and you used 
-the native installation (non-Docker method), then simply press Ctrl+C in the terminal window where 
+the native installation (non-Docker method), than simply press Ctrl+C in the terminal window where 
 you ran the installer script.
 
 2. Run the following commands to clear out the old data and configurations
     ```bash
     cd ~/deploy/rsp-sw-toolkit-gw/cache/
     rm -rf *.json
+
+    cd ~/deploy/rsp-sw-toolkit-gw/config/behaviors/
+    rm -rf behavior_PORTS_*
     ```
 
 3. Start the RSP Controller by running the following commands

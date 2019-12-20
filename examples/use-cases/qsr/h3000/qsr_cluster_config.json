@@ -1,0 +1,20 @@
+{
+  "id": "QsrUseCaseClusterConfigExample",
+  "clusters": [
+    {
+      "id": "FreezerCluster",
+      "personality": ,
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
+    }, {
+      "id": "Receiving-ExitingCluster",
+      "personality": "",
+      "facility_id": "",
+      "aliases": [  ],
+      "behavior_id": "",
+      "sensor_groups": [[""]]
+    }
+  ]
+}

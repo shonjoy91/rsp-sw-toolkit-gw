@@ -1,0 +1,6 @@
+{
+  "jsonrpc": "2.0",
+  "id": "4",
+  "method": "cluster_set_config",
+  "params": CONTENTS_OF_CLUSTER_CONFIG_GO_HERE
+}
