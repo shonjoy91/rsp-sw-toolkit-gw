@@ -21,6 +21,7 @@ import com.intel.rfid.api.sensor.ApplyBehaviorRequest;
 import com.intel.rfid.api.sensor.Behavior;
 import com.intel.rfid.api.sensor.ConnectRequest;
 import com.intel.rfid.api.sensor.DeviceAlertNotification;
+import com.intel.rfid.api.sensor.EnabledState;
 import com.intel.rfid.api.sensor.GeoRegion;
 import com.intel.rfid.api.sensor.GetBISTResultsRequest;
 import com.intel.rfid.api.sensor.GetGeoRegionRequest;
@@ -37,6 +38,7 @@ import com.intel.rfid.api.sensor.ResetRequest;
 import com.intel.rfid.api.sensor.RspInfo;
 import com.intel.rfid.api.sensor.SensorHeartbeatNotification;
 import com.intel.rfid.api.sensor.SetAlertThresholdRequest;
+import com.intel.rfid.api.sensor.SetAntennaConfigRequest;
 import com.intel.rfid.api.sensor.SetFacilityIdRequest;
 import com.intel.rfid.api.sensor.SetGeoRegionRequest;
 import com.intel.rfid.api.sensor.SetLEDRequest;
@@ -44,6 +46,7 @@ import com.intel.rfid.api.sensor.SetMotionEventRequest;
 import com.intel.rfid.api.sensor.ShutdownRequest;
 import com.intel.rfid.api.sensor.SoftwareUpdateRequest;
 import com.intel.rfid.api.sensor.StatusUpdateNotification;
+import com.intel.rfid.api.sensor.VirtualPort;
 import com.intel.rfid.exception.RspControllerException;
 import com.intel.rfid.helpers.ExecutorUtils;
 import com.intel.rfid.helpers.Jackson;
@@ -83,6 +86,7 @@ public class SensorPlatform
     protected final String deviceId;
     protected int minRssiDbm10X = Integer.MIN_VALUE;
 
+    public static final int NUM_RSP9000_PORTS = 2;
     public static final int NUM_ALIASES = 4;
     protected final List<String> aliases = new ArrayList<>(NUM_ALIASES);
 
@@ -105,6 +109,7 @@ public class SensorPlatform
 
     private final ExecutorService readExecutor;
 
+    protected SetAntennaConfigRequest setAntennaConfigRequest = new SetAntennaConfigRequest();
     protected Behavior currentBehavior = new Behavior();
     protected Connection.State connectionState = Connection.State.DISCONNECTED;
     protected ReadState readState = ReadState.STOPPED;
@@ -615,11 +620,29 @@ public class SensorPlatform
         }
     }
 
+    List<VirtualPort> getVirtualPortList(Behavior _behavior) {
+        List<VirtualPort> ports = new ArrayList<>();
+        for (int i = 0; i < NUM_RSP9000_PORTS; i++) {
+            VirtualPort port = new VirtualPort();
+            port.index = i;
+            port.state = EnabledState.Enabled;
+            port.power_level = (float) (_behavior.getPower_level());
+            port.dwell_time = _behavior.getDwell_time();
+            port.inv_cycles = _behavior.getInv_cycles();
+            port.physical_port = i;
+            ports.add(i, port);
+        }
+        return ports;
+    }
+
     public void setBehavior(Behavior _behavior) {
         if (_behavior == null) { return; }
         currentBehavior = _behavior;
         if (isConnected() && readState == ReadState.STARTED) {
             execute(new ApplyBehaviorRequest(ApplyBehaviorRequest.Action.STOP, currentBehavior));
+        }
+        if ((rspInfo.platform == Platform.UNKNOWN) || (rspInfo.platform == Platform.RSP9000)) {
+            execute(new SetAntennaConfigRequest(getVirtualPortList(currentBehavior)));
         }
     }
 
@@ -758,6 +781,9 @@ public class SensorPlatform
                                      JsonRpcError.Type.WRONG_STATE,
                                      "facility id is not configured");
         } else {
+            if ((rspInfo.platform == Platform.UNKNOWN) || (rspInfo.platform == Platform.RSP9000)) {
+                rh = execute(new SetAntennaConfigRequest(getVirtualPortList(currentBehavior)));
+            }
             rh = execute(new ApplyBehaviorRequest(_action, currentBehavior));
         }
 
